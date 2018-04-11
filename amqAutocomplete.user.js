@@ -8,6 +8,9 @@
 // @grant        none
 // ==/UserScript==
 
+var options = {
+	highlight: false
+}
 
 class FilterManager {
 	constructor (list, limit) {
@@ -217,9 +220,11 @@ AmqAwesomeplete.prototype.evaluate = function () {
 
 	$("#qpAnswerInputLoadingContainer").removeClass("hide");
 	this.$ul.children('li').remove();
-
+        
+	var val = options.highlight ? this.filterManager.lastQry : "" 
+	
 	for (let i = this.suggestions.length - 1; i >= 0; i--) {
-		this.ul.insertBefore(this.item(this.suggestions[i], this.filterManager.lastQry, i), this.ul.firstChild);
+		this.ul.insertBefore(this.item(this.suggestions[i], val, i), this.ul.firstChild);
 	}
 
 	if (this.ul.children.length === 0) {
