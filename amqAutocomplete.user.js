@@ -218,7 +218,11 @@ AmqAwesomeplete.prototype.evaluate = function () {
 	var me = this;
 	
 	this.suggestions = this.filterManager.filterBy(this.input.value).map(v => new Suggestion(me.data(v, this.filterManager.lastQry)))	
-
+	
+	if (this.sort !== false) {
+		this.suggestions = this.suggestions.sort(this.sort);
+	}
+	
 	$("#qpAnswerInputLoadingContainer").removeClass("hide");
 	this.$ul.children('li').remove();
         
