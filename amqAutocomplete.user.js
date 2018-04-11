@@ -8,6 +8,7 @@
 // @grant        none
 // ==/UserScript==
 
+
 class FilterManager {
 	constructor (list, limit) {
 		this.list = list.filter(v => this.cleanString(v).trim().length)
@@ -72,7 +73,6 @@ class FilterManager {
 
 		for (let id of this.results) {
 			var anime = this.cleaned[id];
-			console.log(id, anime, this.lastQry, results)
 			if (anime.indexOf(this.lastQry) != -1 || this.partialMatches(id)) results.add(id);
 		}
 
@@ -213,16 +213,13 @@ AmqAwesomeplete.prototype.evaluate = function () {
 
 	var me = this;
 	
-	this.suggestions = this.filterManager.filterBy(this.input.value)	
-
-	console.log(this.suggestions)
+	this.suggestions = this.filterManager.filterBy(this.input.value).map(v => new Suggestion(me.data(v, this.filterManager.lastQry)))	
 
 	$("#qpAnswerInputLoadingContainer").removeClass("hide");
 	this.$ul.children('li').remove();
 
 	for (let i = this.suggestions.length - 1; i >= 0; i--) {
-		let text = this.suggestions[i];
-		this.ul.insertBefore(this.item(text, this.filterManager.lastQry, i), this.ul.firstChild);
+		this.ul.insertBefore(this.item(this.suggestions[i], this.filterManager.lastQry, i), this.ul.firstChild);
 	}
 
 	if (this.ul.children.length === 0) {
@@ -344,4 +341,4 @@ function removeDiacritics (str) {
     return str.replace(/[^\u0000-\u007E]/g, function(a){ 
        return diacriticsMap[a] || a; 
     });
-} 
+}    
