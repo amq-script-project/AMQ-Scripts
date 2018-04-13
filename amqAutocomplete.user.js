@@ -47,7 +47,7 @@ class FilterManager {
 	}
 
 	cleanString (str) {
-		return removeDiacritics(str).replace("-", " ").replace(/[^\w\s]/gi, '').replace(/  +/g, ' ').toLowerCase();
+		return removeDiacritics(str).replace("-", " ").replace(/[^\w\s]/gi, ' ').replace(/  +/g, ' ').toLowerCase();
 	}
 
 	alphabeticalSort (list) {
