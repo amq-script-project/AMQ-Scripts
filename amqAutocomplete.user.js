@@ -1,28 +1,74 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  faster and better autocomplete
 // First searches for text startingWith, then text endingWith, then includes and finally if input words match words in anime (in any order)
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
 // @grant        none
+// @downloadURL https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw/592cfd766bd3fed385759ad90dafcc48fc719b23/amqAutocomplete.user.js
+// @updateURL   https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw/592cfd766bd3fed385759ad90dafcc48fc719b23/amqAutocomplete.user.js
 // ==/UserScript==
 
+if (!Listener) return;
+
 var options = {
-	highlight: false
+	highlight: false, // highlight or not the match
+	sorting : "total", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is default
+    sortList: true // true = consider animes by last seen order (after checking startsWith/endsWith)
 }
+
+var debug = false;
+
+function log(msg) {
+    if(debug) console.log(msg)
+}
+
+var storedData = {}
+
+if (localStorage) {
+    storedData = JSON.parse(localStorage.getItem("storedData") || "{}")
+}
+
+new Listener("answer results", function (result) {
+
+	var rightAnswers = {}
+	rightAnswers[result.songInfo.animeName.toLowerCase()] = true
+
+	result.players.forEach((playerResult) => {
+        if(playerResult.rightAnswer) {
+		    rightAnswers[playerResult.answer.toLowerCase()] = true;
+		}
+	});
+
+	for (var answer in rightAnswers) {
+	    storedData[answer] = new Date().getTime();
+	}
+
+	log(storedData)
+
+}).bindListener();
+
+new Listener("quiz end result", function (payload) {
+    if (localStorage) localStorage.setItem("storedData", JSON.stringify(storedData))
+}).bindListener();
 
 class FilterManager {
 	constructor (list, limit) {
 		this.list = list.filter(v => this.cleanString(v).trim().length)
 		this.limit = limit
 
+		if (options.sortList) {
+            this.list = this.sortBySeen(this.list);
+		}
+
 		this.sorted =  {
 			list: this.list.map((v, idx) => ({idx: idx, value: this.cleanString(v)}))
 		}
 
 		this.cleaned = this.sorted.list.map(v => v.value)
+
 
 		this.reverseSorted = {
 			list: this.sorted.list.map(v => ({idx: v.idx, value: v.value.split("").reverse().join("")}))
@@ -44,6 +90,15 @@ class FilterManager {
 		this.lastQry = ""
 		this.results = new Set();
 		this.reset();
+	}
+
+	sortBySeen(arr) {
+       return arr.map((v, idx) => ({val : v, idx: idx, d: (storedData[v.toLowerCase()] || 1)})).sort(function(a, b){
+	       if (a.d < b.d) return 1;
+		   if (b.d < a.d) return -1;
+		   if (a.idx < b.idx) return -1;
+		   return 1;
+	   }).map((v) => v.val);
 	}
 
 	cleanString (str) {
@@ -222,6 +277,23 @@ AmqAwesomeplete.prototype.evaluate = function () {
 	if (this.sort !== false) {
 		this.suggestions = this.suggestions.sort(this.sort);
 	}
+
+	if (options.sorting == "partial" || options.sorting == "total") {
+	    this.suggestions = this.suggestions.map((v, idx) => ({v: v, idx: idx, d: storedData[v.value.toLowerCase()] || 1})).sort(function(a, b) {
+		    if (a.d != 1 && b.d == 1) return -1;
+			if (a.d == 1 && b.d != 1) return 1;
+
+			if (options.sorting == "total") {
+			    if (a.d < b.d) return 1;
+				if (b.d < a.d) return -1;
+			}
+
+			if (a.idx < b.idx) return -1;
+			return 1;
+		}).map(v => v.v);
+	}
+
+	log(this.suggestions)
 	
 	$("#qpAnswerInputLoadingContainer").removeClass("hide");
 	this.$ul.children('li').remove();
