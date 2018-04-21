@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.2
 // @description  faster and better autocomplete
 // First searches for text startingWith, then text endingWith, then includes and finally if input words match words in anime (in any order)
 // @author       Juvian
@@ -34,13 +34,15 @@ if (localStorage) {
 new Listener("answer results", function (result) {
 
 	var rightAnswers = {}
-	rightAnswers[result.songInfo.animeName.toLowerCase()] = true
-
-	result.players.forEach((playerResult) => {
-        if(playerResult.rightAnswer) {
-		    rightAnswers[playerResult.answer.toLowerCase()] = true;
-		}
-	});
+        
+	if (result.players.filter(p => p.rightAnswer && p.name == selfName && (rightAnswers[p.answer.toLowerCase()] = true)).length == 0) {
+		rightAnswers[result.songInfo.animeName.toLowerCase()] = true
+		result.players.forEach((playerResult) => {
+			if(playerResult.rightAnswer) {
+			    rightAnswers[playerResult.answer.toLowerCase()] = true;
+			}
+		});
+	}
 
 	for (var answer in rightAnswers) {
 	    storedData[answer] = new Date().getTime();
