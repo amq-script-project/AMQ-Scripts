@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  faster and better autocomplete
 // First searches for text startingWith, then text endingWith, then includes and finally if input words match words in anime (in any order)
 // @author       Juvian
@@ -15,7 +15,7 @@ if (!Listener) return;
 
 var options = {
 	highlight: false, // highlight or not the match
-	sorting : "total", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is default
+	sorting : "partial", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is default
     sortList: true // true = consider animes by last seen order (after checking startsWith/endsWith)
 }
 
@@ -60,6 +60,11 @@ class FilterManager {
 	constructor (list, limit) {
 		this.list = list.filter(v => this.cleanString(v).trim().length)
 		this.limit = limit
+        this.originalOrder = {}
+
+		this.list.forEach(function(anime, idx){
+		    this.originalOrder[anime] = idx;
+		})
 
 		if (options.sortList) {
             this.list = this.sortBySeen(this.list);
@@ -280,20 +285,20 @@ AmqAwesomeplete.prototype.evaluate = function () {
 		this.suggestions = this.suggestions.sort(this.sort);
 	}
 
-	if (options.sorting == "partial" || options.sorting == "total") {
-	    this.suggestions = this.suggestions.map((v, idx) => ({v: v, idx: idx, d: storedData[v.value.toLowerCase()] || 1})).sort(function(a, b) {
-		    if (a.d != 1 && b.d == 1) return -1;
+	this.suggestions = this.suggestions.map((v) => ({v: v, d: storedData[v.value.toLowerCase()] || 1})).sort(function(a, b) {
+		if (options.sorting == "partial" || options.sorting == "total") {
+			if (a.d != 1 && b.d == 1) return -1;
 			if (a.d == 1 && b.d != 1) return 1;
+		}
 
-			if (options.sorting == "total") {
-			    if (a.d < b.d) return 1;
-				if (b.d < a.d) return -1;
-			}
+		if (options.sorting == "total") {
+			if (a.d < b.d) return 1;
+			if (b.d < a.d) return -1;
+		}
 
-			if (a.idx < b.idx) return -1;
-			return 1;
-		}).map(v => v.v);
-	}
+		if (me.originalOrder[a.v] < me.originalOrder[b.v]) return -1;
+		return 1;
+	}).map(v => v.v);
 
 	log(this.suggestions)
 	
