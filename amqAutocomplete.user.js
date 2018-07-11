@@ -34,9 +34,7 @@ if (localStorage) {
 new Listener("answer results", function (result) {
 
 	var rightAnswers = {}
-        
 	if (result.players.filter(p => p.rightAnswer && p.name == selfName && (rightAnswers[p.answer.toLowerCase()] = true)).length == 0) {
-		rightAnswers[result.songInfo.animeName.toLowerCase()] = true
 		result.players.forEach((playerResult) => {
 			if(playerResult.rightAnswer) {
 			    rightAnswers[playerResult.answer.toLowerCase()] = true;
