@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.6
 // @description  faster and better autocomplete
 // First searches for text startingWith, then text endingWith, then includes and finally if input words match words in anime (in any order)
 // @author       Juvian
