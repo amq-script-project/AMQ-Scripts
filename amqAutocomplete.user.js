@@ -9,7 +9,7 @@
 // @grant        none
 // @downloadURL https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw
 // @updateURL   https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw
-// @copyright CC 4.0 https://creativecommons.org/licenses/by/4.0/
+// @copyright MIT license
 // ==/UserScript==
 
 if (!window.Listener) return;
