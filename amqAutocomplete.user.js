@@ -12,7 +12,7 @@
 // @copyright MIT license
 // ==/UserScript==
 
-if (!window.Listener) return;
+if (!Listener) return;
 
 var options = {
 	highlight: false, // highlight or not the match
