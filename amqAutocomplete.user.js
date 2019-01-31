@@ -11,7 +11,7 @@
 // @updateURL   https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw
 // ==/UserScript==
 
-if (!Listener) return;
+if (!window.Listener) return;
 
 var options = {
 	highlight: false, // highlight or not the match
