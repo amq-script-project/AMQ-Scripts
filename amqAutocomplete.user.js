@@ -329,7 +329,7 @@ var oldSendAnwer = Quiz.prototype.sendAnswer;
 
 Quiz.prototype.sendAnswer = function (showState) {
     var awesome = quiz.awesomepleteInstance;
-    if(awesome.suggestions.length && awesome.filterManager.list.indexOf(awesome.filterManager.cleanString(awesome.input.value)) == -1){
+    if(awesome.suggestions.length && awesome.input.value.trim() && awesome.filterManager.list.indexOf(awesome.filterManager.cleanString(awesome.input.value)) == -1){
 	   awesome.input.value = awesome.suggestions[0].value;
 	}
 	oldSendAnwer.apply(this, [showState])
