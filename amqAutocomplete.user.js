@@ -340,7 +340,7 @@ var oldSendAnwer = Quiz.prototype.sendAnswer;
 Quiz.prototype.sendAnswer = function (showState) {
     try{
 		var awesome = quiz.awesomepleteInstance;
-		if(awesome.suggestions && awesome.suggestions.length && awesome.input.value.trim() && awesome.filterManager.cleaned.indexOf(awesome.filterManager.cleanString(awesome.input.value).toLowerCase()) == -1){
+		if(awesome.suggestions && awesome.suggestions.length && awesome.input.value.trim() && awesome.suggestions[0].value.trim() && awesome.filterManager.cleaned.indexOf(awesome.filterManager.cleanString(awesome.input.value).toLowerCase()) == -1){
 			awesome.input.value = awesome.suggestions[0].value;
 		}
 	} catch (ex) {
