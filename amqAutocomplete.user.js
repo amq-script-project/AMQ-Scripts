@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.10
+// @version      1.11
 // @description  faster and better autocomplete
 // First searches for text startingWith, then text endingWith, then includes and finally if input words match words in anime (in any order)
 // @author       Juvian
@@ -338,9 +338,13 @@ AmqAwesomeplete.prototype.evaluate = function () {
 var oldSendAnwer = Quiz.prototype.sendAnswer;
 
 Quiz.prototype.sendAnswer = function (showState) {
-    var awesome = quiz.awesomepleteInstance;
-    if(awesome.suggestions && awesome.suggestions.length && awesome.input.value.trim() && awesome.filterManager.cleaned.indexOf(awesome.filterManager.cleanString(awesome.input.value).toLowerCase()) == -1){
-	   awesome.input.value = awesome.suggestions[0].value;
+    try{
+		var awesome = quiz.awesomepleteInstance;
+		if(awesome.suggestions && awesome.suggestions.length && awesome.input.value.trim() && awesome.filterManager.cleaned.indexOf(awesome.filterManager.cleanString(awesome.input.value).toLowerCase()) == -1){
+			awesome.input.value = awesome.suggestions[0].value;
+		}
+	} catch (ex) {
+        console.log(ex);
 	}
 	oldSendAnwer.apply(this, [showState])
 }
