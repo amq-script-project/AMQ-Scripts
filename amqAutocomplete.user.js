@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.13
+// @version      1.14
 // @description  faster and better autocomplete
 // First searches for text startingWith, then text endingWith, then includes and finally if input words match words in anime (in any order)
 // @author       Juvian
@@ -17,7 +17,8 @@ if (!window.Listener) return;
 var options = {
 	highlight: false, // highlight or not the match
 	sorting : "partial", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is default
-    sortList: true // true = consider animes by last seen order (after checking startsWith/endsWith)
+    sortList: true, // true = consider animes by last seen order (after checking startsWith/endsWith)
+	allowRightLeftArrows: false // use right and left arrows to move dropdown selected options
 }
 
 var debug = false;
@@ -280,6 +281,12 @@ AmqAwesomeplete.prototype = oldProto;
 AmqAwesomeplete.prototype.preprocess = function () {	
 	this.filterManager = new FilterManager(this._list.sort(this.sort), this.maxItems);
 	this.highLightManager = new HightLightManager(this);
+	if (options.allowRightLeftArrows) {
+		$(this.input).on("keydown", (e) => {
+		    if (e.keyCode == 37) this.previous()
+			else if (e.keyCode == 39) this.next();
+		})
+	}
 }
 
 AmqAwesomeplete.prototype.evaluate = function () {
