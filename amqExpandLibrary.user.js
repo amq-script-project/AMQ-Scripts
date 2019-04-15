@@ -28,7 +28,7 @@ ExpandQuestionList.prototype.updateQuestionList = function (questions) {
 	this.topShownQuestionIndex = 0;
 	this.updateScrollLayout();
 	this._$questionList.perfectScrollbar('destroy');
-	this._$questionList.css('overflow-y', 'scroll !important');
+	this._$questionList.attr("style", "overflow-y: scroll !important");
 };
 
 ExpandQuestionList.prototype.updateScrollLayout = function () {}
