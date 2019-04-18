@@ -13,30 +13,30 @@
 
 GM_addStyle(`
 #gameContainer, #gameChatPage > .col-xs-9, #gameChatPage, #gcMessageContainer,#rbRoomContainer .rbrRoomImageContainer, #mainMenuSocailButton, #xpBarCoverInner, #avatarUserImgContainer, .topMenuBar, #awContentRow, #awMainView, .gcInputContainer, #qpVideoOverflowContainer, #qpVideosUserHidden, #qpVideosUserHidden, .qpSideContainer, .qpAnimeNameContainer, #qpCounter, #qpVideoHider, #qpInfoHider, #qpWaitBuffering {
-  	background-image: url(https://wallpapers.wallhaven.cc/wallpapers/full/wallhaven-723319.jpg) !important;
+    background-image: url(https://wallpapers.wallhaven.cc/wallpapers/full/wallhaven-723319.jpg) !important;
     background-size: 100% auto !important;
     background-attachment: fixed !important;
     background-position: 0px !important;
 }
 
 .leftShadowBorder, #currencyContainer, #menuBarOptionContainer, #awContentRow .rightShadowBorder {
-	box-shadow:none;
+    box-shadow:none;
 }
 
 #footerMenuBar .menuBar, #optionsContainer.popOut, #rightMenuBarPartContainer::before, .gcList > li:nth-child(2n) {
-   background-color:transparent !important;
+    background-color:transparent !important;
 }
 
 #socialTab:not(.open), #optionsContainer:not(.open) {
-	display:none;
+    display:none;
 }
 
 #mainMenuSocailButton, #avatarUserImgContainer {
-	border:none !important;
+    border:none !important;
 }
 
 #optionsContainer li {
-	background-color:#424242 !important;
+    background-color:#424242 !important;
 }
 
 #rbMajorFilters {
