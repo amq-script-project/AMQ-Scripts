@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.14
+// @version      1.15
 // @description  faster and better autocomplete
-// First searches for text startingWith, then text endingWith, then includes and finally if input words match words in anime (in any order)
+// First searches for text startingWith, then includes and finally if input words match words in anime (in any order)
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
 // @grant        none
@@ -15,10 +15,12 @@
 if (!window.Listener) return;
 
 var options = {
-	highlight: false, // highlight or not the match
-	sorting : "partial", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is default
-    sortList: true, // true = consider animes by last seen order (after checking startsWith/endsWith)
-	allowRightLeftArrows: false // use right and left arrows to move dropdown selected options
+	highlight: true, // highlight or not the match
+	sorting : "partial", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is amq default
+    sortList: true, // true = consider matching animes by last seen order (after checking startsWith)
+	allowRightLeftArrows: false, // use right and left arrows to move dropdown selected options
+	allowStartsWith: true, // allow startsWith priotization (fastest matching)
+	allowDifferentOrder: true // allow the words to be on any order (no hero boku will match boku no hero)
 }
 
 var debug = false;
@@ -60,14 +62,14 @@ class FilterManager {
 	constructor (list, limit) {
 		this.list = list.filter(v => this.cleanString(v).trim().length)
 		this.limit = limit
-                this.originalOrder = {}
+        this.originalOrder = {}
 
 		this.list.forEach((anime, idx) => {
 		    this.originalOrder[anime] = idx;
 		})
 
 		if (options.sortList) {
-                    this.list = this.sortBySeen(this.list);
+            this.list = this.sortBySeen(this.list);
 		}
 
 		this.sorted =  {
@@ -75,11 +77,6 @@ class FilterManager {
 		}
 
 		this.cleaned = this.sorted.list.map(v => v.value)
-
-
-		this.reverseSorted = {
-			list: this.sorted.list.map(v => ({idx: v.idx, value: v.value.split("").reverse().join("")}))
-		}
 
 		this.splitted = this.cleaned.map(v => v.split(" "))
 
@@ -92,7 +89,6 @@ class FilterManager {
 		}
 
 		this.alphabeticalSort(this.sorted.list)
-		this.alphabeticalSort(this.reverseSorted.list)
 
 		this.lastQry = ""
 		this.results = new Set();
@@ -126,9 +122,6 @@ class FilterManager {
 		this.sorted.start = 0,
 		this.sorted.end = this.sorted.list.length;
 
-		this.reverseSorted.start = 0,
-		this.reverseSorted.end = this.reverseSorted.list.length;
-
 		this.lastIndex = 0;
 		this.lastPartialIndex = 0;
 		this.results.clear()
@@ -139,7 +132,7 @@ class FilterManager {
 
 		for (let id of this.results) {
 			var anime = this.cleaned[id];
-			if (anime.indexOf(this.lastQry) != -1 || this.partialMatches(id)) results.add(id);
+			if (anime.indexOf(this.lastQry) != -1 || (options.allowDifferentOrder && this.partialMatches(id))) results.add(id);
 		}
 
 		this.results = results;
@@ -155,13 +148,16 @@ class FilterManager {
 
 		this.checkOldResults();
 
-		this.addResults(this.range(this.sorted));
-		this.addResults(this.range(this.reverseSorted));
+		if (options.allowStartsWith) {
+			this.addResults(this.range(this.sorted));
+		}
 				
 		this.addContainingResults();
-		
-		for (; this.lastPartialIndex < this.splitted.length && this.results.size < this.limit; this.lastPartialIndex++) {
-			if (this.partialMatches(this.lastPartialIndex)) this.results.add(this.lastPartialIndex);
+
+		if (options.allowDifferentOrder) {
+			for (; this.lastPartialIndex < this.splitted.length && this.results.size < this.limit; this.lastPartialIndex++) {
+				if (this.partialMatches(this.lastPartialIndex)) this.results.add(this.lastPartialIndex);
+			}
 		}
 	}
 
@@ -170,7 +166,7 @@ class FilterManager {
 		re.lastIndex = this.lastIndex
 		var match;
 
-		while ((match = re.exec(this.superString)) && this.results.size < this.limit) {
+		while (this.results.size < this.limit && (match = re.exec(this.superString))) {
    			var idx = this.first(this.superStringLookup, v => v > match.index, 0, this.superStringLookup.length) - 1
    			this.results.add(idx);
    			this.lastIndex = re.lastIndex
@@ -219,7 +215,7 @@ class FilterManager {
 	filterBy (str) {
 		//console.time(str + " filter")
 		
-		if (str.length == 0) return [];
+		if (str.trim().length == 0) return [];
 		this.processResultsFor(str);
 		return Array.from(this.results).map(id => this.list[id])
 		
