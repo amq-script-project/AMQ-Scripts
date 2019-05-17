@@ -44,6 +44,10 @@ def log(message):
     print(msg)
 
 
+def system_call_wait(command):
+    os.system("start /wait /MIN cmd /c %s" % command)
+
+
 def SDconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
               keyframeinterval=120):  # 480p
     """
@@ -83,7 +87,7 @@ NUL && ' % (ffmpeg, ss, to, inputfile, title, keyframeinterval)
                     audioencode, volumesettings, outputfile)
     # os.popen(command)
     log(command)
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
     log("conversion complete")
     # os.remove("480pdummy")
     return outputfile
@@ -127,7 +131,50 @@ NUL && ' % (ffmpeg, ss, to, inputfile, title, keyframeinterval)
 -map 0:a:0 "%s"' % (ffmpeg, ss, to, inputfile, title, keyframeinterval,
                     audioencode, volumesettings, outputfile)
     log(command)
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
+    log("conversion complete")
+    return outputfile
+
+
+def unscaled_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
+              keyframeinterval=120):  # 720p
+    """
+    decent quality video, high quality audio, medium bitrate
+    """
+    outputfile += "-unscaled.webm"
+    log("unscaled conversion started")
+    title = "AMQ unscaled convert"
+    audioencode = "-c:a libopus -b:a 320k"  # default encoding
+    start = float(start)
+    end = float(end)
+    keyframeinterval = int(keyframeinterval)
+    volume = float(volume)
+    volumesettings = ""
+    ss = ""
+    to = ""
+    if volume == 0.0 and start == 0 and end == 0:
+        pass
+        # TODO: in the rare occasion that no audio editing is necessary,
+        # consider copying audio stream
+    if volume != 0.0:
+        volumesettings = '-af "volume=%.1fdB"' % (volume)
+    if start != 0.0:
+        ss = "-ss %f" % (start)
+    if end != 0.0:
+        to = "-to %f" % (end)
+    command = '%s -y %s %s -i "%s" -map_metadata -1 -map_chapters -1 \
+-metadata title="%s" -c:v libvpx-vp9 -b:v 3250k -crf 24 \
+-g %d -pass 1 -threads 16 -tile-columns 6 -frame-parallel 1 \
+-speed 4 -pix_fmt yuv420p -an -map 0:v:0 -max_muxing_queue_size 4096 -f webm \
+NUL && ' % (ffmpeg, ss, to, inputfile, title, keyframeinterval)
+    command += '%s -y %s %s -i "%s" -map_metadata -1 -map_chapters -1 \
+-metadata title="%s" -c:v libvpx-vp9 -b:v 3250k -crf 24 \
+-g %d -pass 2 -threads 16 -tile-columns 6 -frame-parallel 1 \
+-speed 1 -pix_fmt yuv420p %s %s -map 0:v:0 -max_muxing_queue_size 4096 \
+-map 0:a:0 "%s"' % (ffmpeg, ss, to, inputfile, title, keyframeinterval,
+                    audioencode, volumesettings, outputfile)
+    log(command)
+    system_call_wait(command)
     log("conversion complete")
     return outputfile
 
@@ -156,7 +203,7 @@ def mp3convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0):  # mp3
     command = '%s %s %s -i "%s" -vn -sn -c:a libmp3lame -b:a 320k -ac 2 %s \
 -map_metadata -1 -metadata title="%s" -max_muxing_queue_size 4096 "%s"' % (
         ffmpeg, ss, to, inputfile, volumesettings, title, outputfile)
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
     log(command)
     print(command)
     return outputfile
@@ -201,24 +248,24 @@ def stillconvert(inputfile, outputfile, targetResolution, volume=0.0,
         return None
     # get the image
     command = 'ffmpeg -ss 0 -i "%s" -vframes 1 stillimagetemp.png' % inputfile
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
     # create the sound
     command = '%s %s %s -i "%s" -vn %s %s -map_metadata -1 -map_chapters -1 \
 -metadata title="AMQ sound" -ac 2 -max_muxing_queue_size 4096 \
 stillimagetemp.mka' % (ffmpeg, ss, t, inputfile, soundsettings, volumesettings)
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
     # REM create still video
     command = '%s -loop 1 -framerate 1 -i stillimagetemp.png -g %d \
 -vf scale=-1:%d -c:v libvpx-vp9 %s -sn -an -map_metadata -1 -map_chapters -1 \
 -metadata title="AMQ still image convert video %dp" -r 1 -pix_fmt yuv420p \
 -max_muxing_queue_size 4096 stillimagetemp.webm' % (
         ffmpeg, keyframeinterval, targetResolution, t, targetResolution)
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
     # REM mux them together
     command = '%s -i stillimagetemp.webm -i stillimagetemp.mka -c copy \
 -metadata title="AMQ still image convert %dp" -max_muxing_queue_size 4096 \
 -map 0:v:0 -map 1:a:0 "%s"' % (ffmpeg, targetResolution, outputfile)
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
     # REM delete temporary files
     os.remove("stillimagetemp.png")
     os.remove("stillimagetemp.webm")
@@ -265,7 +312,7 @@ def sourceconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
         volumesettings, outputfile)
     print(command)
     log(command)
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
     return outputfile
 
 
@@ -328,7 +375,7 @@ def autoconvert(inputfile, targetResolution, animeTitle, songType="",
 -c:a flac -max_muxing_queue_size 4096 "%s"' % (ffmpeg, inputfile, mp3,
                                                videosettings, dummyfile)
     log(command)
-    os.system("start /wait /MIN cmd /c %s" % command)
+    system_call_wait(command)
     command = '%s -i "%s" %s %s -sn -hide_banner -nostats \
 -af "silencedetect=n=-60dB:d=0.1" -map 0:a:0 -ac 2 \
 -max_muxing_queue_size 4096 -f null -' % (ffmpeg, dummyfile, mp3,
@@ -500,6 +547,9 @@ volumedetect" -sn -hide_banner -nostats -max_muxing_queue_size 4096 -f null \
     if targetResolution == -1:
         ret = sourceconvert(dummyfile, filename, audiochange,
                             currentstart, currentend, keyframeinterval, crf)
+    elif targetResolution == -2:
+        ret = unscaled_convert(dummyfile, filename, audiochange,
+                            currentstart, currentend, keyframeinterval)
     elif targetResolution == 0:
         ret = mp3convert(dummyfile, filename, audiochange,
                          currentstart, currentend)
