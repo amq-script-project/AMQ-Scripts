@@ -14,9 +14,18 @@ while True:
             break
     while True:
         target = input(
-            "Please choose target resolution:\n0: mp3\n" +
-            "1: 480p\n2: 720p\n3: Source [default]\n4: All\n" +
-            "5:AMQ\n\t")
+            """Please choose target resolution:
+            0: mp3
+            1: 480p
+            2: 720p
+            3: Source [default] (slow)
+            4: All (Source, 720p, 480p, mp3)
+            5: All-AMQ submit order (720p, Source, 480p, mp3)
+            6: unscaled (like 720p but for esoteric sizes)
+            7: AMQ-720 source is 720 or higher (720p, mp3, 480p)
+            8: AMQ-576 source is 576 or higher (unscaled, 480, mp3)
+            9: AMQ-480 source is 480 or lower (unscaled, mp3)
+            \t""")
         target = target.lower()
         crf = -1  # default value
         if target == "0" or target == "mp3":
@@ -25,12 +34,20 @@ while True:
             targetResolution = 480
         elif target == "2" or target == "720p":
             targetResolution = 720
+        elif target == "6" or target == "unscaled":
+            targetResolution = -4
+        elif target == "7" or target == "amq":
+            targetResolution = -5
+        elif target == "8" or target == "amq-576":
+            targetResolution = -6
+        elif target == "9" or target == "amq-480":
+            targetResolution = -7
         elif (target == "3" or target == "source" or target == ""
               or target == "4" or target == "all"
-              or target == "5" or target.lower() == "amq"):
+              or target == "5" or target == "all-amq"):
             if target == "3" or target == "source" or target == "":
                 targetResolution = -1
-            if target == "5" or target.lower() == "amq":
+            if target == "5" or target == "amq-720":
                 targetResolution = -3
             else:
                 targetResolution = -2
@@ -117,6 +134,40 @@ while True:
                             songType, songTitle, songArtist, start, end, -1)
             autoconvert(filename, 480, animeTitle,
                         songType, songTitle, songArtist, start, end, -1)
+        elif targetResolution == -4:  # unscaled
+            autoconvert(filename, -2, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1)
+        elif targetResolution == -5:  # amq-720
+            sourcefile = autoconvert(filename, 720, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1)
+            if start != 0.0 or end != 0.0:
+                autoconvert(sourcefile, 0, animeTitle,
+                            songType, songTitle, songArtist, 0.0, 0.0, -1)
+            else:
+                autoconvert(filename, 0, animeTitle,
+                            songType, songTitle, songArtist, start, end, -1)
+            autoconvert(filename, 480, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1)
+        elif targetResolution == -6:  # amq-576
+            sourcefile = autoconvert(filename, -2, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1)
+            if start != 0.0 or end != 0.0:
+                autoconvert(sourcefile, 0, animeTitle,
+                            songType, songTitle, songArtist, 0.0, 0.0, -1)
+            else:
+                autoconvert(filename, 0, animeTitle,
+                            songType, songTitle, songArtist, start, end, -1)
+            autoconvert(filename, 480, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1)
+        elif targetResolution == -7:  # amq-480
+            sourcefile = autoconvert(filename, -2, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1)
+            if start != 0.0 or end != 0.0:
+                autoconvert(sourcefile, 0, animeTitle,
+                            songType, songTitle, songArtist, 0.0, 0.0, -1)
+            else:
+                autoconvert(filename, 0, animeTitle,
+                            songType, songTitle, songArtist, start, end, -1)
         else:
             autoconvert(filename, targetResolution, animeTitle,
                         songType, songTitle, songArtist, start, end, crf)
