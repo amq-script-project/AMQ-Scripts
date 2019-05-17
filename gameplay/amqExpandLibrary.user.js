@@ -5,8 +5,8 @@
 // @description  Makes it more ugly and efficient
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
-// @downloadURL  https://gist.github.com/juvian/4bf4496b236f8ee9b3c158d7520902d9/raw
-// @updateURL    https://gist.github.com/juvian/4bf4496b236f8ee9b3c158d7520902d9/raw
+// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqExpandLibrary.user.js
+// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqExpandLibrary.user.js
 // @grant        none
 // @require      https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
 

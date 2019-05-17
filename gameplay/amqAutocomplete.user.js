@@ -7,8 +7,8 @@
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
 // @grant        none
-// @downloadURL https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw
-// @updateURL   https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw
+// @downloadURL https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAutocomplete.user.js
+// @updateURL   https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAutocomplete.user.js
 // @copyright MIT license
 // ==/UserScript==
 
