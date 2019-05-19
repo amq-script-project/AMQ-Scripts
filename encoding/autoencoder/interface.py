@@ -4,7 +4,9 @@ import re
 print("Welcome to the autoconverter interface")
 while True:
     while True:
-        filename = input("Please type the name of the file:\n\t")
+        filename = input("Please type the path/url to the file, or drag and drop the file into the window:\n\t")
+        if filename.startswith('"') and filename.endswith('"'):
+            filename = filename[1:-1]
         if not os.path.isfile(filename):
             if re.match("https?://.*", filename):
                 # assume webpage is live and is a file
