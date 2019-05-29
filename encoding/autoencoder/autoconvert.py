@@ -531,6 +531,8 @@ volumedetect" -sn -hide_banner -nostats -max_muxing_queue_size 4096 -f null \
         newnumber = currentnumber + 1
         f.write("%d" % newnumber)
         f.close()
+    if !os.path.exists(outputFolder)
+        os.makedirs(outputFolder)
     filename = outputFolder + "AAMQ%04d-" % currentnumber + \
         createFileName(animeTitle, songType, songTitle, songArtist)
     if currentend == 0.0:
