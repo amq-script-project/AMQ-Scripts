@@ -24,7 +24,7 @@ global ffmpeg
 ffmpeg = "ffmpeg"  # command to invoke ffmpeg, eg C:ffmpeg\bin\ffmpeg.exe
 # global ffprobe = "ffprobe"
 global outputFolder
-outputFolder = "testfolder\\"  # path to output folder
+outputFolder = "outputfiles\\"  # path to output folder
 global maxmean
 maxmean = -16.0
 global maxpeak
@@ -531,6 +531,8 @@ volumedetect" -sn -hide_banner -nostats -max_muxing_queue_size 4096 -f null \
         newnumber = currentnumber + 1
         f.write("%d" % newnumber)
         f.close()
+    if not os.path.exists(outputFolder):
+        os.makedirs(outputFolder)
     filename = outputFolder + "AAMQ%04d-" % currentnumber + \
         createFileName(animeTitle, songType, songTitle, songArtist)
     if currentend == 0.0:
