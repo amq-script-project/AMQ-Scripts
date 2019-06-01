@@ -21,7 +21,7 @@ def quick_import(file: str, force_lsmas=False, resample=True):
     src = lvf.src(file, force_lsmas=force_lsmas)
     depth = vsutil.get_depth(src)
 
-    if vsutil.get_subsampling is not '420':
+    if vsutil.get_subsampling != '420':
         src = multi_resample(src, depth=depth)
 
     if resample:
@@ -68,47 +68,25 @@ def general_filtering(clip: vs.VideoNode, mode='low', denoise=True, deband=True,
     """
 
     # There's probably way nicer ways to do this
-    if mode is 'lower':
-        h = 0.1
-        sigma = 2
-        range = 10
-        y = 16
-        grain_strength = 0.1
-    elif mode is 'low':
-        h = 0.4
-        sigma = 3
-        range = 14
-        y = 24
-        grain_strength = 0.2
-    elif mode is 'medium':
-        h = 0.6
-        sigma = 4
-        range = 16
-        y = 32
-        grain_strength = 0.3
-    elif mode is 'high':
-        h = 1
-        sigma = 6
-        range = 18
-        y = 40
-        grain_strength = 0.8
-    elif mode is 'higher':
-        h = 2
-        sigma = 10
-        range = 23
-        y = 64
-        grain_strength = 2
-    else:
+    modes = {
+        'lower':  (0.1,  2, 10, 16, 0.1),
+        'low':    (0.4,  3, 14, 24, 0.2),
+        'medium': (0.6,  4, 16, 32, 0.3),
+        'high':   (1.0,  6, 18, 40, 0.8),
+        'higher': (2.0, 10, 23, 64, 2.0)
+    }
+    try:
+        h, sigma, range, y, grain_strength = modes[mode]
+    except KeyError:
         raise ValueError("general_filtering: Unknown mode!")
 
-    cb = y - 8
-    cr = y - 8
     filtered = clip
 
     if denoise:
         filtered = lvf.quick_denoise(filtered, h=h, sigma=sigma)
 
     if deband:
+        cb = cr = y - 8
         filtered = core.f3kdb.Deband(filtered, range=range, y=y, cb=cb, cr=cr, grainy=0, grainc=0, output_depth=16)
 
     if grain:
@@ -126,27 +104,24 @@ def general_antialiasing(src, strength='weak'):
         - strong (Eedi3)
         - stronger (Eedi3SangNom)
     """
-    if strength is 'weak':
-        aatype = 'Nnedi3'
-    elif strength is 'strong':
-        aatype = 'Eedi3'
-    elif strength is 'stronger':
-        aatype = 'Eedi3SangNom'
-    else:
+    strengths = {
+        'weak'     : 'Nnedi3',
+        'strong'   : 'Eedi3',
+        'stronger' : 'Eedi3SangNom'
+    }
+    try:
+        return taa.TAAmbk(src, aatype=strengths[strength])
+    except KeyError:
         raise ValueError("general_antialiasing: Unknown strength!")
-
-    return taa.TAAmbk(src, aatype=aatype)
 
 
 # Helper Functions:
 def multi_resample(clip, depth=None):
-        if depth == 10:
-            return core.resize.Spline36(clip, format=vs.YUV420P10)
-        elif depth == 12:
-            return core.resize.Spline36(clip, format=vs.YUV420P12)
-        elif depth == 16: # You never know~
-            return core.resize.Spline36(clip, format=vs.YUV420P16)
-        else:
-            return core.resize.Spline36(clip, format=vs.YUV420P8)
+        format = {
+            10: vs.YUV420P10,
+            12: vs.YUV420P12,
+            16: vs.YUV420P16,  # You never know~
+        }
+        return core.resize.Spline36(clip, format=format.get(depth, vs.YUV420P8))
 
 # PS: I hate everything I've written in here
