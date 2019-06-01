@@ -6,6 +6,9 @@ adjust audio volume and use a standard formula for output
 Dependent on:
 mediainfo
 ffmpeg
+
+Author: Zolhungaj
+        FokjeM / Riven Skaye (really minor tweaks)
 """
 import re
 import os
