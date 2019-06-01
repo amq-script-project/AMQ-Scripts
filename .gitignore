@@ -1,0 +1,28 @@
+# .gitignore for the AMQ-Scripts project
+
+##IDE / Dev env files##
+###Komodo IDE/Edit###
+*.komodoproject
+.komodotools
+
+###Notepad++###
+*.bak
+
+##Python files##
+__pycache__/
+__pycache__/*
+*.pyc
+
+##auto-encoder output##
+outputfiles/
+outputfiles/*
+*.log
+*.webm
+*.mp3
+*.mkv
+*.mka
+*dummy*
+currentnumber.txt
+*.bat
+
+##Feel free to add anything I missed##
