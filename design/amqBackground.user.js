@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         AMQ Background script
 // @namespace    http://tampermonkey.net/
-// @version      3.0
+// @version      3.1
 // @description  Adds multiple custom background to amq or even a video. Tried to include as many selectors as possible, so remove the ones where you prefer to have original background
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
 // @grant        none
 // @require      https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
 // ==/UserScript==
+
+if (!window.QuizInfoContainer) return;
 
 let timer = (secs) => setInterval(changeBackground, secs * 1000);
 
@@ -36,7 +38,7 @@ let options = {
 	video: {
 		url: "https://desktophut-com.cdn.vidyome.com/videos/12-2018/kStWC5u7eyifonqthwFl.mp4", //another good one: "https://desktophut-com.cdn.vidyome.com/videos/04-2019/mySuBqs1CcijooCKJsOq.mp4"
 		enabled: true, // no images with this
-		filter: "opacity(0.5)" // could also be blur(3px) or "none" to deactivate
+		filter: "none" // could be blur(3px) or "none" to deactivate
 	},
     transparent: [
 		{
@@ -67,7 +69,10 @@ let options = {
 		{
 		    selector: ".qpAvatarImgContainer",
 			description: "backgound of avatar image in quiz",
-			enabled: true
+			enabled: true,
+			css: `.qpAvatarImgContainer {
+                       box-shadow:none;
+                   }`
 		},
 		{
 		    selector: "#gameChatPage > .col-xs-9",
@@ -176,12 +181,12 @@ let options = {
 			opacity: 0.5
 		},
 		{
-		    selector: ".qpAvatarInfoContainer, .qpAvatarAnswerContainer",
+		    selector: ".qpAvatarInfoContainer > div, .qpAvatarAnswerContainer",
 			description: "name/guess near avatar image in quiz",
 			enabled: true,
 			opacity: 0.5,
 			css: `.qpAvatarInfoContainer > div {
-                      background-color: transparent !important;
+                      box-shadow:none;
                   }`
 		},
 		{
@@ -199,6 +204,12 @@ let options = {
 		{
 		    selector: "#qpVideoHider, #qpVideoOverflowContainer",
 			description: "video counter/sound only background",
+			enabled: true,
+			opacity: 0.5
+		},
+		{
+		    selector: "#socailTabFooter > .selected, #socialTab",
+			description: "friends online menu",
 			enabled: true,
 			opacity: 0.5
 		}
@@ -338,7 +349,7 @@ ${transparents.map(obj => `
     -ms-transform: translate(-50%,-50%);
     transform: translate(-50%,-50%);*/
     z-index: -1 !important;
-    filter: blur(${options.video.blur}px);
+    filter: ${options.video.filter};
     will-change: contents;
 }
 
