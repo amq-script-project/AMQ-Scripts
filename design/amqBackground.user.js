@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Background script
 // @namespace    http://tampermonkey.net/
-// @version      3.1
+// @version      3.2
 // @description  Adds multiple custom background to amq or even a video. Tried to include as many selectors as possible, so remove the ones where you prefer to have original background
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
@@ -212,24 +212,16 @@ let options = {
 			description: "friends online menu",
 			enabled: true,
 			opacity: 0.5
-		}
-	],
-	background: [
-		{
-            selector: "#gameContainer",
-			description: "main screen background",
-		    enabled: true
 		},
 		{
-		    selector: "#avatarWindow",
-			description: "background of choosing avatar page",
+		    selector: ".lobbyAvatarTextContainer",
+			description: "username/level text lobby",
 			enabled: true,
-			extra: "#awMainView",
+			opacity: 0.5
 		}
 	]
 }
 
-let backgrounds = options.background.filter(opt => opt.enabled);
 let transparents = options.transparent.filter(opt => opt.enabled);
 
 function changeBackground() {
@@ -237,23 +229,14 @@ function changeBackground() {
 	document.documentElement.style.setProperty('--url', `url("${options.images[this.index]}")`);
 }
 
+let template = $(`<div id="custom-background"></div>`);
+
+
 if (options.video.enabled) {
-	let videoTemplate = `<video id="background-video" autoplay loop muted><source src="${options.video.url}"></video>`;
-
-	$("#gameContainer").append(videoTemplate);
-	let avatar = backgrounds.filter(bg => bg.selector == '#avatarWindow');
-
-	if (avatar.length) {
-	    transparents.push(avatar[0]);
-		transparents.push({selector: avatar[0].extra, opacity: avatar[0].opacity});
-		$("#avatarWindow").append(videoTemplate);
-	}
-
-	backgrounds = [];
+	template.append(`<video autoplay loop muted><source src="${options.video.url}"></video>`);
 }
 
-transparents = transparents.concat(backgrounds.filter(b => b.extra).map(opt => ({selector: opt.extra, opacity: opt.opacity})));
-
+$("#mainContainer").append(template);
 
 function extend (func, method, ext) {
     let old = func.prototype[method];
@@ -290,18 +273,19 @@ extend(VideoOverlay, "hideWaitingBuffering", function () {
     this.$bufferingScreen.siblings().css("visibility", "visible");
 });
 
+extend(AvatarWindow, "closeWindow", function () {
+    $("#custom-background").css("z-index", -1);
+	$("#avatarWindow").css("z-index", -1);
+});
 
+extend(AvatarWindow, "showWindow", function () {
+    $("#custom-background").css("z-index", 10);
+	$("#avatarWindow").css("z-index", 11);
+});
 
 GM_addStyle(`
 :root {
   --url: url("${options.images[0]}");
-}
-
-${backgrounds.map(opt => opt.selector).join(',')} {
-    background-image: var(--url) !important;
-    background-size: 100% auto !important;
-    background-attachment: fixed !important;
-    background-position: 0px !important;
 }
 
 ${transparents.map(obj => `
@@ -334,7 +318,7 @@ ${transparents.map(obj => `
     padding-left: 10px;
 }
 
-#background-video {
+#custom-background {
     position: absolute;
     left: 0%;
     top: 0%;
@@ -348,17 +332,18 @@ ${transparents.map(obj => `
     -moz-transform: translate(-50%,-50%);
     -ms-transform: translate(-50%,-50%);
     transform: translate(-50%,-50%);*/
-    z-index: -1 !important;
+    z-index: -1;
     filter: ${options.video.filter};
     will-change: contents;
+    background-image: var(--url) !important;
+    background-size: 100% auto !important;
+    background-attachment: fixed !important;
+    background-position: 0px !important;
 }
 
-#mainContainer, #gameContainer {
-   z-index: 55555;
+#mainContainer > *, #awMainView, #avatarWindow {
+    background: none;
 }
 
-.clickAble, .button {
-    z-index:3;
-}
 `);
 
