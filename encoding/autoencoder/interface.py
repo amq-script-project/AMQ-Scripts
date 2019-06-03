@@ -1,4 +1,16 @@
+""""
+The part of the program the user should be using.
+Presents them with a CLI that asks for file info.
+
+Tries to check what kind of file the user is offering
+so the user doesn't have to do anything.
+
+Author: Zolhungaj
+        FokjeM / RivenSkaye (minor tweaks)
+"""
+
 from autoconvert import autoconvert
+from autorescheck import autorescheck
 import os
 import re
 print("Welcome to the autoconverter interface")
@@ -25,34 +37,20 @@ while True:
             5: All-AMQ submit order (720p, Source, 480p, mp3)
             6: unscaled (like 720p but for esoteric sizes)
             7: AMQ-720 source is 720 or higher (720p, mp3, 480p)
-            8: AMQ-576 source is 576 or higher (unscaled, 480, mp3)
+            8: AMQ-576 source is 576 or at least higher than 480 (unscaled, 480p, mp3)
             9: AMQ-480 source is 480 or lower (unscaled, mp3)
+            Leave blank for auto-determination mode, we'll figure out the details for you.
             \t""")
+        choice = {"0" : 0, "mp3" : 0, "1" : 480, "480p" : 480, "2" : 720, "720p" : 720, "3" : -1, "source" : -1, "4" : -2, "all" : -2, "all-amq" : -2, "5" : -3, "amq-720" : -3, "6" : -4, "unscaled" : -4, "7" : -5, "amq" : -5, "8" : -6, "amq-576" : -6, "9" : -7, "amq-480" : -7}
         target = target.lower()
         crf = -1  # default value
-        if target == "0" or target == "mp3":
-            targetResolution = 0
-        elif target == "1" or target == "480p":
-            targetResolution = 480
-        elif target == "2" or target == "720p":
-            targetResolution = 720
-        elif target == "6" or target == "unscaled":
-            targetResolution = -4
-        elif target == "7" or target == "amq":
-            targetResolution = -5
-        elif target == "8" or target == "amq-576":
-            targetResolution = -6
-        elif target == "9" or target == "amq-480":
-            targetResolution = -7
-        elif (target == "3" or target == "source" or target == ""
-              or target == "4" or target == "all"
-              or target == "5" or target == "all-amq"):
-            if target == "3" or target == "source" or target == "":
-                targetResolution = -1
-            if target == "5" or target == "amq-720":
-                targetResolution = -3
-            else:
-                targetResolution = -2
+        try:
+            targetResolution = choice[target]
+        # Any illegal value causes auto-determination to run.
+        except KeyError:
+            targetResolution = choice[autorescheck(filename)]
+        # range(a, b) is inclusive a and exclusive b!
+        if (targetResolution in range(-3, 0)):
             while True:
                 try:
                     string = input(
@@ -70,9 +68,6 @@ while True:
                     print("%d is not in the range [0-63]")
                     continue
                 break
-        else:
-            print('"%s" is not a valid choice' % target)
-            continue
         break
     animeTitle = input(
         "Please enter anime name, this will be used to name the file\n\t")
@@ -177,7 +172,7 @@ while True:
     except Exception as e:
         print("During execution, an exception occured:%s" % str(e))
     print("")
-    cont = input("Would you like to continue?(y/[n])")
+    cont = str.lower(input("Would you like to continue?(y/[n])")) # Make sure we don't exit on capital Y
     if cont == "":
         break
     elif cont[0] == "y":
