@@ -1,29 +1,28 @@
 """
 Simple piece of code that checks the current video quality
 and then returns the best AMQ option.
+
+Author: FokjeM / RivenSkaye
 """
 import os
 import subprocess
 import datetime
 import time
-global mediainfo
-global logfile
+mediainfo = "mediainfo"
 logfile = "AMQ-autorescheck.log"
-if "\\mediainfo" in str.lower(os.environ['PATH']):
-    mediainfo = "mediainfo"
-else:
+if "\\mediainfo" not in str.lower(os.environ['PATH']):
     log("MediaInfo not found on path.")
     try:
-        subprocess.call("C:\\Program\ Files\\MediaInfo\\MediaInfo.exe");
+        subprocess.check_call("C:\\Program\ Files\\MediaInfo\\MediaInfo.exe");
         mediainfo = "C:\\Program\ Files\\MediaInfo\\MediaInfo.exe"
-    except:
+    except CalledProcessError:
         log("MediaInfo not installed in Program Files.")
         try:
-            subprocess.call("C:\\Program\ Files\ (x86)\\MediaInfo\\MediaInfo.exe");
+            subprocess.check_call("C:\\Program\ Files\ (x86)\\MediaInfo\\MediaInfo.exe");
             mediainfo = "C:\\Program\ Files\ (x86)\\MediaInfo\\MediaInfo.exe"
-        except:
+        except CalledProcessError:
             log("MediaInfo not found in Program Files (x86).")
-            print("MediaInfo was not found on your system, it is a dependency for this script\r\nGet it at: https://mediaarea.net/en/MediaInfo\r\nIf you already have the CLI version, add it to your PATH.")
+            log("MediaInfo was not found on your system, it is a dependency for this script\r\nGet it at: https://mediaarea.net/en/MediaInfo\r\nIf you already have the CLI version, add it to your PATH.")
             exit()
 
 def autorescheck(inputfile):
@@ -31,11 +30,11 @@ def autorescheck(inputfile):
     command = '%s "%s" --output=Video;%%Height%%' % (mediainfo, inputfile)
     process = os.popen(command)
     height = int(process.read())
-    if height <= 480:
+    if height <= 480: # 480 or worse, should be encoded as AMQ 480p
         return "9"
-    elif height < 720:
+    elif height < 720: # This falls under the 576p category, because we know it's more than 480p
         return "8"
-    else:
+    else: # It's 720p or better. Someone has quality content!
         return "7"
 
 def log(message):

@@ -6,7 +6,7 @@ Tries to check what kind of file the user is offering
 so the user doesn't have to do anything.
 
 Author: Zolhungaj
-        FokjeM / RivenSkaye (really minor tweaks)
+        FokjeM / RivenSkaye (minor tweaks)
 """
 
 from autoconvert import autoconvert
@@ -46,7 +46,8 @@ while True:
         crf = -1  # default value
         try:
             targetResolution = choice[target]
-        except:
+        # Any illegal value causes auto-determination to run.
+        except KeyError:
             targetResolution = choice[autorescheck(filename)]
         # range(a, b) is inclusive a and exclusive b!
         if (targetResolution in range(-3, 0)):
@@ -66,6 +67,7 @@ while True:
                 if crf < 0 or crf > 63:
                     print("%d is not in the range [0-63]")
                     continue
+                break
         break
     animeTitle = input(
         "Please enter anime name, this will be used to name the file\n\t")
@@ -170,7 +172,7 @@ while True:
     except Exception as e:
         print("During execution, an exception occured:%s" % str(e))
     print("")
-    cont = input("Would you like to continue?(y/[n])")
+    cont = str.lower(input("Would you like to continue?(y/[n])")) # Make sure we don't exit on capital Y
     if cont == "":
         break
     elif cont[0] == "y":

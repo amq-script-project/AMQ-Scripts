@@ -15,22 +15,16 @@ import os
 import datetime
 import time
 import subprocess
-global logfile
 # dependencies:
 # mediainfo, tested on v18.05
 # ffmpeg, tested on N-91538-g269daf5985
 #
 logfile = "AMQ-autoconvert.log"
-global mediainfo
 mediainfo = "mediainfo"  # command to invoke mediainfo, eg C:mediainfo.exe
-global ffmpeg
 ffmpeg = "ffmpeg"  # command to invoke ffmpeg, eg C:ffmpeg\bin\ffmpeg.exe
 # global ffprobe = "ffprobe"
-global outputFolder
 outputFolder = "outputfiles\\"  # path to output folder
-global maxmean
 maxmean = -16.0
-global maxpeak
 maxpeak = -1.0
 
 
