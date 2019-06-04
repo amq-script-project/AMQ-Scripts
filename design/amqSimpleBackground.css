@@ -1,0 +1,61 @@
+/*
+AMQ Simple Background Stylesheet.
+Simply change the URL in quotes to your desired background, and save the stylesheet.
+If you are using Stylish/Stylus, you need to set it to "Applies to" -> "URLs on the domain" -> animemusicquiz.com
+
+If you'd like the chat area to have a separate background, you can change it from
+rgba(0,0,0,0.5); to url("abc.zzz/background.png");
+*/
+
+:root {
+	/* Change the URL in quotes to whatever you want the bg to be. */
+	--bg: url("https://files.catbox.moe/0fg6l8.jpg"); 
+	/* Optional: if you want a different background for chat. Phone wallpapers tend to work best. */
+	--chatbg: rgba(0,0,0,0.5);
+}
+
+#gameContainer {
+	background-image: var(--bg);
+	background-size: 100% auto;
+}
+
+#startPage {
+	background-image: var(--bg);
+	background-size: 100% auto;
+}
+
+#awMainView {
+	background-image: var(--bg);
+	background-size: 100% auto;
+}
+
+#loadingScreen {
+	background-image: none;
+	background-color: transparent;
+}
+
+#gameChatPage > .col-xs-9 {
+	background-image: none;
+	background-color: transparent;
+}
+
+#gameChatContainer {
+	background: var(--chatbg);
+}
+
+.leftShadowBorder {
+	box-shadow: none;
+	-webkit-box-shadow: none;
+}
+
+.gcList > li:nth-child(2n) {
+	background: none;
+}
+
+.gcInputContainer {
+	background: none;
+}
+
+#gcEmojiPickerButton > i {
+	color: #d9d9d9;   
+}

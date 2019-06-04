@@ -45,15 +45,41 @@ def system_call_wait(command):
     os.system("start /wait /MIN cmd /c %s" % command)
 
 
-def SDconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
-              keyframeinterval=120):  # 480p
-    """
-    SD/480p convert, low quality video, low quality audio, low bitrate
-    """
-    outputfile += "-480p.webm"
-    log("480p conversion started")
-    title = "AMQ 480p convert"
-    audioencode = "-c:a libopus -b:a 192k"  # default encoding
+def regular_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
+              keyframeinterval=120, scaling=0, libaom_av1_experimental=False):
+    if scaling == 0:
+        outputfile += "-unscaled.webm"
+        log("unscaled conversion started")
+        title = "AMQ unscaled convert"
+        audioencode = "-c:a libopus -b:a 320k"  # default encoding
+        videosettings = "-b:v 3250k -crf 24"
+        scaling_settings = ""
+    elif scaling == 480:
+        outputfile += "-480p.webm"
+        log("480p conversion started")
+        title = "AMQ 480p convert"
+        audioencode = "-c:a libopus -b:a 192k"  # default encoding
+        videosettings = "-b:v 2000k -crf 33"
+        scaling_settings = '-vf "scale=-1:480"'
+    elif scaling == 720:
+        outputfile += "-720p.webm"
+        log("720p conversion started")
+        title = "AMQ 720p convert"
+        audioencode = "-c:a libopus -b:a 320k"  # default encoding
+        videosettings = "-b:v 3250k -crf 24"
+        scaling_settings = '-vf "scale=-1:720"'
+    else:
+        outputfile += "-%dp.webm" % scaling
+        log("%dp conversion started") % scaling
+        title = "AMQ %dp convert" % scaling
+        audioencode = "-c:a libopus -b:a 320k"  # default encoding
+        videosettings = "-b:v 3250k -crf 24"
+        scaling_settings = '-vf "scale=-1:%d"' % scaling
+
+    if libaom_av1_experimental:
+        videoencoder = "libaom-av1 -strict -2"
+    else:
+        videoencoder = "libvpx-vp9"
     start = float(start)
     end = float(end)
     keyframeinterval = int(keyframeinterval)
@@ -71,17 +97,78 @@ def SDconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
         ss = "-ss %f" % (start)
     if end != 0.0:
         to = "-to %f" % (end)
-    command = '%s -y %s %s -i "%s" -map_metadata -1 -map_chapters -1 \
--metadata title="%s" -c:v libvpx-vp9 -b:v 2000k -crf 33 \
--g %d -vf scale=-1:480 -pass 1 -threads 16 -tile-columns 6 -frame-parallel 1 \
--speed 4 -pix_fmt yuv420p -an -map 0:v:0 -max_muxing_queue_size 4096 -f webm \
-NUL && ' % (ffmpeg, ss, to, inputfile, title, keyframeinterval)
-    command += '%s -y %s %s -i "%s" -map_metadata -1 -map_chapters -1 \
--metadata title="%s" -c:v libvpx-vp9 -b:v 2000k -crf 33 \
--g %d -vf scale=-1:480 -pass 2 -threads 16 -tile-columns 6 -frame-parallel 1 \
--speed 1 -pix_fmt yuv420p %s %s -map 0:v:0 -max_muxing_queue_size 4096 \
--map 0:a:0 "%s"' % (ffmpeg, ss, to, inputfile, title, keyframeinterval,
-                    audioencode, volumesettings, outputfile)
+    command  = '%s -y %s %s -i "%s" ' % (ffmpeg, ss, to, inputfile)
+    command += '-map_metadata -1 -map_chapters -1 '
+    command += '-metadata title="%s" ' % title
+    command += '-c:v %s %s ' % (videoencoder, videosettings)
+    command += '-g %d ' % keyframeinterval
+    command += '%s -pass 1 -threads 16 ' % scaling_settings
+    command += '-tile-columns 2 -tile-rows 2 '
+    command += '-frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '-an -map 0:v:0 -max_muxing_queue_size 4096 -f webm NUL && '
+
+    command += '%s -y %s %s -i "%s" ' % (ffmpeg, ss, to, inputfile)
+    command += '-map_metadata -1 -map_chapters -1 '
+    command += '-metadata title="%s" ' % title
+    command += '-c:v %s %s ' % (videoencoder, videosettings)
+    command += '-g %d ' % keyframeinterval
+    command += '%s -pass 2 -threads 16 ' % scaling_settings
+    command += '-tile-columns 2 -tile-rows 2 '
+    command += '-frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '%s %s -map 0:v:0 ' % (audioencode, volumesettings)
+    command +='-max_muxing_queue_size 4096 -map 0:a:0 "%s"' % outputfile
+    # os.popen(command)
+    log(command)
+    system_call_wait(command)
+    log("conversion complete")
+    # os.remove("480pdummy")
+    return outputfile
+
+
+def SDconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
+              keyframeinterval=120):  # 480p
+    """
+    SD/480p convert, low quality video, low quality audio, low bitrate
+    """
+    return regular_convert(inputfile, outputfile, volume, start, end, keyframeinterval, 480)
+    outputfile += "-480p.webm"
+    log("480p conversion started")
+    title = "AMQ 480p convert"
+    audioencode = "-c:a libopus -b:a 192k"  # default encoding
+    videoencoder = "libvpx-vp9"
+    start = float(start)
+    end = float(end)
+    keyframeinterval = int(keyframeinterval)
+    volume = float(volume)
+    volumesettings = ""
+    ss = ""
+    to = ""
+    if volume == 0.0 and start == 0 and end == 0:
+        pass
+        # TODO: in the rare occasion that no audio editing is necessary,
+        # consider copying audio stream
+    if volume != 0.0:
+        volumesettings = '-af "volume=%.1fdB"' % (volume)
+    if start != 0.0:
+        ss = "-ss %f" % (start)
+    if end != 0.0:
+        to = "-to %f" % (end)
+    command  = '%s -y %s %s -i "%s" ' % (ffmpeg, ss, to, inputfile)
+    command += '-map_metadata -1 -map_chapters -1 '
+    command += '-metadata title="%s" ' % title
+    command += '-c:v %s -b:v 2000k -crf 33 ' % videoencoder
+    command += '-g %d -vf scale=-1:480 -pass 1 -threads 16 ' % keyframeinterval
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '-an -map 0:v:0 -max_muxing_queue_size 4096 -f webm NUL && '
+
+    command += '%s -y %s %s -i "%s" ' % (ffmpeg, ss, to, inputfile)
+    command += '-map_metadata -1 -map_chapters -1 '
+    command += '-metadata title="%s" ' % title
+    command += '-c:v %s -b:v 2000k -crf 33 ' % videoencoder
+    command += '-g %d -vf scale=-1:480 -pass 2 -threads 16 ' % keyframeinterval
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '%s %s -map 0:v:0 ' % (audioencode, volumesettings)
+    command +='-max_muxing_queue_size 4096 -map 0:a:0 "%s"' % outputfile
     # os.popen(command)
     log(command)
     system_call_wait(command)
@@ -95,10 +182,12 @@ def HDconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
     """
     decent quality video, high quality audio, medium bitrate
     """
+    return regular_convert(inputfile, outputfile, volume, start, end, keyframeinterval, 720)
     outputfile += "-720p.webm"
     log("720p conversion started")
     title = "AMQ 720p convert"
     audioencode = "-c:a libopus -b:a 320k"  # default encoding
+    videoencoder = "libvpx-vp9"
     start = float(start)
     end = float(end)
     keyframeinterval = int(keyframeinterval)
@@ -116,32 +205,38 @@ def HDconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
         ss = "-ss %f" % (start)
     if end != 0.0:
         to = "-to %f" % (end)
-    command = '%s -y %s %s -i "%s" -map_metadata -1 -map_chapters -1 \
--metadata title="%s" -c:v libvpx-vp9 -b:v 3250k -crf 24 \
--g %d -vf scale=-1:720 -pass 1 -threads 16 -tile-columns 6 -frame-parallel 1 \
--speed 4 -pix_fmt yuv420p -an -map 0:v:0 -max_muxing_queue_size 4096 -f webm \
-NUL && ' % (ffmpeg, ss, to, inputfile, title, keyframeinterval)
-    command += '%s -y %s %s -i "%s" -map_metadata -1 -map_chapters -1 \
--metadata title="%s" -c:v libvpx-vp9 -b:v 3250k -crf 24 \
--g %d -vf scale=-1:720 -pass 2 -threads 16 -tile-columns 6 -frame-parallel 1 \
--speed 1 -pix_fmt yuv420p %s %s -map 0:v:0 -max_muxing_queue_size 4096 \
--map 0:a:0 "%s"' % (ffmpeg, ss, to, inputfile, title, keyframeinterval,
-                    audioencode, volumesettings, outputfile)
+    command  = '%s -y %s %s -i "%s" ' % (ffmpeg, ss, to, inputfile)
+    command += '-map_metadata -1 -map_chapters -1 '
+    command += '-metadata title="%s" ' % title
+    command += '-c:v %s -b:v 3250k -crf 24 ' % videoencoder
+    command += '-g %d -vf scale=-1:720 -pass 1 -threads 16 ' % keyframeinterval
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '-an -map 0:v:0 -max_muxing_queue_size 4096 -f webm NUL && '
+
+    command += '%s -y %s %s -i "%s" ' % (ffmpeg, ss, to, inputfile)
+    command += '-map_metadata -1 -map_chapters -1 '
+    command += '-metadata title="%s" ' % title
+    command += '-c:v %s -b:v 3250k -crf 24 ' % videoencoder
+    command += '-g %d -vf scale=-1:720 -pass 2 -threads 16 ' % keyframeinterval
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '%s %s -map 0:v:0 ' % (audioencode, volumesettings)
+    command +='-max_muxing_queue_size 4096 -map 0:a:0 "%s"' % outputfile
     log(command)
     system_call_wait(command)
     log("conversion complete")
     return outputfile
 
 
-def unscaled_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
-              keyframeinterval=120):  # 720p
+def unscaled_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0, keyframeinterval=120):  # 720p
     """
     decent quality video, high quality audio, medium bitrate
     """
+    return regular_convert(inputfile, outputfile, volume, start, end, keyframeinterval)
     outputfile += "-unscaled.webm"
     log("unscaled conversion started")
     title = "AMQ unscaled convert"
     audioencode = "-c:a libopus -b:a 320k"  # default encoding
+    videoencoder = "libvpx-vp9"
     start = float(start)
     end = float(end)
     keyframeinterval = int(keyframeinterval)
@@ -159,17 +254,22 @@ def unscaled_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
         ss = "-ss %f" % (start)
     if end != 0.0:
         to = "-to %f" % (end)
-    command = '%s -y %s %s -i "%s" -map_metadata -1 -map_chapters -1 \
--metadata title="%s" -c:v libvpx-vp9 -b:v 3250k -crf 24 \
--g %d -pass 1 -threads 16 -tile-columns 6 -frame-parallel 1 \
--speed 4 -pix_fmt yuv420p -an -map 0:v:0 -max_muxing_queue_size 4096 -f webm \
-NUL && ' % (ffmpeg, ss, to, inputfile, title, keyframeinterval)
-    command += '%s -y %s %s -i "%s" -map_metadata -1 -map_chapters -1 \
--metadata title="%s" -c:v libvpx-vp9 -b:v 3250k -crf 24 \
--g %d -pass 2 -threads 16 -tile-columns 6 -frame-parallel 1 \
--speed 1 -pix_fmt yuv420p %s %s -map 0:v:0 -max_muxing_queue_size 4096 \
--map 0:a:0 "%s"' % (ffmpeg, ss, to, inputfile, title, keyframeinterval,
-                    audioencode, volumesettings, outputfile)
+    command  = '%s -y %s %s -i "%s" ' % (ffmpeg, ss, to, inputfile)
+    command += '-map_metadata -1 -map_chapters -1 '
+    command += '-metadata title="%s" ' % title
+    command += '-c:v %s -b:v 3250k -crf 24 ' % videoencoder
+    command += '-g %d -pass 1 -threads 16 ' % keyframeinterval
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '-an -map 0:v:0 -max_muxing_queue_size 4096 -f webm NUL && '
+
+    command += '%s -y %s %s -i "%s" ' % (ffmpeg, ss, to, inputfile)
+    command += '-map_metadata -1 -map_chapters -1 '
+    command += '-metadata title="%s" ' % title
+    command += '-c:v %s -b:v 3250k -crf 24 ' % videoencoder
+    command += '-g %d -pass 2 -threads 16 ' % keyframeinterval
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '%s %s -map 0:v:0 ' % (audioencode, volumesettings)
+    command +='-max_muxing_queue_size 4096 -map 0:a:0 "%s"' % outputfile
     log(command)
     system_call_wait(command)
     log("conversion complete")
