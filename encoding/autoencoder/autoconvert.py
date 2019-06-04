@@ -60,21 +60,21 @@ def regular_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
         title = "AMQ 480p convert"
         audioencode = "-c:a libopus -b:a 192k"  # default encoding
         videosettings = "-b:v 2000k -crf 33"
-        scaling_settings = '"-vf scale=-1:480"'
+        scaling_settings = '-vf "scale=-1:480"'
     elif scaling == 720:
         outputfile += "-720p.webm"
         log("720p conversion started")
         title = "AMQ 720p convert"
         audioencode = "-c:a libopus -b:a 320k"  # default encoding
         videosettings = "-b:v 3250k -crf 24"
-        scaling_settings = '"-vf scale=-1:720"'
+        scaling_settings = '-vf "scale=-1:720"'
     else:
         outputfile += "-%dp.webm" % scaling
         log("%dp conversion started") % scaling
         title = "AMQ %dp convert" % scaling
         audioencode = "-c:a libopus -b:a 320k"  # default encoding
         videosettings = "-b:v 3250k -crf 24"
-        scaling_settings = '"-vf scale=-1:%d"' % scaling
+        scaling_settings = '-vf "scale=-1:%d"' % scaling
 
     if libaom_av1_experimental:
         videoencoder = "libaom-av1 -strict -2"
@@ -628,6 +628,8 @@ volumedetect" -sn -hide_banner -nostats -max_muxing_queue_size 4096 -f null \
         newnumber = currentnumber + 1
         f.write("%d" % newnumber)
         f.close()
+    if not os.path.exists(outputFolder):
+        os.makedirs(outputFolder)
     filename = outputFolder + "AAMQ%04d-" % currentnumber + \
         createFileName(animeTitle, songType, songTitle, songArtist)
     if currentend == 0.0:
