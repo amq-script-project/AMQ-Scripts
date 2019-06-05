@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Background script
 // @namespace    http://tampermonkey.net/
-// @version      3.2
+// @version      3.3
 // @description  Adds multiple custom background to amq or even a video. Tried to include as many selectors as possible, so remove the ones where you prefer to have original background
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
@@ -9,7 +9,6 @@
 // @require      https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
 // ==/UserScript==
 
-if (!window.QuizInfoContainer) return;
 
 let timer = (secs) => setInterval(changeBackground, secs * 1000);
 
@@ -218,6 +217,18 @@ let options = {
 			description: "username/level text lobby",
 			enabled: true,
 			opacity: 0.5
+		},
+		{
+		    selector: "#startPageCenter",
+			description: "login screen",
+			enabled: true,
+			opacity: 0.5
+		},
+		{
+		    selector: "#startPageLogoContainer",
+			description: "login screen logo",
+			enabled: true,
+			opacity: 0.5
 		}
 	]
 }
@@ -234,56 +245,77 @@ let template = $(`<div id="custom-background"></div>`);
 
 if (options.video.enabled) {
 	template.append(`<video autoplay loop muted><source src="${options.video.url}"></video>`);
+} else {
+    images = [""]
 }
 
 $("#mainContainer").append(template);
 
 function extend (func, method, ext) {
-    let old = func.prototype[method];
+    let old = (func.fn ? func.fn : func.prototype)[method];
 	func.prototype[method] = function () {
-	    old.apply(this, Array.from(arguments));
+	    let result = old.apply(this, Array.from(arguments));
 		ext.apply(this, Array.from(arguments));
+		return result;
 	}
 }
 
-extend(QuizInfoContainer, "showContent", function () {
-    $("#qpInfoHider").prevAll().css("visibility", "visible");
-	$("#qpAnimeNameContainer").css("visibility", "visible");
-});
+let loggedIn = window.QuizInfoContainer != null;
 
-extend(QuizInfoContainer, "hideContent", function () {
-    $("#qpInfoHider").prevAll().css("visibility", "hidden");
-	$("#qpAnimeNameContainer").css("visibility", "hidden");
-});
+if (loggedIn) {//we are logged in
+	extend(QuizInfoContainer, "showContent", function () {
+		$("#qpInfoHider").prevAll().css("visibility", "visible");
+		$("#qpAnimeNameContainer").css("visibility", "visible");
+	});
 
-extend(VideoOverlay, "show", function () {
-    this.$hider.siblings().css("visibility", "hidden");
-});
+	extend(QuizInfoContainer, "hideContent", function () {
+		$("#qpInfoHider").prevAll().css("visibility", "hidden");
+		$("#qpAnimeNameContainer").css("visibility", "hidden");
+	});
 
-extend(VideoOverlay, "hide", function () {
-    this.$hider.siblings().css("visibility", "visible");
-});
+	extend(VideoOverlay, "show", function () {
+		this.$hider.siblings().css("visibility", "hidden");
+	});
+
+	extend(VideoOverlay, "hide", function () {
+		this.$hider.siblings().css("visibility", "visible");
+	});
 
 
-extend(VideoOverlay, "showWaitingBuffering", function () {
-    this.$bufferingScreen.siblings().css("visibility", "hidden");
-});
+	extend(VideoOverlay, "showWaitingBuffering", function () {
+		this.$bufferingScreen.siblings().css("visibility", "hidden");
+	});
 
-extend(VideoOverlay, "hideWaitingBuffering", function () {
-    this.$bufferingScreen.siblings().css("visibility", "visible");
-});
+	extend(VideoOverlay, "hideWaitingBuffering", function () {
+		this.$bufferingScreen.siblings().css("visibility", "visible");
+	});
 
-extend(AvatarWindow, "closeWindow", function () {
-    $("#custom-background").css("z-index", -1);
-	$("#avatarWindow").css("z-index", -1);
-});
+	extend(AvatarWindow, "closeWindow", function () {
+		$("#custom-background").css("z-index", -1);
+		$("#avatarWindow").css("z-index", -1);
+	});
 
-extend(AvatarWindow, "showWindow", function () {
-    $("#custom-background").css("z-index", 10);
-	$("#avatarWindow").css("z-index", 11);
-});
+	extend(AvatarWindow, "showWindow", function () {
+		$("#custom-background").css("z-index", 10);
+		$("#avatarWindow").css("z-index", 11);
+	});
+
+	let loadingScreenStateChange = function () {
+	    if ($(this).attr("id") == "loadingScreen") {
+		    if ($(this).hasClass("hidden")) {
+			    $("#custom-background").css("z-index", -1);
+			} else {
+			    $("#custom-background").css("z-index", 10);
+			}
+		}
+	}
+
+	extend($, "addClass", loadingScreenStateChange);
+	extend($, "removeClass", loadingScreenStateChange);
+}
 
 GM_addStyle(`
+
 :root {
   --url: url("${options.images[0]}");
 }
@@ -332,7 +364,7 @@ ${transparents.map(obj => `
     -moz-transform: translate(-50%,-50%);
     -ms-transform: translate(-50%,-50%);
     transform: translate(-50%,-50%);*/
-    z-index: -1;
+    z-index: ${loggedIn ? 5 : -1};
     filter: ${options.video.filter};
     will-change: contents;
     background-image: var(--url) !important;
@@ -341,7 +373,7 @@ ${transparents.map(obj => `
     background-position: 0px !important;
 }
 
-#mainContainer > *, #awMainView, #avatarWindow {
+#mainContainer > *, #awMainView, #avatarWindow, #startPage, #loadingScreen {
     background: none;
 }
 
