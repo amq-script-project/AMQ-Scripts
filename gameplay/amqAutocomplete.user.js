@@ -1,18 +1,20 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.15
+// @version      1.16
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order)
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
 // @grant        none
-// @downloadURL https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAutocomplete.user.js
-// @updateURL   https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAutocomplete.user.js
+// @downloadURL https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw
+// @updateURL   https://gist.github.com/juvian/0fb1e36f03bd2b0275298ab9c1633900/raw
 // @copyright MIT license
 // ==/UserScript==
 
-if (!window.Listener) return;
+let isNode = typeof window === 'undefined';
+
+if (!isNode && typeof Listener === 'undefined') return;
 
 var options = {
 	highlight: true, // highlight or not the match
@@ -31,91 +33,63 @@ function log(msg) {
 
 var storedData = {}
 
-if (localStorage) {
+if (!isNode && window.localStorage) {
     storedData = JSON.parse(localStorage.getItem("storedData") || "{}")
 }
 
-new Listener("answer results", function (result) {
-
-	var rightAnswers = {}
-	if (result.players.filter(p => p.rightAnswer && p.name == selfName && (rightAnswers[p.answer.toLowerCase()] = true)).length == 0) {
-		result.players.forEach((playerResult) => {
-			if(playerResult.rightAnswer) {
-			    rightAnswers[playerResult.answer.toLowerCase()] = true;
-			}
-		});
-	}
-
-	for (var answer in rightAnswers) {
-	    storedData[answer] = new Date().getTime();
-	}
-
-	log(storedData)
-
-}).bindListener();
-
-new Listener("quiz end result", function (payload) {
-    if (localStorage) localStorage.setItem("storedData", JSON.stringify(storedData))
-}).bindListener();
-
 class FilterManager {
 	constructor (list, limit) {
-		this.list = list.filter(v => this.cleanString(v).trim().length)
+		this.list = list.filter(v => v.trim().length).map((v, idx) => ({str: this.cleanString(v), idx: idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: v}));
 		this.limit = limit
-        this.originalOrder = {}
-
-		this.list.forEach((anime, idx) => {
-		    this.originalOrder[anime] = idx;
-		})
+		this.specialChars = {}
 
 		if (options.sortList) {
             this.list = this.sortBySeen(this.list);
 		}
 
-		this.sorted =  {
-			list: this.list.map((v, idx) => ({idx: idx, value: this.cleanString(v)}))
-		}
+		this.sorted = {
+			list: this.alphabeticalSort(this.list.map(v => ({value: v.str, idx: v.idx})))
+		};
 
-		this.cleaned = this.sorted.list.map(v => v.value)
-
-		this.splitted = this.cleaned.map(v => v.split(" "))
-
-		this.superString = this.cleaned.join("$$$");
+		this.superString = this.list.map(v => v.str).join("$$$");
 
 		this.superStringLookup = [{value: 0}];
 
-		for (var i = 0; i < this.cleaned.length; i++) {
-			this.superStringLookup.push({value: this.superStringLookup[i].value + this.cleaned[i].length + 3})
+		for (var i = 0; i < this.list.length; i++) {
+			this.superStringLookup.push({value: this.superStringLookup[i].value + this.list[i].str.length + 3})
 		}
 
-		this.alphabeticalSort(this.sorted.list)
-
-		this.lastQry = ""
+		this.lastQry = "";
+		this.lastSpecialStr = "";
 		this.results = new Set();
 		this.reset();
 	}
 
 	sortBySeen(arr) {
-       return arr.map((v, idx) => ({val : v, idx: idx, d: (storedData[v.toLowerCase()] || 1)})).sort(function(a, b){
+       return arr.map((v) => ({val : v, d: (storedData[v.originalStr.toLowerCase()] || 1)})).sort(function(a, b){
 	       if (a.d < b.d) return 1;
 		   if (b.d < a.d) return -1;
-		   if (a.idx < b.idx) return -1;
+		   if (a.val.idx < b.val.idx) return -1;
 		   return 1;
 	   }).map((v) => v.val);
 	}
 
 	cleanString (str) {
-		return removeDiacritics(str).replace("-", " ").replace(/[^\w\s]/gi, ' ').replace(/  +/g, ' ').toLowerCase();
+		return removeDiacritics(str).replace("-", " ").replace(/[^\w\s]/gi, ' ').replace(/  +/g, ' ').toLowerCase().trim();
+	}
+
+	onlySpecialChars(str) {
+	    return removeDiacritics(str).replace(/[\w\s]/gi, '').split('').sort().join('');
 	}
 
 	alphabeticalSort (list) {
 		return list.sort(function(a, b){
-			if (a.value < b.value)
+			if (a.str < b.str)
 			    return -1;
-			if (a.value > b.value)
+			if (a.str > b.str)
 			    return 1;
 			return 0;
-		});		
+		});
 	}
 
 	reset () {
@@ -130,33 +104,44 @@ class FilterManager {
 	checkOldResults () {
 		var results = new Set()
 
-		for (let id of this.results) {
-			var anime = this.cleaned[id];
-			if (anime.indexOf(this.lastQry) != -1 || (options.allowDifferentOrder && this.partialMatches(id))) results.add(id);
+		for (let idx of this.results) {
+			var anime = this.list[idx].str;
+			if (anime.indexOf(this.lastQry) != -1 || (options.allowDifferentOrder && this.partialMatches(idx))) results.add(idx);
 		}
 
-		this.results = results;
+        this.results = new Set();
+		results.forEach(idx => this.addResult(idx));
 	}
 
+
+
 	processResultsFor(str) {
+		let specialStr = this.onlySpecialChars(str);
 		str = this.cleanString(str);
 
-		if (str.startsWith(this.lastQry) == false) this.reset();
+		if (!str.startsWith(this.lastQry) || !this.specialMatchesStr(this.lastSpecialStr, specialStr)) this.reset();
 
 		this.lastQry = str;
 		this.lastQrySplit = str.split(" ").filter((s) => s.trim());
+		this.lastSpecialStr = specialStr;
 
 		this.checkOldResults();
 
-		if (options.allowStartsWith) {
-			this.addResults(this.range(this.sorted));
-		}
-				
-		this.addContainingResults();
+		if (this.lastQry.length) {
+			if (options.allowStartsWith) {
+				this.addResults(this.range(this.sorted));
+			}
 
-		if (options.allowDifferentOrder) {
-			for (; this.lastPartialIndex < this.splitted.length && this.results.size < this.limit; this.lastPartialIndex++) {
-				if (this.partialMatches(this.lastPartialIndex)) this.results.add(this.lastPartialIndex);
+			this.addContainingResults();
+
+			if (options.allowDifferentOrder) {
+				for (; this.lastPartialIndex < this.list.length && this.results.size < this.limit; this.lastPartialIndex++) {
+					if (this.partialMatches(this.lastPartialIndex)) this.addResult(this.lastPartialIndex);
+				}
+			}
+		} else if (this.lastSpecialStr.length) {
+			for (; this.lastPartialIndex < this.list.length && this.results.size < this.limit; this.lastPartialIndex++) {
+				this.addResult(this.lastPartialIndex);
 			}
 		}
 	}
@@ -168,15 +153,15 @@ class FilterManager {
 
 		while (this.results.size < this.limit && (match = re.exec(this.superString))) {
    			var idx = this.first(this.superStringLookup, v => v > match.index, 0, this.superStringLookup.length) - 1
-   			this.results.add(idx);
+   			this.addResult(idx);
    			this.lastIndex = re.lastIndex
 		}
 	}
 
 	partialMatches (idx) {
-		var animeSplitted = this.splitted[idx];
+		var animeSplitted = this.list[idx].splittedStr;
 
-		if (this.lastQrySplit.every((v) => this.cleaned[idx].indexOf(v) != -1)) {
+		if (this.lastQrySplit.every((v) => this.list[idx].str.indexOf(v) != -1)) {
 			var used = animeSplitted.map(v => false);
 			var matches = []
 			for (var i = 0; i < this.lastQrySplit.length; i++) {
@@ -187,6 +172,28 @@ class FilterManager {
 			}
 			return this.matches(0, matches, used);
 		}
+	}
+
+	specialMatches(idx) {
+		return this.specialMatchesStr(this.lastSpecialStr, this.list[idx].specialStr);
+	}
+
+	specialMatchesStr(qry, strToMatch) {
+	    let curIdx = 0;
+
+		for (let i = 0; strToMatch && i < strToMatch.length && curIdx < qry.length; i++) {
+		    if (strToMatch[i] == qry[curIdx]) {
+			    curIdx++;
+			} else if (strToMatch[i] > qry[curIdx]) {
+			    break;
+			}
+		}
+
+		return curIdx == qry.length;
+	}
+
+	addResult(idx) {
+	    if (this.specialMatches(idx)) this.results.add(idx);
 	}
 
 	matches (currentIndex, matches, used) {
@@ -208,17 +215,17 @@ class FilterManager {
 
 	addResults (range) {
 		for (var i = range.first; i <= range.last && this.results.size < this.limit; i++) {
-			this.results.add(range.list[i].idx);
+			this.addResult(range.list[i].idx);
 		}
 	}
 
 	filterBy (str) {
 		//console.time(str + " filter")
-		
+
 		if (str.trim().length == 0) return [];
 		this.processResultsFor(str);
-		return Array.from(this.results).map(id => this.list[id])
-		
+		return Array.from(this.results).map(idx => this.list[idx])
+
 		//console.timeEnd(str + " filter")
 	}
 
@@ -249,7 +256,6 @@ class FilterManager {
 	            lo = mi + 1;
 	        }
 	    }
-
 	    return hi;
 	}
 }
@@ -262,96 +268,120 @@ class HightLightManager {
 	}
 }
 
-var oldProto = AmqAwesomeplete.prototype;
-var oldEvaluate = AmqAwesomeplete.prototype.evaluate;
+if (!isNode) {
 
-AmqAwesomeplete = function(input, o) {
-	oldProto.constructor.apply(this, Array.from(arguments))
-	this.isAnimeAutocomplete = this._list.indexOf("Lain") != -1;
-	if (this.isAnimeAutocomplete) this.preprocess();
-}
+	var oldProto = AmqAwesomeplete.prototype;
+	var oldEvaluate = AmqAwesomeplete.prototype.evaluate;
 
-AmqAwesomeplete.prototype = oldProto;
-
-
-AmqAwesomeplete.prototype.preprocess = function () {	
-	this.filterManager = new FilterManager(this._list.sort(this.sort), this.maxItems);
-	this.highLightManager = new HightLightManager(this);
-	if (options.allowRightLeftArrows) {
-		$(this.input).on("keydown", (e) => {
-		    if (e.keyCode == 37) this.previous()
-			else if (e.keyCode == 39) this.next();
-		})
-	}
-}
-
-AmqAwesomeplete.prototype.evaluate = function () {
-	if (this.isAnimeAutocomplete == false) return oldEvaluate.call(this);
-
-	var me = this;
-	
-	this.suggestions = this.filterManager.filterBy(this.input.value).map(v => new Suggestion(me.data(v, this.filterManager.lastQry)))	
-	
-	if (this.sort !== false) {
-		this.suggestions = this.suggestions.sort(this.sort);
+	AmqAwesomeplete = function(input, o) {
+		oldProto.constructor.apply(this, Array.from(arguments))
+		this.isAnimeAutocomplete = this._list.indexOf("Lain") != -1;
+		if (this.isAnimeAutocomplete) this.preprocess();
 	}
 
-	this.suggestions = this.suggestions.map((v) => ({v: v, d: storedData[v.value.toLowerCase()] || 1})).sort(function(a, b) {
-		if (options.sorting == "partial" || options.sorting == "total") {
-			if (a.d != 1 && b.d == 1) return -1;
-			if (a.d == 1 && b.d != 1) return 1;
+	AmqAwesomeplete.prototype = oldProto;
+
+
+	AmqAwesomeplete.prototype.preprocess = function () {
+		this.filterManager = new FilterManager(this._list.sort(this.sort), this.maxItems);
+		this.highLightManager = new HightLightManager(this);
+		if (options.allowRightLeftArrows) {
+			$(this.input).on("keydown", (e) => {
+			    if (e.keyCode == 37) this.previous()
+				else if (e.keyCode == 39) this.next();
+			})
+		}
+	}
+
+	AmqAwesomeplete.prototype.evaluate = function () {
+		if (this.isAnimeAutocomplete == false) return oldEvaluate.call(this);
+
+		this.filterManager.filterBy(this.input.value);
+
+		this.suggestions = this.filterManager.filterBy(this.input.value);
+
+		this.suggestions = this.suggestions.map((v) => ({v: v, d: storedData[v.originalStr.toLowerCase()] || 1})).sort((a, b) => {
+			if (options.sorting == "partial" || options.sorting == "total") {
+				if (a.d != 1 && b.d == 1) return -1;
+				if (a.d == 1 && b.d != 1) return 1;
+			}
+
+			if (options.sorting == "total") {
+				if (a.d < b.d) return 1;
+				if (b.d < a.d) return -1;
+			}
+
+		    if (this.sort !== false) {
+			    if (a.v.idx < b.v.idx) return -1;
+			}
+
+			return 1;
+		}).map(v => new Suggestion(this.data(v.v.originalStr, this.filterManager.lastQry)));
+
+		log(this.suggestions)
+
+		$("#qpAnswerInputLoadingContainer").removeClass("hide");
+		this.$ul.children('li').remove();
+
+		var val = options.highlight ? this.filterManager.lastQry : ""
+
+		for (let i = this.suggestions.length - 1; i >= 0; i--) {
+			this.ul.insertBefore(this.item(this.suggestions[i], val, i), this.ul.firstChild);
 		}
 
-		if (options.sorting == "total") {
-			if (a.d < b.d) return 1;
-			if (b.d < a.d) return -1;
+		if (this.ul.children.length === 0) {
+
+			this.status.textContent = "No results found";
+
+			this.close({ reason: "nomatches" });
+
+		} else {
+			this.open();
+
+			this.status.textContent = this.ul.children.length + " results found";
 		}
 
-		if (me.filterManager.originalOrder[a.v] < me.filterManager.originalOrder[b.v]) return -1;
-		return 1;
-	}).map(v => v.v);
+		$("#qpAnswerInputLoadingContainer").addClass("hide");
+	};
 
-	log(this.suggestions)
-	
-	$("#qpAnswerInputLoadingContainer").removeClass("hide");
-	this.$ul.children('li').remove();
-        
-	var val = options.highlight ? this.filterManager.lastQry : "" 
-	
-	for (let i = this.suggestions.length - 1; i >= 0; i--) {
-		this.ul.insertBefore(this.item(this.suggestions[i], val, i), this.ul.firstChild);
-	}
+	//auto send incomplete answer
+	var oldSendAnwer = Quiz.prototype.sendAnswer;
 
-	if (this.ul.children.length === 0) {
-
-		this.status.textContent = "No results found";
-
-		this.close({ reason: "nomatches" });
-
-	} else {
-		this.open();
-
-		this.status.textContent = this.ul.children.length + " results found";
-	}
-
-	$("#qpAnswerInputLoadingContainer").addClass("hide");
-};
-
-//auto send incomplete answer
-var oldSendAnwer = Quiz.prototype.sendAnswer;
-
-Quiz.prototype.sendAnswer = function () {
-    try{
-		var awesome = quiz.autoCompleteController.awesomepleteInstance;
-		if(awesome.suggestions && awesome.suggestions.length && awesome.input.value.trim() && awesome.suggestions[0].value.trim() && awesome.filterManager.cleaned.indexOf(awesome.filterManager.cleanString(awesome.input.value).toLowerCase()) == -1){
-			awesome.input.value = awesome.suggestions[0].value;
+	Quiz.prototype.sendAnswer = function () {
+	    try{
+			var awesome = quiz.autoCompleteController.awesomepleteInstance;
+			if(awesome && awesome.suggestions && awesome.suggestions.length && awesome.input.value.trim() && awesome.suggestions.every(s => awesome.filterManager.cleanString(s.value) != awesome.filterManager.cleanString(awesome.input.value))){
+				awesome.input.value = awesome.suggestions[0].value;
+			}
+		} catch (ex) {
+	        console.log(ex);
 		}
-	} catch (ex) {
-        console.log(ex);
+		oldSendAnwer.apply(this, Array.from(arguments))
 	}
-	oldSendAnwer.apply(this, Array.from(arguments))
+
+
+	new Listener("answer results", function (result) {
+		var rightAnswers = {}
+		if (result.players.filter(p => p.rightAnswer && p.name == selfName && (rightAnswers[p.answer.toLowerCase()] = true)).length == 0) {
+			result.players.forEach((playerResult) => {
+				if(playerResult.rightAnswer) {
+				    rightAnswers[playerResult.answer.toLowerCase()] = true;
+				}
+			});
+		}
+
+		for (var answer in rightAnswers) {
+		    storedData[answer] = new Date().getTime();
+		}
+
+		log(storedData)
+
+	}).bindListener();
+
+	new Listener("quiz end result", function (payload) {
+	    if (localStorage) localStorage.setItem("storedData", JSON.stringify(storedData))
+	}).bindListener();
 }
-
 
 var defaultDiacriticsRemovalMap = [
     {'base':'A', 'letters':'\u0041\u24B6\uFF21\u00C0\u00C1\u00C2\u1EA6\u1EA4\u1EAA\u1EA8\u00C3\u0100\u0102\u1EB0\u1EAE\u1EB4\u1EB2\u0226\u01E0\u00C4\u01DE\u1EA2\u00C5\u01FA\u01CD\u0200\u0202\u1EA0\u1EAC\u1EB6\u1E00\u0104\u023A\u2C6F'},
@@ -453,7 +483,26 @@ for (var i=0; i < defaultDiacriticsRemovalMap .length; i++){
 
 // "what?" version ... http://jsperf.com/diacritics/12
 function removeDiacritics (str) {
-    return str.replace(/[^\u0000-\u007E]/g, function(a){ 
-       return diacriticsMap[a] || a; 
+    return str.replace(/[^\u0000-\u007E]/g, function(a){
+       return diacriticsMap[a] || a;
     });
-}    
+}
+
+if (isNode) {
+	let l = new FilterManager(["asd", "asd!", "asd!!*hi"], 15);
+
+	escapeRegExp = (v) => v;
+	search = (str, len) => {
+		s = l.filterBy(str);
+		if (s.length != len) {
+			console.log(s, str, len)
+		}
+	}
+
+	search("s", 3)
+	search("!s", 2)
+	search("*", 1)
+	search("*!", 1)
+	search("!*", 1)
+	search("!asd!*hi", 1)
+}
