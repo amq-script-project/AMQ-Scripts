@@ -114,7 +114,7 @@ def regular_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
     command += '-g %d ' % keyframeinterval
     command += '%s -pass 2 -threads 16 ' % scaling_settings
     command += '-tile-columns 2 -tile-rows 2 '
-    command += '-frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '-frame-parallel 1 -cpu-used 1 -pix_fmt yuv420p '
     command += '%s %s -map 0:v:0 ' % (audioencode, volumesettings)
     command +='-max_muxing_queue_size 4096 -map 0:a:0 "%s"' % outputfile
     # os.popen(command)
@@ -166,7 +166,7 @@ def SDconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
     command += '-metadata title="%s" ' % title
     command += '-c:v %s -b:v 2000k -crf 33 ' % videoencoder
     command += '-g %d -vf scale=-1:480 -pass 2 -threads 16 ' % keyframeinterval
-    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 1 -pix_fmt yuv420p '
     command += '%s %s -map 0:v:0 ' % (audioencode, volumesettings)
     command +='-max_muxing_queue_size 4096 -map 0:a:0 "%s"' % outputfile
     # os.popen(command)
@@ -218,7 +218,7 @@ def HDconvert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
     command += '-metadata title="%s" ' % title
     command += '-c:v %s -b:v 3250k -crf 24 ' % videoencoder
     command += '-g %d -vf scale=-1:720 -pass 2 -threads 16 ' % keyframeinterval
-    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 1 -pix_fmt yuv420p '
     command += '%s %s -map 0:v:0 ' % (audioencode, volumesettings)
     command +='-max_muxing_queue_size 4096 -map 0:a:0 "%s"' % outputfile
     log(command)
@@ -267,7 +267,7 @@ def unscaled_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0, keyf
     command += '-metadata title="%s" ' % title
     command += '-c:v %s -b:v 3250k -crf 24 ' % videoencoder
     command += '-g %d -pass 2 -threads 16 ' % keyframeinterval
-    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 4 -pix_fmt yuv420p '
+    command += '-tile-columns 4 -frame-parallel 1 -cpu-used 1 -pix_fmt yuv420p '
     command += '%s %s -map 0:v:0 ' % (audioencode, volumesettings)
     command +='-max_muxing_queue_size 4096 -map 0:a:0 "%s"' % outputfile
     log(command)
