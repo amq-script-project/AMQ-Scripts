@@ -5,7 +5,7 @@ Presents them with a CLI that asks for file info.
 Tries to check what kind of file the user is offering
 so the user doesn't have to do anything.
 
-Author: Zolhungaj
+Authors: Zolhungaj
         FokjeM / RivenSkaye (minor tweaks)
 """
 

@@ -6,11 +6,12 @@ adjust audio volume and use a standard formula for output
 Dependent on:
 mediainfo
 ffmpeg
-
-Author: Zolhungaj
-        FokjeM / Riven Skaye (really minor tweaks)
 mkclean
+
+Authors: Zolhungaj
+        FokjeM / Riven Skaye (really minor tweaks)
 """
+import sys
 import re
 import os
 import datetime
@@ -20,7 +21,7 @@ import subprocess
 # mediainfo, tested on v18.05
 # ffmpeg, tested on N-91538-g269daf5985
 #
-with open("autoconvert.config") as file:
+with open(os.path.dirname(sys.argv[0]) + os.sep + "autoconvert.config") as file:
     data = file.read()
     search_keywords = [
         "ffmpeg_path",
