@@ -8,22 +8,6 @@ Author: FokjeM / RivenSkaye
 import os
 import sys
 import re
-import datetime
-import time
-mediainfo = "mediainfo"
-logfile = "AMQ-autorescheck.log"
-def log(message):
-    """
-    Borrowed Zol's code here
-    This functions logs to a file, given by the logfile global
-    """
-    # write timestamp message newline to file
-    msg = "[%s]: %s\n" % (datetime.datetime.fromtimestamp(
-        datetime.datetime.now().timestamp()).isoformat(), message)
-    file = open(logfile, "a", encoding="utf-8")
-    file.write(msg)
-    file.close()
-    print(msg)
 
 with open(os.path.dirname(sys.argv[0]) + os.sep + "autoconvert.config") as file:
     match = re.search("mediainfo_path" + r"\s?=[ \t\r\f\v]*(.+)$", file.read(), re.I | re.M)
