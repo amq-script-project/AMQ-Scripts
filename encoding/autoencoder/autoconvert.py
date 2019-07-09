@@ -6,10 +6,12 @@ adjust audio volume and use a standard formula for output
 Dependent on:
 mediainfo
 ffmpeg
+mkclean
 
-Author: Zolhungaj
+Authors: Zolhungaj
         FokjeM / Riven Skaye (really minor tweaks)
 """
+import sys
 import re
 import os
 import datetime
@@ -19,14 +21,79 @@ import subprocess
 # mediainfo, tested on v18.05
 # ffmpeg, tested on N-91538-g269daf5985
 #
-logfile = "AMQ-autoconvert.log"
-mediainfo = "mediainfo"  # command to invoke mediainfo, eg C:mediainfo.exe
-ffmpeg = "ffmpeg"  # command to invoke ffmpeg, eg C:ffmpeg\bin\ffmpeg.exe
-# global ffprobe = "ffprobe"
-outputFolder = "outputfiles\\"  # path to output folder
-maxmean = -16.0
-maxpeak = -1.0
+with open(os.path.dirname(sys.argv[0]) + os.sep + "autoconvert.config") as file:
+    data = file.read()
+    search_keywords = [
+        "ffmpeg_path",
+        "mediainfo_path",
+        "output_folder_path",
+        "logfile_path",
+        "max_mean_volume",
+        "max_peak_volume"
+    ]
+    keyword_dictionary = {}
+    for keyword in search_keywords:
+        match = re.search(keyword + r"\s?=[ \t\r\f\v]*(.+)$", data, re.I | re.M)
+        if match is None:
+            print("ERROR %s missing in config file" % keyword)
+            input()
+            exit(0)
+        else:
+            print(match.group(1))
+            keyword_dictionary[keyword] = match.group(1)
+    ffmpeg = keyword_dictionary["ffmpeg_path"]
+    mediainfo = keyword_dictionary["mediainfo_path"]
+    outputFolder = keyword_dictionary["output_folder_path"]
+    logfile = keyword_dictionary["logfile_path"]
+    maxmean = float(keyword_dictionary["max_mean_volume"])
+    maxpeak = float(keyword_dictionary["max_peak_volume"])
 
+    optional_settings = [
+        "mkclean_path",
+        "enable_mkclean",
+        "enable_av1"
+    ]
+    keyword_dictionary_optional = {}
+    for keyword in optional_settings:
+        match = re.search(keyword + r"\s?=[ \t\r\f\v]*(.+)$", data, re.I | re.M)
+        if match is not None:
+            print(match.group(1))
+            keyword_dictionary_optional[keyword] = match.group(1)
+    try:
+        temp = keyword_dictionary_optional["enable_mkclean"]
+        if temp.lower() == "true":
+            mkclean_enabled = True
+        elif temp.lower() == "false":
+            mkclean_enabled = False
+        else:
+            mkclean_enabled = False
+            print("mkcleaned disabled by default, enable_mkclean set to unrecognized value '%s'" % temp)
+    except Exception:
+        mkclean_enabled = False
+        print("mkcleaned disabled by default, enable_mkclean not set")
+    if mkclean_enabled:
+        try:
+            mkclean = keyword_dictionary_optional["mkclean_path"]
+        except Exception:
+            mkclean = ""
+            mkclean_enabled = False
+            print("mkcleaned disabled by default, path not set")
+    try:
+        temp = keyword_dictionary_optional["enable_av1"]
+        if temp.lower() == "true":
+            libaom_av1_experimental = True
+        elif temp.lower() == "false":
+            libaom_av1_experimental = False
+        else:
+            libaom_av1_experimental = False
+            print("av1 disabled by default, enable_av1 set to unrecognized value '%s'" % temp)
+    except Exception:
+        libaom_av1_experimental = False
+        print("av1 disabled by default, enable_av1 not set")
+    if libaom_av1_experimental and mkclean_enabled:
+        print("ERROR mkclean does not support av1")
+        input()
+        exit(0)
 
 def log(message):
     """
@@ -46,7 +113,7 @@ def system_call_wait(command):
 
 
 def regular_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
-              keyframeinterval=120, scaling=0, libaom_av1_experimental=False):
+              keyframeinterval=120, scaling=0):
     if scaling == 0:
         outputfile += "-unscaled.webm"
         log("unscaled conversion started")
@@ -120,6 +187,9 @@ def regular_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0,
     # os.popen(command)
     log(command)
     system_call_wait(command)
+    if mkclean_enabled:
+        command = "%s --doctype 4 --keep-cues --optimize %s %s" % (mkclean_path, outputfile, outputfile[:-5] + "-optimized" + outputfile[-5:])
+        system_call_wait(command)
     log("conversion complete")
     # os.remove("480pdummy")
     return outputfile
@@ -231,7 +301,7 @@ def unscaled_convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0, keyf
     """
     decent quality video, high quality audio, medium bitrate
     """
-    return regular_convert(inputfile, outputfile, volume, start, end, keyframeinterval)
+    return regular_convert(inputfile, outputfile, volume, start, end, keyframeinterval, 0)
     outputfile += "-unscaled.webm"
     log("unscaled conversion started")
     title = "AMQ unscaled convert"
