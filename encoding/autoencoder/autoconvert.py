@@ -367,9 +367,12 @@ def mp3convert(inputfile, outputfile, volume=0.0, start=0.0, end=0.0):  # mp3
         title = "AMQ mp3(c) convert"
     if volume != 0.0:
         volumesettings = '-af "volume=%.1fdB"' % (volume)
-    command = '%s %s %s -i "%s" -vn -sn -c:a libmp3lame -b:a 320k -ac 2 %s \
--map_metadata -1 -metadata title="%s" -max_muxing_queue_size 4096 "%s"' % (
-        ffmpeg, ss, to, inputfile, volumesettings, title, outputfile)
+    command  = '%s %s %s ' % (ffmpeg, ss, to)
+    command += '-i "%s" ' % inputfile
+    command += '-vn -sn -c:a libmp3lame -b:a 320k -compression_level 0 -ac 2 '
+    command += '%s ' % volumesettings
+    command += '-map_metadata -1 -metadata title="%s" ' % title
+    command += '-max_muxing_queue_size 4096 "%s"' % outputfile
     system_call_wait(command)
     log(command)
     print(command)
