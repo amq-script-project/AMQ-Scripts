@@ -13,6 +13,21 @@ from autoconvert import autoconvert
 from autorescheck import autorescheck
 import os
 import re
+
+upload = False
+try:
+    with open("interface.config") as file:
+        match = re.search("upload" + r"\s?=[ \t\r\f\v]*(true|false)$", file.read(), re.I | re.M)
+        if match is None:
+            print("interface.py: upload defaults to FALSE")
+        else:
+            if match.group(1).lower() == "true":
+                upload = True
+except Exception:
+    print("interface.py: no config file present")
+if upload:
+    import catbox
+
 print("Welcome to the autoconverter interface")
 while True:
     while True:
@@ -103,76 +118,90 @@ while True:
                 continue
         break
     try:
+        res = []
         if targetResolution == -2:
             sourcefile = autoconvert(filename, -1, animeTitle,
                                      songType, songTitle, songArtist,
                                      start, end, crf)
+            res.append(sourcefile)
             if start != 0.0 or end != 0.0:
-                autoconvert(sourcefile, 0, animeTitle,
-                            songType, songTitle, songArtist, 0.0, 0.0, -1)
+                res.append(autoconvert(sourcefile, 0, animeTitle,
+                            songType, songTitle, songArtist, 0.0, 0.0, -1))
             else:
-                autoconvert(filename, 0, animeTitle,
-                            songType, songTitle, songArtist, start, end, -1)
-            autoconvert(filename, 480, animeTitle,
-                        songType, songTitle, songArtist, start, end, -1)
-            autoconvert(filename, 720, animeTitle,
-                        songType, songTitle, songArtist, start, end, -1)
+                res.append(autoconvert(filename, 0, animeTitle,
+                            songType, songTitle, songArtist, start, end, -1))
+            res.append(autoconvert(filename, 480, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1))
+            res.append(autoconvert(filename, 720, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1))
         elif targetResolution == -3:
-            autoconvert(filename, 720, animeTitle,
-                        songType, songTitle, songArtist, start, end, -1)
+            res.append(autoconvert(filename, 720, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1))
             sourcefile = autoconvert(filename, -1, animeTitle,
                                      songType, songTitle, songArtist,
                                      start, end, crf)
+            res.append(sourcefile)
             if start != 0.0 or end != 0.0:
-                autoconvert(sourcefile, 0, animeTitle,
-                            songType, songTitle, songArtist, 0.0, 0.0, -1)
+                res.append(autoconvert(sourcefile, 0, animeTitle,
+                            songType, songTitle, songArtist, 0.0, 0.0, -1))
             else:
-                autoconvert(filename, 0, animeTitle,
-                            songType, songTitle, songArtist, start, end, -1)
-            autoconvert(filename, 480, animeTitle,
-                        songType, songTitle, songArtist, start, end, -1)
+                res.append(autoconvert(filename, 0, animeTitle,
+                            songType, songTitle, songArtist, start, end, -1))
+            res.append(autoconvert(filename, 480, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1))
         elif targetResolution == -4:  # unscaled
-            autoconvert(filename, -2, animeTitle,
-                        songType, songTitle, songArtist, start, end, -1)
+            res.append(autoconvert(filename, -2, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1))
         elif targetResolution == -5:  # amq-720
             sourcefile = autoconvert(filename, 720, animeTitle,
                         songType, songTitle, songArtist, start, end, -1)
+            res.append(sourcefile)
             if start != 0.0 or end != 0.0:
-                autoconvert(sourcefile, 0, animeTitle,
-                            songType, songTitle, songArtist, 0.0, 0.0, -1)
+                res.append(autoconvert(sourcefile, 0, animeTitle,
+                            songType, songTitle, songArtist, 0.0, 0.0, -1))
             else:
-                autoconvert(filename, 0, animeTitle,
-                            songType, songTitle, songArtist, start, end, -1)
-            autoconvert(filename, 480, animeTitle,
-                        songType, songTitle, songArtist, start, end, -1)
+                res.append(autoconvert(filename, 0, animeTitle,
+                            songType, songTitle, songArtist, start, end, -1))
+            res.append(autoconvert(filename, 480, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1))
         elif targetResolution == -6:  # amq-576
             sourcefile = autoconvert(filename, -2, animeTitle,
                         songType, songTitle, songArtist, start, end, -1)
+            res.append(sourcefile)
             if start != 0.0 or end != 0.0:
-                autoconvert(sourcefile, 0, animeTitle,
-                            songType, songTitle, songArtist, 0.0, 0.0, -1)
+                res.append(autoconvert(sourcefile, 0, animeTitle,
+                            songType, songTitle, songArtist, 0.0, 0.0, -1))
             else:
-                autoconvert(filename, 0, animeTitle,
-                            songType, songTitle, songArtist, start, end, -1)
-            autoconvert(filename, 480, animeTitle,
-                        songType, songTitle, songArtist, start, end, -1)
+                res.append(autoconvert(filename, 0, animeTitle,
+                            songType, songTitle, songArtist, start, end, -1))
+            res.append(autoconvert(filename, 480, animeTitle,
+                        songType, songTitle, songArtist, start, end, -1))
         elif targetResolution == -7:  # amq-480
             sourcefile = autoconvert(filename, -2, animeTitle,
                         songType, songTitle, songArtist, start, end, -1)
+            res.append(sourcefile)
             if start != 0.0 or end != 0.0:
-                autoconvert(sourcefile, 0, animeTitle,
-                            songType, songTitle, songArtist, 0.0, 0.0, -1)
+                res.append(autoconvert(sourcefile, 0, animeTitle,
+                            songType, songTitle, songArtist, 0.0, 0.0, -1))
             else:
-                autoconvert(filename, 0, animeTitle,
-                            songType, songTitle, songArtist, start, end, -1)
+                res.append(autoconvert(filename, 0, animeTitle,
+                            songType, songTitle, songArtist, start, end, -1))
         else:
-            autoconvert(filename, targetResolution, animeTitle,
-                        songType, songTitle, songArtist, start, end, crf)
+            res.append(autoconvert(filename, targetResolution, animeTitle,
+                        songType, songTitle, songArtist, start, end, crf))
         print("Job completed")
     except Exception as e:
         print("During execution, an exception occured:%s" % str(e))
     print("")
-    cont = str.lower(input("Would you like to continue?(y/[n])")) # Make sure we don't exit on capital Y
+    if upload:
+        links = []
+        for file in res:
+            try:
+                links.append(catbox.upload(file))
+            except Exception as e:
+                print("Could not upload %s: %s" % (file, str(e)))
+        print(links)
+    cont = input("Would you like to continue?(y/[n])").lower()
     if cont == "":
         break
     elif cont[0] == "y":
