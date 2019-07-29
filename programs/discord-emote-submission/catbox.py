@@ -45,17 +45,6 @@ def upload_from_url(url):
     response = requests.post(host, data=payload)
     if response.ok:
         print("mirror success: %s" % response.text)
-        try:
-            caturl = response.text
-            source_extension = re.match(r".*\.(\w+)$", url).group(1)
-            cat_extension = re.match(r".*\.(\w+)$", caturl).group(1)
-            if cat_extension != source_extension:
-                f = open("catfail.txt", "a", encoding="utf-8")
-                f.write("%s -> %s\n" % (url, caturl))
-                f.close()
-                print("%s -> %s" % (url, caturl))
-        except Exception:
-            pass
         return response.text
     else:
         print("mirror failed: %s" % response.text)
