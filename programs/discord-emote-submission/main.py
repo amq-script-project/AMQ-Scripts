@@ -16,16 +16,16 @@ while(True):
     if selection == "1":
         filenames = askopenfilenames()
         for f in filenames:
-            ret =  upload_catbox(f)
+            ret =  upload(f)
             if ret is not None:
                 file_list.append(ret)
                 prefix, suffix = re.match(r"(.+)\.(.+)", f).groups()
                 scale = 32
                 outputfile = "%s%dx%d.%s" % (prefix, scale, scale, suffix)
                 command  = 'ffmpeg -y -i "%s" ' % f
-                command += '-vf "scale=iw*sar*min(%d/(iw*sar)\,%d/ih):ih*min(%d/(iw*sar)\,%d/ih)' % (scale,)*4  # width:height
+                command += '-vf "scale=iw*sar*min(%d/(iw*sar)\,%d/ih):ih*min(%d/(iw*sar)\,%d/ih)' % ((scale,)*4)  # width:height
                 # ripped from https://superuser.com/questions/891145/ffmpeg-upscale-and-letterbox-a-video#891478
-                command += ', pad=%d:%d:-1:-1:000000@0.0" ' % (scale,)*2  # -1 makes ffmpeg autimatically centre the image, 000000@0.0 is fully transparent black
+                command += ', pad=%d:%d:-1:-1:000000@0.0" ' % ((scale,)*2)  # -1 makes ffmpeg autimatically centre the image, 000000@0.0 is fully transparent black
                 command += '"%s"' % outputfile
                 os.system("start /wait /MIN cmd /c %s" % command)
                 cb = upload(outputfile)
