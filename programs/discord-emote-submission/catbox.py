@@ -4,14 +4,16 @@ import os
 import re
 
 def upload(file):
-    host = "https://catbox.moe/user/api.php"
     origname = file
-    if(re.match(r"^.*\.webm$", file)):
-        mime_type = "video/webm"
-        ext = ".webm"
-    elif(re.match(r"^.*\.mp3$", file)):
-        mime_type = "audio/mpeg"
-        ext = ".mp3"
+    if(re.match(r"^.*\.png$", file)):
+        mime_type = "image/png"
+        ext = ".png"
+    elif(re.match(r"^.*\.jpe?g$", file)):
+        mime_type = "image/jpeg"
+        ext = ".jpg"
+    elif(re.match(r"^.*\.gif$", file)):
+        mime_type = "image/gif"
+        ext = ".gif"
     else:
         return None
     if userhash:
@@ -36,7 +38,6 @@ def upload(file):
 
 def upload_from_url(url):
     print("mirroring %s to catbox" % url)
-    host = "https://catbox.moe/user/api.php"
     if userhash:
         payload = {"reqtype": "urlupload", "userhash": userhash, "url": url}
     else:
@@ -61,7 +62,22 @@ def upload_from_url(url):
         return None
 
 
+def create_album(file_list, title, description):
+    files = ""
+    for f in file_list:
+        files += re.search(r".*/(.*)$", f).group(1)+ " "
+    payload = {"reqtype": "createalbum", "userhash": userhash, "title":title, "desc":description, "files": files}
+    response = requests.post(host, data=payload)
+    if response.ok:
+        print("album success: %s" % response.text)
+        return response.text
+    else:
+        print("album failed: %s" % response.text)
+        return None
+
+
 userhash = None
+host = "https://catbox.moe/user/api.php"
 try:
     with open("catbox.config") as file:
         match = re.search("userhash" + r"\s?=[ \t\r\f\v]*(.+)$", file.read(), re.I | re.M)
@@ -71,6 +87,9 @@ try:
             userhash = match.group(1)
 except Exception:
     print("catbox.py: no config file present")
+
+if not userhash:
+    exit(0)
 
 if __name__ == "__main__":
     f = input("select file to upload")
