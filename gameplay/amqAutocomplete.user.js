@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.16
+// @version      1.17
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -20,7 +20,8 @@ var options = {
     sortList: true, // true = consider matching animes by last seen order (after checking startsWith)
 	allowRightLeftArrows: false, // use right and left arrows to move dropdown selected options
 	allowStartsWith: true, // allow startsWith priotization (fastest matching)
-	allowDifferentOrder: true // allow the words to be on any order (no hero boku will match boku no hero)
+	allowDifferentOrder: true, // allow the words to be on any order (no hero boku will match boku no hero),
+	daysToRemember: 90 // sets amount of days to consider an anime as seen in sorting
 }
 
 var debug = false;
@@ -32,7 +33,7 @@ function log(msg) {
 var storedData = {}
 
 if (!isNode && window.localStorage) {
-    storedData = JSON.parse(localStorage.getItem("storedData") || "{}")
+    storedData = JSON.parse(localStorage.getItem("storedData") || "{}");
 }
 
 class FilterManager {
@@ -40,6 +41,7 @@ class FilterManager {
 		this.list = list.filter(v => v.trim().length).map((v, idx) => ({str: this.cleanString(v), idx: idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: v}));
 		this.limit = limit
 		this.specialChars = {}
+        this.now = new Date(); this.now.setDate(this.now.getDate() - options.daysToRemember);
 
 		if (options.sortList) {
             this.list = this.sortBySeen(this.list);
@@ -63,8 +65,13 @@ class FilterManager {
 		this.reset();
 	}
 
+	getLastSeen(anime) {
+		return storedData[anime.toLowerCase()] >= this.now.getTime() ? storedData[anime.toLowerCase()] : 1
+	}
+
+
 	sortBySeen(arr) {
-       return arr.map((v) => ({val : v, d: (storedData[v.originalStr.toLowerCase()] || 1)})).sort(function(a, b){
+       return arr.map((v) => ({val : v, d: this.getLastSeen(v.originalStr)})).sort(function(a, b){
 	       if (a.d < b.d) return 1;
 		   if (b.d < a.d) return -1;
 		   if (a.val.idx < b.val.idx) return -1;
@@ -298,7 +305,7 @@ if (!isNode) {
 
 		this.suggestions = this.filterManager.filterBy(this.input.value);
 
-		this.suggestions = this.suggestions.map((v) => ({v: v, d: storedData[v.originalStr.toLowerCase()] || 1})).sort((a, b) => {
+		this.suggestions = this.suggestions.map((v) => ({v: v, d: this.filterManager.getLastSeen(v.originalStr)})).sort((a, b) => {
 			if (options.sorting == "partial" || options.sorting == "total") {
 				if (a.d != 1 && b.d == 1) return -1;
 				if (a.d == 1 && b.d != 1) return 1;
@@ -343,11 +350,11 @@ if (!isNode) {
 	};
 
 	//auto send incomplete answer
-	var oldSendAnwer = Quiz.prototype.sendAnswer;
+	var oldSendAnwer = QuizAnswerInput.prototype.submitAnswer;
 
-	Quiz.prototype.sendAnswer = function () {
+	QuizAnswerInput.prototype.submitAnswer = function () {
 	    try{
-			var awesome = quiz.autoCompleteController.awesomepleteInstance;
+			var awesome = this.autoCompleteController.awesomepleteInstance;
 			if(awesome && awesome.suggestions && awesome.suggestions.length && awesome.input.value.trim() && awesome.suggestions.every(s => awesome.filterManager.cleanString(s.value) != awesome.filterManager.cleanString(awesome.input.value))){
 				awesome.input.value = awesome.suggestions[0].value;
 			}
@@ -359,17 +366,8 @@ if (!isNode) {
 
 
 	new Listener("answer results", function (result) {
-		var rightAnswers = {}
-		if (result.players.filter(p => p.rightAnswer && p.name == selfName && (rightAnswers[p.answer.toLowerCase()] = true)).length == 0) {
-			result.players.forEach((playerResult) => {
-				if(playerResult.rightAnswer) {
-				    rightAnswers[playerResult.answer.toLowerCase()] = true;
-				}
-			});
-		}
-
-		for (var answer in rightAnswers) {
-		    storedData[answer] = new Date().getTime();
+		for (var lang in result.songInfo.animeNames) {
+		    storedData[result.songInfo.animeNames[lang].toLowerCase()] = new Date().getTime();
 		}
 
 		log(storedData)
