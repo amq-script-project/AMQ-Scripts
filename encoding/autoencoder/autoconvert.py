@@ -520,7 +520,10 @@ def autoconvert(inputfile, targetResolution, animeTitle, songType="",
     and how much the audio should be adjusted
     can be told where to start for start/silence detection
     """
-    # stage three: check if still image
+    if inputfile.startswith('"'):
+        inputfile = inputfile[1:]
+    if inputfile.endswith('"'):
+        inputfile = inputfile[:-1]
     log("started converting to %s of %s %s: %s by %s" %
         (targetResolution, animeTitle, songType, songTitle, songArtist))
     # This will return a single line, giving framerate in frames per second
