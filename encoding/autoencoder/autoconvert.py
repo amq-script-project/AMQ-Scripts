@@ -536,12 +536,13 @@ def autoconvert(inputfile, targetResolution, animeTitle, songType="",
     # stage four: check audio for cut points (important, -vn for mp3 only)
     dummyfile = "dummy%sfor%d.mkv" % (createFileName(
         animeTitle, songType, songTitle, songArtist), targetResolution)
+    if len(dummyfile) > 150:
+        dummyfile = dummyfile[:120] + dummyfile[-30:]
     mp3 = ""
     videosettings = "-c:v copy -map 0:v:0"
     if targetResolution == 0 or stillimage:  # stillimage/sound-only: -vn
         mp3 = "-vn"  # this is to avoid desync in ffmpeg between normal and -vn
-        dummyfile = "dummy%sfor%d.mka" % (createFileName(
-            animeTitle, songType, songTitle, songArtist), targetResolution)
+        dummyfile = dummyfile[:-1] + "a"
         videosettings = "-sn"
 
     command = '%s -y -i "%s" %s -hide_banner -nostats %s -map 0:a:0 -ac 2 \
@@ -708,6 +709,8 @@ volumedetect" -sn -hide_banner -nostats -max_muxing_queue_size 4096 -f null \
         os.makedirs(outputFolder)
     filename = outputFolder + "AAMQ%04d-" % currentnumber + \
         createFileName(animeTitle, songType, songTitle, songArtist)
+    if len(filename) > 150:
+        filename = filename[:120] + filename[-30:]
     if currentend == 0.0:
         duration = duration - currentstart
     else:
