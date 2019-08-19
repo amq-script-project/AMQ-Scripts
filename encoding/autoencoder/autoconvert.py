@@ -545,7 +545,7 @@ def autoconvert(inputfile, targetResolution, animeTitle, songType="",
         dummyfile = dummyfile[:-1] + "a"
         videosettings = "-sn"
 
-    command = '%s -y -i "%s" %s -hide_banner -nostats %s -map 0:a:0 -ac 2 \
+    command = '%s -y -i "%s" %s -hide_banner -map_metadata -1 -nostats %s -map 0:a:0 -ac 2 \
 -c:a flac -max_muxing_queue_size 4096 "%s"' % (ffmpeg, inputfile, mp3,
                                                videosettings, dummyfile)
     log(command)
