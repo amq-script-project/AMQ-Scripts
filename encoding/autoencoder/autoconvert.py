@@ -634,6 +634,8 @@ def autoconvert(inputfile, targetResolution, animeTitle, songType="",
                 break
         else:
             break
+    if targetResolution != 0:
+        currentstart = max(0, currentstart-0.1)  # fixes a bug in google chrome
     if currentend - currentstart <= 0:
         log("[ERROR] %s has a length of zero nonsilence" % inputfile)
         return None
