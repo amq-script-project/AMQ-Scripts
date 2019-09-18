@@ -1,0 +1,15 @@
+*
+!*.py
+!*.config
+!*README*
+!.gitignore
+*.webm
+*.mp3
+*.mkv
+*.pyc
+*.log
+*.mka
+geckodriver.exe
+*dummy*
+currentnumber.txt
+*.bat
