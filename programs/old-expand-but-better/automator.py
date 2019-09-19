@@ -284,7 +284,7 @@ def main():
         handle_song = find_song_to_upload
         return
 
-    driver = webdriver.Firefox(executable_path='geckodriver_location')
+    driver = webdriver.Firefox(executable_path=geckodriver_location)
     driver.get('https://animemusicquiz.com')
     driver.find_element_by_id("loginUsername").send_keys(username)
     driver.find_element_by_id("loginPassword").send_keys(password)
