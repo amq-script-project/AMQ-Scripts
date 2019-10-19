@@ -118,6 +118,18 @@ let options = {
 			description: "bottom menu",
 			enabled: true
 		},
+        {
+		    selector: "#mpLeaderboardButton",
+			description: "show leaderboard button main screen",
+			enabled: true,
+			opacity: 0.5
+		},
+        {
+		    selector: "#mpRankedButton",
+			description: "play Ranked button main screen",
+			enabled: true,
+			opacity: 0.5
+		},
 		{
 		    selector: "#mpPlayButton",
 			description: "play button main screen",
