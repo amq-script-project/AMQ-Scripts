@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.17
+// @version      1.18
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
+// @require      https://cdnjs.cloudflare.com/ajax/libs/fuzzyset.js/0.0.8/fuzzyset.min.js
 // @grant        none
 // @copyright MIT license
 // ==/UserScript==
@@ -14,6 +15,10 @@ let isNode = typeof window === 'undefined';
 
 if (!isNode && typeof Listener === 'undefined') return;
 
+if (isNode) {
+	FuzzySet = require('fuzzyset.js')
+}
+
 var options = {
 	highlight: true, // highlight or not the match
 	sorting : "partial", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is amq default
@@ -21,7 +26,11 @@ var options = {
 	allowRightLeftArrows: false, // use right and left arrows to move dropdown selected options
 	allowStartsWith: true, // allow startsWith priotization (fastest matching)
 	allowDifferentOrder: true, // allow the words to be on any order (no hero boku will match boku no hero),
-	daysToRemember: 90 // sets amount of days to consider an anime as seen in sorting
+	daysToRemember: 90, // sets amount of days to consider an anime as seen in sorting,
+	fuzzy: {
+		dropdown: true, // whether to show fuzzy matches if no matches found
+		answer: true, // whether to use top fuzzy match on round end as answer if no matches found
+	}
 }
 
 var debug = false;
@@ -47,16 +56,27 @@ class FilterManager {
             this.list = this.sortBySeen(this.list);
 		}
 
+		this.list.forEach((v, idx) => v.idx = idx);
+
 		this.sorted = {
-			list: this.alphabeticalSort(this.list.map(v => ({value: v.str, idx: v.idx})))
+			list: this.alphabeticalSort(this.list.map(v => ({str: v.str, idx: v.idx})))
 		};
+
+		if (options.fuzzy.dropdown || options.fuzzy.answer) {
+			this.fuzzy = FuzzySet(this.sorted.list.map(v => v.str));
+			this.reverseMapping = {}
+			this.sorted.list.forEach(v => {
+				this.reverseMapping[v.str] = this.reverseMapping[v.str] || []
+				this.reverseMapping[v.str].push(v.idx)
+			});
+		}
 
 		this.superString = this.list.map(v => v.str).join("$$$");
 
-		this.superStringLookup = [{value: 0}];
+		this.superStringLookup = [{str: 0}];
 
 		for (var i = 0; i < this.list.length; i++) {
-			this.superStringLookup.push({value: this.superStringLookup[i].value + this.list[i].str.length + 3})
+			this.superStringLookup.push({str: this.superStringLookup[i].str + this.list[i].str.length + 3})
 		}
 
 		this.lastQry = "";
@@ -120,7 +140,7 @@ class FilterManager {
 
 
 
-	processResultsFor(str) {
+	processResultsFor(str, fuzzy) {
 		let specialStr = this.onlySpecialChars(str);
 		str = this.cleanString(str);
 
@@ -149,6 +169,12 @@ class FilterManager {
 				this.addResult(this.lastPartialIndex);
 			}
 		}
+
+		this.fuzzySearched = this.results.size == 0 && fuzzy;
+
+		if (this.fuzzySearched) {
+			this.results = new Set(this.fuzzy.get(str).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
+		} 
 	}
 
 	addContainingResults () {
@@ -224,11 +250,11 @@ class FilterManager {
 		}
 	}
 
-	filterBy (str) {
+	filterBy (str, fuzzy) {
 		//console.time(str + " filter")
 
 		if (str.trim().length == 0) return [];
-		this.processResultsFor(str);
+		this.processResultsFor(str, fuzzy);
 		return Array.from(this.results).map(idx => this.list[idx])
 
 		//console.timeEnd(str + " filter")
@@ -237,7 +263,7 @@ class FilterManager {
 	range (data) {
 		var first = this.first(data.list, f => f >= this.lastQry, data.start, data.end);
 
-		if (first < data.end && data.list[first].value.startsWith(this.lastQry)) {
+		if (first < data.end && data.list[first].str.startsWith(this.lastQry)) {
 			return {
 				first: first,
 				last: this.first(data.list, f => !f.startsWith(this.lastQry), first, data.end) - 1,
@@ -255,7 +281,7 @@ class FilterManager {
 	first(array, pred, lo, hi) {
 	    while (lo != hi) {
 	        const mi = lo + ((hi - lo) >> 1);
-	        if (pred(array[mi].value)) {
+	        if (pred(array[mi].str)) {
 	            hi = mi;
 	        } else {
 	            lo = mi + 1;
@@ -301,11 +327,11 @@ if (!isNode) {
 	AmqAwesomeplete.prototype.evaluate = function () {
 		if (this.isAnimeAutocomplete == false) return oldEvaluate.call(this);
 
-		this.filterManager.filterBy(this.input.value);
+		this.suggestions = this.filterManager.filterBy(this.input.value, options.fuzzy.dropdown);
 
-		this.suggestions = this.filterManager.filterBy(this.input.value);
+		this.suggestions = this.suggestions.map((v) => ({v: v, d: this.filterManager.getLastSeen(v.originalStr)}));
 
-		this.suggestions = this.suggestions.map((v) => ({v: v, d: this.filterManager.getLastSeen(v.originalStr)})).sort((a, b) => {
+		if (!this.filterManager.fuzzySearched) this.suggestions = this.suggestions.sort((a, b) => {
 			if (options.sorting == "partial" || options.sorting == "total") {
 				if (a.d != 1 && b.d == 1) return -1;
 				if (a.d == 1 && b.d != 1) return 1;
@@ -321,7 +347,9 @@ if (!isNode) {
 			}
 
 			return 1;
-		}).map(v => new Suggestion(this.data(v.v.originalStr, this.filterManager.lastQry)));
+		})
+
+		this.suggestions = this.suggestions.map(v => new Suggestion(this.data(v.v.originalStr, this.filterManager.lastQry)));
 
 		log(this.suggestions)
 
@@ -355,8 +383,9 @@ if (!isNode) {
 	QuizAnswerInput.prototype.submitAnswer = function () {
 	    try{
 			var awesome = this.autoCompleteController.awesomepleteInstance;
-			if(awesome && awesome.suggestions && awesome.suggestions.length && awesome.input.value.trim() && awesome.suggestions.every(s => awesome.filterManager.cleanString(s.value) != awesome.filterManager.cleanString(awesome.input.value))){
-				awesome.input.value = awesome.suggestions[0].value;
+
+			if(awesome && awesome.suggestions && awesome.input.value.trim() && awesome.suggestions.every(s => awesome.filterManager.cleanString(s.value) != awesome.filterManager.cleanString(awesome.input.value)) && (awesome.suggestions.length || (!options.fuzzy.dropdown && options.fuzzy.answer))) {
+				awesome.input.value = awesome.suggestions.length ? awesome.suggestions[0].value : awesome.filterManager.filterBy(awesome.input.value, true)[0].originalStr;
 			}
 		} catch (ex) {
 	        console.log(ex);
@@ -485,20 +514,30 @@ function removeDiacritics (str) {
 }
 
 if (isNode) {
-	let l = new FilterManager(["asd", "asd!", "asd!!*hi"], 15);
+	storedData["oh my kokoro"] = new Date().getTime()
+
+	let l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro"], 15);
 
 	escapeRegExp = (v) => v;
-	search = (str, len) => {
-		s = l.filterBy(str);
-		if (s.length != len) {
+	search = (str, len, first, fuzzy) => {
+		s = l.filterBy(str, fuzzy);
+		if (s.length != len || first !== s[0].originalStr) {
 			console.log(s, str, len)
 		}
+		return s
 	}
 
-	search("s", 3)
-	search("!s", 2)
-	search("*", 1)
-	search("*!", 1)
-	search("!*", 1)
-	search("!asd!*hi", 1)
+	expect = (s, str) => {
+		if (l.filterBy(s)[0] !== str) console.log(str)
+	}	
+
+	search("s", 3, "asd")
+	search("!s", 2, "asd!")
+	search("*", 1, "asd!!*hi")
+	search("*!", 1, "asd!!*hi")
+	search("!*", 1, "asd!!*hi")
+	search("!asd!*hi", 1, "asd!!*hi")
+	search("ko", 2, "kokoro")
+	search("kororo", 2, "kokoro", true)
+	search("ads", 3, "asd", true)
 }
