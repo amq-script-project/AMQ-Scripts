@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.18
+// @version      1.19
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -30,7 +30,8 @@ var options = {
 	fuzzy: {
 		dropdown: true, // whether to show fuzzy matches if no matches found
 		answer: true, // whether to use top fuzzy match on round end as answer if no matches found
-	}
+	},
+	addEntries: true // whether to allow oo, ou and uu as ō/ū
 }
 
 var debug = false;
@@ -48,6 +49,7 @@ if (!isNode && window.localStorage) {
 class FilterManager {
 	constructor (list, limit) {
 		this.list = list.filter(v => v.trim().length).map((v, idx) => ({str: this.cleanString(v), idx: idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: v}));
+		this.addEntries();
 		this.limit = limit
 		this.specialChars = {}
         this.now = new Date(); this.now.setDate(this.now.getDate() - options.daysToRemember);
@@ -83,6 +85,24 @@ class FilterManager {
 		this.lastSpecialStr = "";
 		this.results = new Set();
 		this.reset();
+	}
+
+	addEntries() {
+		if (!options.addEntries) return;
+
+        this.list.filter(e => e.originalStr.includes('ō') || e.originalStr.includes('ū')).forEach(e => {
+            let additional = [""];
+			for (let i = 0; i < e.originalStr.length; i++) {
+			    if (e.originalStr[i] == 'ō') {
+				   additional = additional.map(s => s + 'oo').concat(additional.map(s => s + 'ou'));
+				} else if (e.originalStr[i] == 'ū') {
+                   additional = additional.map(s => s + 'uu');
+				} else {
+				   additional = additional.map(s => s + e.originalStr[i]);
+				}
+			}
+			this.list = this.list.concat(additional.map((v, idx) => ({str: this.cleanString(v), idx: this.list.length + idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: e.originalStr})));
+		});
 	}
 
 	getLastSeen(anime) {
@@ -174,7 +194,7 @@ class FilterManager {
 
 		if (this.fuzzySearched) {
 			this.results = new Set(this.fuzzy.get(str).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
-		} 
+		}
 	}
 
 	addContainingResults () {
@@ -529,7 +549,7 @@ if (isNode) {
 
 	expect = (s, str) => {
 		if (l.filterBy(s)[0] !== str) console.log(str)
-	}	
+	}
 
 	search("s", 3, "asd")
 	search("!s", 2, "asd!")
