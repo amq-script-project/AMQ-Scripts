@@ -368,6 +368,10 @@ if (!isNode) {
 
 			return 1;
 		})
+		const thing = this.suggestions.map(v => v.v.originalStr) //get all the original strings
+		const thingSet = new Set(thing) //create a set of the strings, removing duplicates
+		const thingSetArray = Array.from(thingSet.keys()) //turn set into array
+		this.suggestions = thingSetArray.map(k => this.suggestions.find(v => v.v.originalStr === k)) //map the original strings back to the suggestions
 
 		this.suggestions = this.suggestions.map(v => new Suggestion(this.data(v.v.originalStr, this.filterManager.lastQry)));
 
