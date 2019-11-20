@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.19
+// @version      1.20
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -49,10 +49,12 @@ if (!isNode && window.localStorage) {
 class FilterManager {
 	constructor (list, limit) {
 		this.list = list.filter(v => v.trim().length).map((v, idx) => ({str: this.cleanString(v), idx: idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: v}));
-		this.addEntries();
 		this.limit = limit
 		this.specialChars = {}
         this.now = new Date(); this.now.setDate(this.now.getDate() - options.daysToRemember);
+
+		this.addEntries();
+		this.list.forEach(v=> v.originalIndex = v.idx);
 
 		if (options.sortList) {
             this.list = this.sortBySeen(this.list);
@@ -84,6 +86,13 @@ class FilterManager {
 		this.lastQry = "";
 		this.lastSpecialStr = "";
 		this.results = new Set();
+		this.originalIndexResults = new Set();
+
+		this.partialContext = {limit: limit, superString: this.superString, superStringLookup: this.superStringLookup, first: this.first}
+		this.partialContext.addResult = (idx) => {
+			if (this.partialMatches(idx)) this.addResult(idx);
+		}
+
 		this.reset();
 	}
 
@@ -101,7 +110,7 @@ class FilterManager {
 				   additional = additional.map(s => s + e.originalStr[i]);
 				}
 			}
-			this.list = this.list.concat(additional.map((v, idx) => ({str: this.cleanString(v), idx: this.list.length + idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: e.originalStr})));
+			this.list = this.list.concat(additional.map((v, idx) => ({str: this.cleanString(v), idx: e.idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: e.originalStr})));
 		});
 	}
 
@@ -124,7 +133,7 @@ class FilterManager {
 	}
 
 	onlySpecialChars(str) {
-	    return removeDiacritics(str).replace(/[\w\s]/gi, '').split('').sort().join('');
+	    return str.replace(/[\w\s]/gi, '').split('').sort().join('');
 	}
 
 	alphabeticalSort (list) {
@@ -142,8 +151,10 @@ class FilterManager {
 		this.sorted.end = this.sorted.list.length;
 
 		this.lastIndex = 0;
-		this.lastPartialIndex = 0;
 		this.results.clear()
+		this.originalIndexResults.clear();
+		this.partialContext.lastIndex = 0;
+		this.lastSpecialIndex = 0
 	}
 
 	checkOldResults () {
@@ -155,6 +166,8 @@ class FilterManager {
 		}
 
         this.results = new Set();
+        this.originalIndexResults = new Set();
+
 		results.forEach(idx => this.addResult(idx));
 	}
 
@@ -179,14 +192,15 @@ class FilterManager {
 
 			this.addContainingResults();
 
-			if (options.allowDifferentOrder) {
-				for (; this.lastPartialIndex < this.list.length && this.results.size < this.limit; this.lastPartialIndex++) {
-					if (this.partialMatches(this.lastPartialIndex)) this.addResult(this.lastPartialIndex);
-				}
+			if (options.allowDifferentOrder && this.lastQrySplit.length >= 2) {
+				this.partialContext.lastQry = this.lastQrySplit[0];
+				this.partialContext.results = this.results;
+				this.partialContext.originalIndexResults = this.originalIndexResults;
+				this.addContainingResults.call(this.partialContext);
 			}
 		} else if (this.lastSpecialStr.length) {
-			for (; this.lastPartialIndex < this.list.length && this.results.size < this.limit; this.lastPartialIndex++) {
-				this.addResult(this.lastPartialIndex);
+			for (; this.lastSpecialIndex < this.list.length && this.originalIndexResults.size < this.limit; this.lastSpecialIndex++) {
+				this.addResult(this.lastSpecialIndex);
 			}
 		}
 
@@ -194,6 +208,7 @@ class FilterManager {
 
 		if (this.fuzzySearched) {
 			this.results = new Set(this.fuzzy.get(str).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
+			this.originalIndexResults = new Set(Array.from(this.results).map(idx => this.list[idx].originalIndex));
 		}
 	}
 
@@ -202,7 +217,7 @@ class FilterManager {
 		re.lastIndex = this.lastIndex
 		var match;
 
-		while (this.results.size < this.limit && (match = re.exec(this.superString))) {
+		while (this.originalIndexResults.size < this.limit && (match = re.exec(this.superString))) {
    			var idx = this.first(this.superStringLookup, v => v > match.index, 0, this.superStringLookup.length) - 1
    			this.addResult(idx);
    			this.lastIndex = re.lastIndex
@@ -244,7 +259,10 @@ class FilterManager {
 	}
 
 	addResult(idx) {
-	    if (this.specialMatches(idx)) this.results.add(idx);
+	    if (this.specialMatches(idx)) {
+	    	this.results.add(idx);
+	    	this.originalIndexResults.add(this.list[idx].originalIndex)
+	    }
 	}
 
 	matches (currentIndex, matches, used) {
@@ -265,19 +283,30 @@ class FilterManager {
 	}
 
 	addResults (range) {
-		for (var i = range.first; i <= range.last && this.results.size < this.limit; i++) {
+		for (var i = range.first; i <= range.last && this.originalIndexResults.size < this.limit; i++) {
 			this.addResult(range.list[i].idx);
 		}
 	}
 
 	filterBy (str, fuzzy) {
-		//console.time(str + " filter")
+		if(debug) console.time(str + " filter")
 
 		if (str.trim().length == 0) return [];
 		this.processResultsFor(str, fuzzy);
-		return Array.from(this.results).map(idx => this.list[idx])
 
-		//console.timeEnd(str + " filter")
+		let results = [];
+		let s = new Set();
+
+		for (let idx of this.results) {
+			if (!s.has(this.list[idx].originalIndex)) {
+				results.push(this.list[idx]);
+				s.add(this.list[idx].originalIndex)
+			}
+		}
+
+		return results
+
+		if(debug) console.timeEnd(str + " filter")
 	}
 
 	range (data) {
@@ -536,7 +565,7 @@ function removeDiacritics (str) {
 if (isNode) {
 	storedData["oh my kokoro"] = new Date().getTime()
 
-	let l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro"], 15);
+	let l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro", "ktrōk"], 15);
 
 	escapeRegExp = (v) => v;
 	search = (str, len, first, fuzzy) => {
@@ -560,4 +589,7 @@ if (isNode) {
 	search("ko", 2, "kokoro")
 	search("kororo", 2, "kokoro", true)
 	search("ads", 3, "asd", true)
+	search("ktr", 1, "ktrōk")
+
+	module.exports = {FilterManager}
 }
