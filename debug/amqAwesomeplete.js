@@ -1,4 +1,6 @@
-Awesomplete = require('Awesomplete')
+isNode = typeof window === 'undefined';
+
+if (isNode) Awesomplete = require('Awesomplete')
 
 'use strict';
 /*exported  AmqAwesomeplete*/
@@ -62,6 +64,7 @@ function AmqAwesomeplete(input, o, scrollable) {
 	});
 
 	this.currentQuery = "";
+	this.$ul = $(this.ul);
 
 	if (scrollable) {
 		let $input = $(input);
@@ -91,7 +94,35 @@ function AmqAwesomeplete(input, o, scrollable) {
 AmqAwesomeplete.prototype = Object.create(Awesomplete.prototype);
 AmqAwesomeplete.prototype.constructor = AmqAwesomeplete;
 
-AmqAwesomeplete.prototype.create = (a, b) => b;
+AmqAwesomeplete.prototype.create = (tag, o) => {
+	if (isNode) return o;
+	var element = document.createElement(tag);
+
+	for (var i in o) {
+		var val = o[i];
+
+		if (i === "inside") {
+			$(val).appendChild(element);
+		}
+		else if (i === "around") {
+			var ref = $(val);
+			ref.parentNode.insertBefore(element, ref);
+			element.appendChild(ref);
+
+			if (ref.getAttribute("autofocus") != null) {
+				ref.focus();
+			}
+		}
+		else if (i in element) {
+			element[i] = val;
+		}
+		else {
+			element.setAttribute(i, val);
+		}
+	}
+
+	return element;
+}
 
 
 AmqAwesomeplete.prototype.evaluate = function () {
@@ -134,6 +165,26 @@ AmqAwesomeplete.prototype.evaluate = function () {
 				this.suggestions = this.suggestions.slice(0, this.maxItems);
 
 				resolve(this.suggestions);
+
+				if (!isNode) {
+					this.$ul.children('li').remove();
+
+					for (let i = this.suggestions.length - 1; i >= 0; i--) {
+						let text = this.suggestions[i];
+						me.ul.insertBefore(me.item(text, value, i), me.ul.firstChild);
+					}
+
+					if (this.ul.children.length === 0) {
+
+						this.status.textContent = "No results found";
+
+						this.close({ reason: "nomatches" });
+
+					} else {
+						this.open();
+						this.status.textContent = this.ul.children.length + " results found";
+					}
+				}
 				
 			}.bind(this);
 
@@ -285,4 +336,11 @@ function createAnimeSearchRegexQuery(query) {
 	return escapedValue;
 }
 
-module.exports = {AmqAwesomeplete, createAnimeSearchRegexQuery}
+
+class QuizAnswerInput {
+	bindListener() {}
+}
+
+Listener = QuizAnswerInput
+
+if (isNode) module.exports = {AmqAwesomeplete, createAnimeSearchRegexQuery}

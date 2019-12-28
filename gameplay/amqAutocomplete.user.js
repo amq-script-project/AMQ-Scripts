@@ -13,7 +13,7 @@
 
 let isNode = typeof window === 'undefined';
 
-if (!isNode && typeof Listener === 'undefined') return;
+if (!isNode && typeof Listener === 'undefined') throw "rip";
 
 if (isNode) {
 	FuzzySet = require('fuzzyset.js')
