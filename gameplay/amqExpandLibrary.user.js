@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Expand Library
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Makes it more ugly and efficient
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
@@ -53,7 +53,7 @@ ExpandQuestionList.prototype.updateScrollLayout = function () {}
 
 GM_addStyle(`
 .elQuestion.open .elQuestionSongContainer {
-    display:initial;
+    display:block;
 }
 
 .elQuestionSongContainer {
