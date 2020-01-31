@@ -207,7 +207,7 @@ class FilterManager {
 		this.fuzzySearched = this.results.size == 0 && fuzzy;
 
 		if (this.fuzzySearched) {
-			this.results = new Set(this.fuzzy.get(str).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
+			this.results = new Set((this.fuzzy.get(str) || []).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
 			this.originalIndexResults = new Set(Array.from(this.results).map(idx => this.list[idx].originalIndex));
 		}
 	}
