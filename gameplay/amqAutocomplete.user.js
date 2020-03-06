@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.20
+// @version      1.21
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -548,12 +548,24 @@ var defaultDiacriticsRemovalMap = [
 
 var diacriticsMap = {};
 
-for (var i=0; i < defaultDiacriticsRemovalMap .length; i++){
-    var letters = defaultDiacriticsRemovalMap [i].letters;
+for (var i=0; i < defaultDiacriticsRemovalMap.length; i++){
+    var letters = defaultDiacriticsRemovalMap[i].letters;
     for (var j=0; j < letters.length ; j++){
-        diacriticsMap[letters[j]] = defaultDiacriticsRemovalMap [i].base;
+        diacriticsMap[letters[j]] = defaultDiacriticsRemovalMap[i].base;
     }
 }
+
+diacriticsMap["×"] = "x";
+diacriticsMap["³"] = "3";
+diacriticsMap["ß"] = "b";
+diacriticsMap["–"] = "-";
+diacriticsMap["²"] = "2";
+diacriticsMap["’"] = "'";
+diacriticsMap["@"] = "a";
+diacriticsMap["æ"] = "a";
+diacriticsMap["ñ"] = "n";
+
+
 
 // "what?" version ... http://jsperf.com/diacritics/12
 function removeDiacritics (str) {
@@ -590,6 +602,9 @@ if (isNode) {
 	search("kororo", 2, "kokoro", true)
 	search("ads", 3, "asd", true)
 	search("ktr", 1, "ktrōk")
+
+	l = new FilterManager(["Kiss×sis"], 15)
+	search("kissx", 1, "Kiss×sis")
 
 	module.exports = {FilterManager}
 }
