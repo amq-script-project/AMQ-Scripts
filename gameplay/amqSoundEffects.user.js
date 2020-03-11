@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Sound Effects
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.2.0
 // @description  Makes the game a lot noisier
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -24,14 +24,19 @@ function mention() {
     snd.play();
 }
 
+function dm() {
+    var snd = new Audio("data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjM1LjEwNAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAAEgAAAo0AUVFRUVFcXFxcXFxmZmZmZnBwcHBwcHp6enp6hISEhISEj4+Pj4+ZmZmZmZmjo6Ojo66urq6urri4uLi4uMLCwsLCzMzMzMzM1tbW1tbh4eHh4eHr6+vr6/X19fX19f//////AAAAAExhdmM1OC42NgAAAAAAAAAAAAAAACQDzAAAAAAAAAKNBvqRDQAAAAAAAAAAAAAAAAD/8xDEAAMoUngBQgAA//qc7hAMDAgIaw/ggP/zEsQAA0i25AGBOAD//7MaTaFX75uIG5vLgP/zEMQAAwiW3EHKOAAwP//4vDY47/0JAicA//MQxAAC0KbsYABEoRQNC2If/wonDnCC0wD/8xDEAAMIntGAAFqBADMI+ZBrdH//UEkKgP/zEMQAAsimzAADVKCVhZLPRv/nngNiYqYA//MQxAACsKbcIAIOpkM0hKBUrX/8JxJZMQT/8xDEAAKYosgAAJqghBAUEC3/WvgnJumIIP/zEMQAAoCe3GAAChMACRkh//roAQTBTEFN//MSxAADCKLuQABEgQABkAveCeP/8G+MyyYA//MQxAAC4J7uYACKiAABwOTDSmG/61fANMD/8xDEAALAosxgAIypAA8M4Qj//wvuIzNMQf/zEMQAAtiiyeABUIwAAW+g8YBP/+9AUqmA//MQxAACkJ7AYAFOoSALgwSDP/0zgmxTEED/8xDEAAKQnqQAAY6gl1gwFDv+qGsPi1MQQP/zEMQAAtimkCACkKgKmnuCCd//alAAn0mA//MQxAACmKJ0AACSqJgYkMP/6lLlgSNJiCD/8xLEAAGwAkSAAEYCAAmv//xWZTEFNRQAAAA=");
+    snd.play();
+}
 
 
 new Listener("Room Settings Changed", (changes) => { settings_changed()}).bindListener()
 new Listener("Game Chat Message", function (payload) {
-		if (!socialTab.isBlocked(payload.sender)) {
-            //this.chatMessage(payload.sender, payload.message, payload.emojis, payload.badges, payload.messageId, payload.atEveryone);
-            if (gameChat.atSelfRegex.test(payload.message) || payload.atEveryone) {
-                mention();
-            }
-		}
-	}).bindListener()
+    if (!socialTab.isBlocked(payload.sender)) {
+        //this.chatMessage(payload.sender, payload.message, payload.emojis, payload.badges, payload.messageId, payload.atEveryone);
+        if (gameChat.atSelfRegex.test(payload.message) || payload.atEveryone) {
+            mention();
+        }
+    }
+}).bindListener()
+new Listener("chat message", function (payload) { dm() }).bindListener();
