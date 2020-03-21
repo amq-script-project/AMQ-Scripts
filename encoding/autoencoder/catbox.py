@@ -2,6 +2,7 @@ import requests
 import datetime
 import os
 import re
+import sys
 
 def upload(file):
     host = "https://catbox.moe/user/api.php"
@@ -63,7 +64,7 @@ def upload_from_url(url):
 
 userhash = None
 try:
-    with open("catbox.config") as file:
+    with open(sys.path[0] + os.sep + "catbox.config") as file:
         match = re.search("userhash" + r"\s?=[ \t\r\f\v]*(.+)$", file.read(), re.I | re.M)
         if match is None:
             print("catbox.py: no userhash present")

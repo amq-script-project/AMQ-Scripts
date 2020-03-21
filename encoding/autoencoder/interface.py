@@ -13,10 +13,11 @@ from autoconvert import autoconvert
 from autorescheck import autorescheck
 import os
 import re
+import sys
 
 upload = False
 try:
-    with open("interface.config") as file:
+    with open(sys.path[0] + os.sep + "interface.config") as file:
         match = re.search("upload" + r"\s?=[ \t\r\f\v]*(true|false)$", file.read(), re.I | re.M)
         if match is None:
             print("interface.py: upload defaults to FALSE")
