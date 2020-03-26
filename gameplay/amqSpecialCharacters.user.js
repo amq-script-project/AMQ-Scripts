@@ -5,6 +5,8 @@
 // @description  Gives shortkeys for special characters
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
+// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqSpecialCharacters.user.js
+// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqSpecialCharacters.user.js
 // @grant        none
 // @copyright MIT license
 // ==/UserScript==
