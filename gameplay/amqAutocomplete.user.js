@@ -355,7 +355,7 @@ if (!isNode) {
 
 	AmqAwesomeplete = function(input, o) {
 		oldProto.constructor.apply(this, Array.from(arguments))
-		this.isAnimeAutocomplete = this._list.indexOf("Lain") != -1;
+		this.isAnimeAutocomplete = this._list.indexOf("Serial Experiments Lain") != -1;
 		if (this.isAnimeAutocomplete) this.preprocess();
 	}
 
