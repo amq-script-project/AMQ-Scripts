@@ -5,6 +5,8 @@ if (isNode) Awesomplete = require('Awesomplete')
 'use strict';
 /*exported  AmqAwesomeplete*/
 
+$ = (v) => v
+
 function AmqAwesomeplete(input, o, scrollable) {
 	o.filter = (text, input) => {
 		return RegExp(input.trim(), "i").test(text);

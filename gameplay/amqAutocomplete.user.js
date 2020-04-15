@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.21
+// @version      1.22
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -193,7 +193,7 @@ class FilterManager {
 			this.addContainingResults();
 
 			if (options.allowDifferentOrder && this.lastQrySplit.length >= 2) {
-				this.partialContext.lastQry = this.lastQrySplit[0];
+				this.partialContext.lastQry = this.lastQrySplit.sort((a, b) => b.length - a.length)[0];
 				this.partialContext.results = this.results;
 				this.partialContext.originalIndexResults = this.originalIndexResults;
 				this.addContainingResults.call(this.partialContext);
@@ -247,11 +247,9 @@ class FilterManager {
 	specialMatchesStr(qry, strToMatch) {
 	    let curIdx = 0;
 
-		for (let i = 0; strToMatch && i < strToMatch.length && curIdx < qry.length; i++) {
+		for (let i = 0; strToMatch && i < strToMatch.length && curIdx < qry.length && strToMatch[i] <= qry[curIdx]; i++) {
 		    if (strToMatch[i] == qry[curIdx]) {
 			    curIdx++;
-			} else if (strToMatch[i] > qry[curIdx]) {
-			    break;
 			}
 		}
 
@@ -268,17 +266,15 @@ class FilterManager {
 	matches (currentIndex, matches, used) {
 		if (currentIndex == matches.length) return true;
 
-		var result = false;
-
 		for (var i = 0; i < matches[0].length; i++) {
 			if (!used[i] && matches[currentIndex][i]) {
 				used[i] = true;
-				result |= this.matches(currentIndex + 1, matches, used);
+				if (this.matches(currentIndex + 1, matches, used)) return true;
 				used[i] = false;
 			}
 		}
 
-		return result;
+		return false;
 
 	}
 

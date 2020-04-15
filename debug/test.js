@@ -30,7 +30,7 @@ function hrtime(arg) {
 		filterManager = new FilterManager(list, amq.maxItems)
 		console.info("my setup " + ms(hrtime(t)))
 
-		let searches = ["shingeki", "art", "ouooouooou", "ōōōōō", "ooo"];
+		let searches = ["shingeki", "art", "ouooouooou", "ōōōōō", "ooo", "Angel Beats"];
 
 		console.log(list.length, amq.maxItems, filterManager.list.length)
 
@@ -47,7 +47,7 @@ function hrtime(arg) {
 			    	let t4 =  hrtime(t3)
 			    	console.info(amq.input.value + ' amq ' + ms(t2) + ' mine ' + ms(t4)) 
 
-			    	if (results.length != results2.length && amq.input.value != 'ōō') console.log(results.length, results2.length, results, results2)	
+			    	if (results.length != results2.length && (amq.input.value != 'ōō' && s != "Angel Beats")) console.log(results.length, results2.length, amq.input.value, results, results2)	
 				} catch (ex) {console.log(ex)}
 			}
 		}
