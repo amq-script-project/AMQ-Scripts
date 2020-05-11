@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Background script
 // @namespace    http://tampermonkey.net/
-// @version      3.3
+// @version      3.5
 // @description  Adds multiple custom background to amq or even a video. Tried to include as many selectors as possible, so remove the ones where you prefer to have original background
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
@@ -27,6 +27,7 @@ let onManualChange = (key) => {
 	});
 }
 
+let defaultOpacity = 0.5;
 
 let options = {
 	images: [
@@ -43,14 +44,12 @@ let options = {
 		{
 		    selector: "div.lobbyAvatarImgContainer",
 			description: "dots in game lobby",
-			opacity: 0.7,
-			enabled: true
+			opacity: 0.7
 		},
 		{
 		    selector: "#mpDriveStatsContainer>.col-xs-6 .floatingContainer",
 			description: "avatar drive entries",
-			opacity: 0.5,
-			enabled: true,
+			opacity: defaultOpacity,
 			css: `.mpDriveEntryName::after {
                       width: 0px;
                  }
@@ -62,91 +61,66 @@ let options = {
 		{
 		    selector: "#mpAvatarDriveContainer",
 			description: "dots in game lobby",
-			opacity: 0.5,
-			enabled: true
+			opacity: defaultOpacity
 		},
 		{
 		    selector: ".qpAvatarImgContainer",
 			description: "backgound of avatar image in quiz",
-			enabled: true,
 			css: `.qpAvatarImgContainer {
                        box-shadow:none;
                    }`
 		},
 		{
 		    selector: "#gameChatPage > .col-xs-9",
-			description: "quiz main screen",
-			enabled: true
+			description: "quiz main screen"
 		},
 		{
             selector: "#gameChatContainer, .gcInputContainer, .gcList > li:nth-child(2n)",
 			description: "quiz chat",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
             selector: ".rbRoom, .rbrRoomImageContainer",
 			description: "rooms to choose",
-			enabled: true,
-			opacity: 0.5,
+			opacity: defaultOpacity,
 			css: `.rbrRoomImageContainer {
                       background-color: transparent !important;
                   }`
 		},
 		{
             selector: "#mainMenuSocailButton",
-		    description: "friends/social button (bottom left)",
-		    enabled: true
+		    description: "friends/social button (bottom left)"
 		},
 		{
             selector: "#avatarUserImgContainer",
-		    description: "avatar background (bottom right)",
-		    enabled: true
+		    description: "avatar background (bottom right)"
 		},
 		{
             selector: ".topMenuBar",
-		    description: "top menu",
-		    enabled: true
+		    description: "top menu"
 		},
 		{
 		    selector: ".awSkinPreviewButtom, .awSkinPreview",
-			description: "unlock/change avatar preview",
-			enabled: true
+			description: "unlock/change avatar preview"
 		},
 		{
 		    selector: "#footerMenuBarBackground, #rightMenuBarPartContainer::before",
-			description: "bottom menu",
-			enabled: true
-		},
-        {
-		    selector: "#mpLeaderboardButton",
-			description: "show leaderboard button main screen",
-			enabled: true,
-			opacity: 0.5
-		},
-        {
-		    selector: "#mpRankedButton",
-			description: "play Ranked button main screen",
-			enabled: true,
-			opacity: 0.5
+			description: "bottom menu"
 		},
 		{
 		    selector: "#mpPlayButton",
 			description: "play button main screen",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#mpExpandButton",
 			description: "expand button main screen",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#mpAvatarDriveContainer, #mpAvatarDriveHeaderShadowHider .floatingContainer",
 			description: "avatar drive container main screen",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#mpDriveDonationContainer .button",
@@ -161,14 +135,12 @@ let options = {
 		{
 		    selector: "#mpNewsContainer, #mpNewsTitleShadowHider div",
 			description: "news main menu",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#mpNewSocailTab .leftRightButtonTop, #mpPatreonContainer, .startPageSocailIcon",
 			description: "main menu black backgrounds near news",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#rbMajorFilters",
@@ -188,14 +160,12 @@ let options = {
 		{
 		    selector: "#qpAnimeContainer div:first-child .qpSideContainer",
 			description: "standings menu in quiz",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: ".qpAvatarInfoContainer > div, .qpAvatarAnswerContainer",
 			description: "name/guess near avatar image in quiz",
-			enabled: true,
-			opacity: 0.5,
+			opacity: defaultOpacity,
 			css: `.qpAvatarInfoContainer > div {
                       box-shadow:none;
                   }`
@@ -203,49 +173,42 @@ let options = {
 		{
 		    selector: "#qpInfoHider, .col-xs-6 + .col-xs-3 .container.qpSideContainer.floatingContainer, .col-xs-3 .qpSingleRateContainer",
 			description: "song info in quiz",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#qpAnimeNameHider, .qpAnimeNameContainer, #qpCounter",
 			description: "anime name answer top menu in quiz",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#qpVideoHider, #qpVideoOverflowContainer",
 			description: "video counter/sound only background",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#socailTabFooter > .selected, #socialTab",
 			description: "friends online menu",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: ".lobbyAvatarTextContainer",
 			description: "username/level text lobby",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#startPageCenter",
 			description: "login screen",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		},
 		{
 		    selector: "#startPageLogoContainer",
 			description: "login screen logo",
-			enabled: true,
-			opacity: 0.5
+			opacity: defaultOpacity
 		}
 	]
 }
 
-let transparents = options.transparent.filter(opt => opt.enabled);
+let transparents = options.transparent.filter(opt => opt.enabled !== false);
 
 function changeBackground() {
     this.index = ((this.index || 0) + 1) % options.images.length;
@@ -257,8 +220,7 @@ let template = $(`<div id="custom-background"></div>`);
 
 if (options.video.enabled) {
 	template.append(`<video autoplay loop muted><source src="${options.video.url}"></video>`);
-} else {
-    images = [""]
+	options.images = [""];
 }
 
 $("#mainContainer").append(template);
@@ -302,15 +264,17 @@ if (loggedIn) {//we are logged in
 		this.$bufferingScreen.siblings().css("visibility", "visible");
 	});
 
-	extend(AvatarWindow, "closeWindow", function () {
-		$("#custom-background").css("z-index", -1);
-		$("#avatarWindow").css("z-index", -1);
+	extend(StoreWindow, "toggle", function () {
+		if (this.open) {
+			$("#custom-background").css("z-index", 10);
+			$("#storeWindow").css("z-index", 11);
+		} else {
+			$("#custom-background").css("z-index", -1);
+			$("#storeWindow").css("z-index", -1);
+		}
 	});
 
-	extend(AvatarWindow, "showWindow", function () {
-		$("#custom-background").css("z-index", 10);
-		$("#avatarWindow").css("z-index", 11);
-	});
+
 
 	let loadingScreenStateChange = function () {
 	    if ($(this).attr("id") == "loadingScreen") {
@@ -385,7 +349,7 @@ ${transparents.map(obj => `
     background-position: 0px !important;
 }
 
-#mainContainer > *, #awMainView, #avatarWindow, #startPage, #loadingScreen {
+#mainContainer > *, #awMainView, #storeWindow, #startPage, #loadingScreen {
     background: none;
 }
 
