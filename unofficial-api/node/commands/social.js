@@ -36,7 +36,7 @@ class Social extends Commands {
 		this._sendCommand({type:"social",command:"invite to game", data: {target}})										
 	}
 
-	addFriend(taget) {
+	addFriend(target) {
 		this._sendCommand({type:"social",command:"friend request", data: {target}})														
 	}
 
