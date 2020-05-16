@@ -29,7 +29,7 @@ async function getToken(user, pass, path = 'data.json') {
 	
 	await fs.writeFile(path, JSON.stringify(data));
 
-	return data.token;
+	return JSON.parse(data.token);
 }
 
 class Listener {
@@ -71,13 +71,13 @@ class SocketWrapper {
 
 	connect(token) {
 		return new Promise((resolve, reject) => {
-			this.socket = io.connect(URL.socket, {
+			this.socket = io.connect(URL.socket + ":" + token.port , {
 								reconnection: true,
 								reconnectionDelay: 1000,
 								reconnectionDelayMax: 2000,
 								reconnectionAttempts: 3,
 								query: {
-									token: token
+									token: token.token
 								}
 							});
 			this.socket.on('sessionId', (sessionId) => {
@@ -100,7 +100,7 @@ class SocketWrapper {
 			this.socket.on('reconnect_attempt', () => {
 				console.log("Attempting to reconnect: " + this.sessionId);
 				this.socket.io.opts.query = {
-					session: sessionId
+					session: this.sessionId
 				};
 			});
 
