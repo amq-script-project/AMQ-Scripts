@@ -402,6 +402,8 @@ def autoconvert(inputfile, targetResolution, animeTitle, songType="",
     command = '%s "%s" --output=Video;%%FrameRate%%' % (mediainfo, inputfile)
     process = os.popen(command)
     framerate = process.read()  # from previous cmd
+    if not framerate:
+        framerate = "24"
     stillimage = False
     if framerate == "1.000":
         stillimage = True
@@ -447,6 +449,8 @@ def autoconvert(inputfile, targetResolution, animeTitle, songType="",
             mediainfo, dummyfile)
         process = os.popen(command)
         framerate = process.read()  # from previous cmd
+        if not framerate:
+            framerate = "24"
     # start = "-ss 0"#default placeholder value
     # end = "-to 9999"#default placeholder value
     currentstart = start
