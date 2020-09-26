@@ -40,8 +40,8 @@ class Quiz extends Commands {
 }
 
 class QuizChat extends Commands {
-	send(msg) {
-		this._sendCommand({type:"lobby",command:"game chat message", data: {msg}});																		
+	send(msg, teamMessage=false) {
+		this._sendCommand({type:"lobby",command:"game chat message", data: {msg: msg, teamMessage: teamMessage}});																		
 	}
 
 	ban(msg) {
