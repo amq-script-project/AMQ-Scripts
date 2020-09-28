@@ -72,6 +72,10 @@ class Settings extends Commands {
 	updateAutoSwitchFavoritedAvatars(switchState) {
 		this._sendCommand({type:"settings",command:"update auto switch avatars", data: {switchState}})																				
 	}
+
+	sendGameState(inGame, inExpand, inMain) {
+		this._sendCommand({type:"settings",command:"update auto switch avatars", data: {inGame, inExpand, inMain}})
+	}
 }
 
 module.exports = Settings;
