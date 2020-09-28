@@ -30,6 +30,10 @@ class Quiz extends Commands {
 		this._sendCommand({type:"quiz",command:"song feedback", data});																
 	}
 
+	videoHiddenFeedback(hidden) {
+		this._sendCommand({type:"quiz",command:"video hidden feedback", data: {hidden}});	
+	}
+
 	skip(skipVote) {
 		this._sendCommand({type:"quiz",command:"skip vote", data: {skipVote}});																
 	}
