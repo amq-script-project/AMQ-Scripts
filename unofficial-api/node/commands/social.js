@@ -59,6 +59,10 @@ class Social extends Commands {
 	modStrike(strikeType, reason, target) {
 		this._sendCommand({type:"social",command:"mod strike", data: {strikeType, reason, target}})																
 	}
+
+	unlockEmote(emoteId) {
+		this._sendCommand({type:"avatar",command:"unlock emote", data: {emoteId}})
+	}
 }
 
 
