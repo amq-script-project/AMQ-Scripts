@@ -67,6 +67,10 @@ class Profile extends Commands {
 		return this._sendCommand({type:"social",command:"player profile",data:{name: name}}, EVENTS.PLAYER_PROFILE, name)
 	}	
 
+	setImage(avatarImage=undefined, emoteId=undefined) {
+		this._sendCommand({type:"social",command:"player profile set image", data: {avatarImage, emoteId}})				
+	}
+
 	showBadge(slotNumber, badgeId) {
 		this._sendCommand({type:"social",command:"player profile show badge", data: {slotNumber, badgeId}})				
 	}
