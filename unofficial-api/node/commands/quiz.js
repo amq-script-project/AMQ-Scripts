@@ -33,6 +33,10 @@ class Quiz extends Commands {
 	videoHiddenFeedback(hidden) {
 		this._sendCommand({type:"quiz",command:"video hidden feedback", data: {hidden}});	
 	}
+	
+	videoError(songId, host, resolution) {
+		this._sendCommand({type:"quiz",command:"video error", data: {songId, host, resolution}});	
+	}
 
 	skip(skipVote) {
 		this._sendCommand({type:"quiz",command:"skip vote", data: {skipVote}});																
