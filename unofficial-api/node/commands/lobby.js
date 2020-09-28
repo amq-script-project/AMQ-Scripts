@@ -19,13 +19,20 @@ class Lobby extends Commands {
 	}
 	
 	leaveTeam() {
-		this._sendCommand({type:"lobby",command:"leave team"});	
+		this._sendCommand({type:"lobby",command:"leave team"});
 	}
 
 	joinTeam(teamNumber) {
-		this._sendCommand({type:"lobby",command:"join team", data: {teamNumber}});		
+		this._sendCommand({type:"lobby",command:"join team", data: {teamNumber}});
 	}
 
+	leaveGame() {
+		this._sendCommand({type:"lobby",command:"leave game"});
+	}
+
+	hostAfk() {
+		this._sendCommand({type:"lobby",command:"host afk"});
+	}
 
 	changeSettings(data) {
 		this._sendCommand({type:"lobby",command:"change game settings", data});																		
