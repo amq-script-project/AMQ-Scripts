@@ -47,6 +47,14 @@ class Quiz extends Commands {
 	voteReturn(accept) {
 		this._sendCommand({type:"quiz",command:"return lobby vote", data: {accept}});																		
 	}
+
+	pause() {
+		this._sendCommand({type:"quiz",command:"quiz pause"});
+	}
+	
+	unpause() {
+		this._sendCommand({type:"quiz",command:"quiz unpause"});
+	}
 }
 
 class QuizChat extends Commands {
