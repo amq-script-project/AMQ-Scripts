@@ -74,6 +74,10 @@ class Profile extends Commands {
 	clearBadge(slotNumber) {
 		this._sendCommand({type:"social",command:"player profile clear badge", data: {slotNumber}})						
 	}
+	
+	setChatBadge(badgeId) {
+		this._sendCommand({type:"social",command:"player profile set chat badge", data: {badgeId}})								
+	}
 
 	clearChatBadge(badgeId) {
 		this._sendCommand({type:"social",command:"player profile clear chat badge", data: {badgeId}})								
