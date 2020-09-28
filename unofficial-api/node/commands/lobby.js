@@ -17,6 +17,15 @@ class Lobby extends Commands {
 	joinQueue() {
 		return this._sendCommand({type:"lobby",command:"join game queue"}, EVENTS.JOIN_GAME_QUEUE);														
 	}
+	
+	leaveTeam() {
+		this._sendCommand({type:"lobby",command:"leave team"});	
+	}
+
+	joinTeam(teamNumber) {
+		this._sendCommand({type:"lobby",command:"join team", data: {teamNumber}});		
+	}
+
 
 	changeSettings(data) {
 		this._sendCommand({type:"lobby",command:"change game settings", data});																		
