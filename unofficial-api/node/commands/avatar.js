@@ -27,6 +27,10 @@ class Avatar extends Commands {
 	patreonUnlock(avatarId) {
 		this._sendCommand({type:"patreon",command:"unlock buyable avatar", data: {avatarId}});								
 	}
+	
+	ticketRoll(amount) {
+		this._sendCommand({type:"patreon",command:"ticket roll", data: {amount}});								
+	}
 
 	outfits(avatarId) {
 		return this._sendCommand({type:"avatar",command:"get outfit designs", data: {avatarId}}, EVENTS.OUTFIT_DESIGNS);				
