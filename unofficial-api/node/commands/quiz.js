@@ -26,7 +26,9 @@ class Quiz extends Commands {
 		this._sendCommand({type:"quiz",command:"quiz answer", data: {answer, isPlaying, volumeAtMax}});												
 	}
 
-	songFeedback(data) {
+	songFeedback(feedbackType, resolution, host, songId, adminReport=false) {
+		//feedbacktype: 0=none, 1=like, 2=dislike, 3=report
+		const data = {feedbackType, resolution, host, songId, adminReport}
 		this._sendCommand({type:"quiz",command:"song feedback", data});																
 	}
 
