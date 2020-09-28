@@ -76,6 +76,10 @@ class Settings extends Commands {
 	sendGameState(inGame, inExpand, inMain) {
 		this._sendCommand({type:"settings",command:"update auto switch avatars", data: {inGame, inExpand, inMain}})
 	}
+
+	guestRegistration(username, password, email, country) {
+		this._sendCommand({type:"settings",command:"guest registration", data: {username, password, email, country}})
+	}
 }
 
 module.exports = Settings;
