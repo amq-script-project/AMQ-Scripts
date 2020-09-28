@@ -10,6 +10,15 @@ class Avatar extends Commands {
 		const data = {avatar: {avatarId, colorId, optionActive}, background: {avatarId: backgroundAvatarId, colorId: backgroundColorId}}
 		return this._sendCommand({type:"avatar",command:"use avatar", data}, EVENTS.USE_AVATAR);				
 	}
+	
+	addFavorite(avatarId, colorId, optionActive, backgroundAvatarId=avatarId, backgroundColorId=colorId) {
+		const data = {avatar: {avatarId, colorId, optionActive}, background: {avatarId: backgroundAvatarId, colorId: backgroundColorId}}
+		this._sendCommand({type:"avatar",command:"new favorite avatar", data});				
+	}
+
+	removeFavorite(favoriteId) {
+		this._sendCommand({type:"avatar",command:"remove favorite avatar", data: {favoriteId}});						
+	}
 
 	unlock(avatarId, colorId) {
 		return this._sendCommand({type:"avatar",command:"unlock avatar", data: {avatarId, colorId}}, EVENTS.UNLOCK_AVATAR);						
