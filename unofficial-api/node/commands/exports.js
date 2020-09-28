@@ -7,5 +7,6 @@ module.exports = {
 	Lobby: require('./lobby'),
 	RoomBrowser: require('./roomBrowser'),
 	Settings: require('./settings'),
-	Tutorial: require('./tutorial')
+	Tutorial: require('./tutorial'),
+	Patreon: require('./patreon')
 }	
