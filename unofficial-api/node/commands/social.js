@@ -68,7 +68,7 @@ class Profile extends Commands {
 	}	
 
 	showBadge(slotNumber, badgeId) {
-		this._sendCommand({type:"social",command:"player profile show badg", data: {slotNumber, badgeId}})				
+		this._sendCommand({type:"social",command:"player profile show badge", data: {slotNumber, badgeId}})				
 	}
 
 	clearBadge(slotNumber) {
