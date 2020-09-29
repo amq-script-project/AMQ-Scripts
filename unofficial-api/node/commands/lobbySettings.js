@@ -177,6 +177,7 @@ class LobbySettings{
             }
         })
         this.CONST = {
+            ROOM_NAME_MAX_LENGTH:20,
             ROOM_MIN_SIZE:1,
             ROOM_MAX_SIZE:40,
         }
@@ -196,10 +197,28 @@ class LobbySettings{
         return delta
     }
 
+    commit(){
+        const delta = this.getDelta()
+        this.oldSettings = JSON.parse(JSON.stringify(this.settings))
+        return delta
+    }
+
     setRoomSize(num) {
         if(num < this.CONST.ROOM_MIN_SIZE || num > this.CONST.ROOM_MAX_SIZE){
             throw "Room size must be between " + this.CONST.ROOM_MIN_SIZE + " and " + this.CONST.ROOM_MAX_SIZE
         }
+        this.settings.roomSize = num
+        gameMode = num > 1 ? "Multiplayer" : "Solo"
+    }
+
+    setRoomName(newName) {
+        if(!newName){
+            throw "Room name cannot be empty"
+        }
+        if(newName.length > this.CONST.ROOM_NAME_MAX_LENGTH){
+            throw "Room name cannot be longer than " + this.CONST.ROOM_NAME_MAX_LENGTH + " characters"
+        }
+        this.settings.roomName = newName
     }
 }
 module.exports = LobbySettings
