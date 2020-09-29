@@ -184,7 +184,17 @@ class LobbySettings{
             SONG_COUNT_MIN:5,
             SONG_COUNT_MAX:100,
             TEAM_SIZE_MIN:1,
-            TEAM_SIZE_MAX:8
+            TEAM_SIZE_MAX:8,
+            SONG_SELECTION:{
+                RANDOM:1,
+                MIX:2,
+                WATCHED:3
+            },
+            SONG_SELECTION_STANDARD_RATIOS:{ //these ratios sum up to 100, to avoid floating points as much as possible
+                RANDOM: {WATCHED: 0, UNWATCHED: 0, RANDOM: 100},
+                MIX: {WATCHED: 80, UNWATCHED: 20, RANDOM: 0},
+                WATCHED: {WATCHED: 100, UNWATCHED: 0, RANDOM: 0}
+            }
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -295,6 +305,32 @@ class LobbySettings{
             throw "lootDropping must be a bool"
         }
         this.settings.modifiers.lootDropping = bool
+    }
+
+    setSongSelectionStandard(num){
+        if(!Object.values(this.CONST.SONG_SELECTION).includes(num)){
+            throw "Please use the values defined in CONST.SONG_SELECTION"
+        }
+        //this is a bit overengineered, WATCHED and RANDOM are pretty trivial
+        const ratio = this.CONST.SONG_SELECTION_STANDARD_RATIOS
+        const ratios = [{}, ratio.RANDOM, ratio.MIX, ratio.WATCHED][num]
+        const songCount = this.settings.songCount
+        let watched = Math.floor(songCount * ratios.WATCHED / 100)
+        let unwatched = Math.floor(songCount * ratios.UNWATCHED / 100)
+        let random = Math.floor(songCount * ratios.RANDOM / 100)
+        let count = 1
+        while(watched + unwatched + random < songCount){ //in this case we know we are in the mix default, which gives a 4:1 watched unwatched ratio
+            if(count%4){
+                watched++
+            }else{
+                unwatched++
+            }
+            count++
+        }
+        this.settings.songSelection.standardValue = num
+        this.settings.songSelection.advancedValue.watched = watched
+        this.settings.songSelection.advancedValue.unwatched = unwatched
+        this.settings.songSelection.advancedValue.random = random
     }
 
     
