@@ -6,8 +6,18 @@ class Avatar extends Commands {
 		return this._sendCommand({type:"avatardrive",command:"get avatar drive standings"}, EVENTS.AVATAR_DRIVE_STANDINGS);		
 	}
 
-	change(avatarId, colorId, optionActive) {
-		return this._sendCommand({type:"avatar",command:"use avatar", data: {avatarId, colorId, optionActive}}, EVENTS.USE_AVATAR);				
+	change(avatarId, colorId, optionActive, backgroundAvatarId=avatarId, backgroundColorId=colorId) {
+		const data = {avatar: {avatarId, colorId, optionActive}, background: {avatarId: backgroundAvatarId, colorId: backgroundColorId}}
+		return this._sendCommand({type:"avatar",command:"use avatar", data}, EVENTS.USE_AVATAR);				
+	}
+	
+	addFavorite(avatarId, colorId, optionActive, backgroundAvatarId=avatarId, backgroundColorId=colorId) {
+		const data = {avatar: {avatarId, colorId, optionActive}, background: {avatarId: backgroundAvatarId, colorId: backgroundColorId}}
+		this._sendCommand({type:"avatar",command:"new favorite avatar", data});				
+	}
+
+	removeFavorite(favoriteId) {
+		this._sendCommand({type:"avatar",command:"remove favorite avatar", data: {favoriteId}});						
 	}
 
 	unlock(avatarId, colorId) {
@@ -16,6 +26,10 @@ class Avatar extends Commands {
 
 	patreonUnlock(avatarId) {
 		this._sendCommand({type:"patreon",command:"unlock buyable avatar", data: {avatarId}});								
+	}
+	
+	ticketRoll(amount) {
+		this._sendCommand({type:"patreon",command:"ticket roll", data: {amount}});								
 	}
 
 	outfits(avatarId) {

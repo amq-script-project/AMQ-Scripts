@@ -64,7 +64,8 @@ class SocketWrapper {
 		this.lobby = new commands.Lobby(this);
 		this.battleRoyal = new commands.BattleRoyal(this);
 		this.settings = new commands.Settings(this);
-		this.tutorial = new commands.Settings(this);
+		this.tutorial = new commands.Tutorial(this);
+		this.patreon = new commands.Patreon(this);
 		this.debug = false;
 		this.timeout = 5000;
 	}

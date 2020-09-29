@@ -59,6 +59,10 @@ class Social extends Commands {
 	modStrike(strikeType, reason, target) {
 		this._sendCommand({type:"social",command:"mod strike", data: {strikeType, reason, target}})																
 	}
+
+	unlockEmote(emoteId) {
+		this._sendCommand({type:"avatar",command:"unlock emote", data: {emoteId}})
+	}
 }
 
 
@@ -67,12 +71,20 @@ class Profile extends Commands {
 		return this._sendCommand({type:"social",command:"player profile",data:{name: name}}, EVENTS.PLAYER_PROFILE, name)
 	}	
 
+	setImage(avatarImage=undefined, emoteId=undefined) {
+		this._sendCommand({type:"social",command:"player profile set image", data: {avatarImage, emoteId}})				
+	}
+
 	showBadge(slotNumber, badgeId) {
-		this._sendCommand({type:"social",command:"player profile show badg", data: {slotNumber, badgeId}})				
+		this._sendCommand({type:"social",command:"player profile show badge", data: {slotNumber, badgeId}})				
 	}
 
 	clearBadge(slotNumber) {
 		this._sendCommand({type:"social",command:"player profile clear badge", data: {slotNumber}})						
+	}
+	
+	setChatBadge(badgeId) {
+		this._sendCommand({type:"social",command:"player profile set chat badge", data: {badgeId}})								
 	}
 
 	clearChatBadge(badgeId) {
