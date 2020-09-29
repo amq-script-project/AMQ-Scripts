@@ -178,6 +178,7 @@ class LobbySettings{
         })
         this.CONST = {
             ROOM_NAME_MAX_LENGTH:20,
+            PASSWORD_MAX_LENGTH:50,
             ROOM_MIN_SIZE:1,
             ROOM_MAX_SIZE:40,
         }
@@ -219,6 +220,20 @@ class LobbySettings{
             throw "Room name cannot be longer than " + this.CONST.ROOM_NAME_MAX_LENGTH + " characters"
         }
         this.settings.roomName = newName
+    }
+
+    setPassword(newPassword){
+        if(!newPassword){
+            return this.clearPassword()
+        }
+        if(newPassword.length > this.CONST.PASSWORD_MAX_LENGTH){
+            throw "Password cannot be longer than " + this.CONST.PASSWORD_MAX_LENGTH + " characters"
+        }
+    }
+
+    clearPassword(){
+        this.settings.password = ""
+        this.settings.privateRoom = false
     }
 }
 module.exports = LobbySettings
