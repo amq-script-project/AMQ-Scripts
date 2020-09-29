@@ -176,9 +176,30 @@ class LobbySettings{
                 this.settings[key] = override[key]
             }
         })
+        this.CONST = {
+            ROOM_MIN_SIZE:1,
+            ROOM_MAX_SIZE:40,
+        }
+        this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
     getSettings(){
         return this.settings
+    }
+
+    getDelta(){
+        const delta = {}
+        Object.keys(this.settings).forEach((key) => {
+            if(JSON.stringify(this.settings[key]) !== JSON.stringify(this.oldSettings[key])){
+                delta[key] = this.settings[key]
+            }
+        })
+        return delta
+    }
+
+    setRoomSize(num) {
+        if(num < this.CONST.ROOM_MIN_SIZE || num > this.CONST.ROOM_MAX_SIZE){
+            throw "Room size must be between " + this.CONST.ROOM_MIN_SIZE + " and " + this.CONST.ROOM_MAX_SIZE
+        }
     }
 }
 module.exports = LobbySettings
