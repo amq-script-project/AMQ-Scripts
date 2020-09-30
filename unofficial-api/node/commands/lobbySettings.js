@@ -224,7 +224,7 @@ class LobbySettings{
             throw "Room size must be in the integer interval [" + this.CONST.ROOM_SIZE_MIN + "," + this.CONST.ROOM_SIZE_MAX + "]"
         }
         this.settings.roomSize = num
-        gameMode = num > 1 ? "Multiplayer" : "Solo"
+        this.settings.gameMode = num > 1 ? "Multiplayer" : "Solo"
     }
 
     setTeamSize(num) {
@@ -272,38 +272,38 @@ class LobbySettings{
         }
         const oldSongCount = this.settings.numberOfSongs
         this.settings.numberOfSongs = num
-        _calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, oldSongCount, this.settings.numberOfSongs)
+        this._calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, oldSongCount, this.settings.numberOfSongs)
     }
 
-    setSkipGuessing(bool){
+    enableSkipGuessing(bool){
         if(typeof bool !== "boolean"){
             throw "skipGuessing must be a bool"
         }
         this.settings.modifiers.skipGuessing = bool
     }
     
-    setSkipReplay(bool){
+    enableSkipReplay(bool){
         if(typeof bool !== "boolean"){
             throw "skipReplay must be a bool"
         }
         this.settings.modifiers.skipReplay = bool
     }
     
-    setDuplicates(bool){
+    enableDuplicates(bool){
         if(typeof bool !== "boolean"){
             throw "duplicates must be a bool"
         }
         this.settings.modifiers.duplicates = bool
     }
     
-    setQueueing(bool){
+    enableQueueing(bool){
         if(typeof bool !== "boolean"){
             throw "queueing must be a bool"
         }
         this.settings.modifiers.queueing = bool
     }
     
-    setLootDropping(bool){
+    enableLootDropping(bool){
         if(typeof bool !== "boolean"){
             throw "lootDropping must be a bool"
         }
@@ -316,7 +316,6 @@ class LobbySettings{
         }
         const ratio = this.CONST.SONG_SELECTION_STANDARD_RATIOS
         const ratios = [ratio.RANDOM, ratio.MIX, ratio.WATCHED][num-1]
-        this.settings.songSelection.standardValue = num
         this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, ratio.QUANTIFIER, this.settings.songCount)
     }
 
@@ -340,6 +339,69 @@ class LobbySettings{
         this.settings.songSelection.advancedValue.watched = watched
         this.settings.songSelection.advancedValue.unwatched = unwatched
         this.settings.songSelection.advancedValue.random = random
+        if(watched === 0 && unwatched === 0){
+            this.settings.songSelection.standardValue = this.CONST.SONG_SELECTION.RANDOM
+        }else if(unwatched === 0 && random === 0){
+            this.settings.songSelection.standardValue = this.CONST.SONG_SELECTION.WATCHED
+        }else{
+            this.settings.songSelection.standardValue = this.CONST.SONG_SELECTION.MIX
+        }
+    }
+
+    setSongSelectionAdvanced(watched, unwatched, random){
+        this._calculateSongDistribution(watched, unwatched, random, watched + unwatched + random, this.settings.songCount)
+    }
+
+    enableTypes(openings, endings, inserts){
+        if(typeof openings !== "boolean"){
+            throw "openings argument must be boolean"
+        }
+        if(typeof endings !== "boolean"){
+            throw "endings argument must be boolean"
+        }
+        if(typeof inserts !== "boolean"){
+            throw "inserts argument must be boolean"
+        }
+        if(!openings && !endings && !inserts){
+            throw "At least one type must be enabled"
+        }
+        this.settings.songType.standardValue.openings = openings
+        this.settings.songType.standardValue.endings = endings
+        this.settings.songType.standardValue.inserts = inserts
+        const advancedOpenings = openings?this.settings.songType.advancedValue.openings:0
+        const advancedEndings = endings?this.settings.songType.advancedValue.endings:0
+        const advancedInserts = inserts?this.settings.songType.advancedValue.inserts:0
+        const advancedRandom = this.settings.songType.advancedValue.random
+        this._calculateTypeDistribution(advancedOpenings, advancedEndings, advancedInserts, advancedRandom, this.settings.songCount)
+    }
+
+    enableOpenings(bool){
+        this.setTypes(bool, this.settings.songType.standardValue.endings, this.settings.songType.standardValue.inserts)
+    }
+    
+    enableEndings(bool){
+        this.setTypes(this.settings.songType.standardValue.openings, bool, this.settings.songType.standardValue.inserts)
+    }
+    
+    enableInserts(bool){
+        this.setTypes(this.settings.songType.standardValue.openings, this.settings.songType.standardValue.endings, bool,)
+    }
+
+    _calculateTypeDistribution(openings, endings, inserts, random, songCount){
+        //TODO
+    }
+
+    setTypeSelectionAdvanced(openings, endings, inserts, random){
+        if(openings){
+            this.settings.songType.standardValue.openings = true
+        }
+        if(endings){
+            this.settings.songType.standardValue.endings = true
+        }
+        if(inserts){
+            this.settings.songType.standardValue.inserts = true
+        }
+        this._calculateTypeDistribution(openings, endings, inserts, random, openings + endings + inserts + random, this.settings.songCount)
     }
 
     
