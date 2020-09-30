@@ -212,7 +212,13 @@ class LobbySettings{
                 QUICK_DRAW:2,
                 LAST_MAN_STANDING:3,
                 BATTLE_ROYALE:4
-            }
+            },
+            INVENTORY_SIZE_MIN:1,
+            INVENTORY_SIZE_MAX:99,
+            LIVES_MIN:1,
+            LIVES_MAX:5,
+            LOOTING_TIME_MIN:10,
+            LOOTING_TIME_MAX:150,
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -523,7 +529,7 @@ class LobbySettings{
 
     enableRandomGuessTime(randomOn){
         if(typeof randomOn !== "boolean"){
-            throw "randomOn must be a bool"
+            throw "guessTime.randomOn must be a bool"
         }
         this.settings.guessTime.randomOn = randomOn
     }
@@ -599,6 +605,71 @@ class LobbySettings{
 
     setGameModeBattleRoyale(){
         this.setGameMode(this.CONST.GAME_MODE.BATTLE_ROYALE)
+    }
+
+    setInventorySize(standardValue){
+        if(!Number.isInteger(standardValue) || standardValue < this.CONST.INVENTORY_SIZE_MIN || standardValue < this.CONST.INVENTORY_SIZE_MAX){
+            throw "Inventory size must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
+        }
+        this.settings.inventorySize.standardValue = standardValue
+        this.settings.inventorySize.randomOn = false
+    }
+
+    setInventorySizeAdvanced(low, high){
+        if(!Number.isInteger(low) || low < this.CONST.INVENTORY_SIZE_MIN || low < this.CONST.INVENTORY_SIZE_MAX){
+            throw "Inventory size low must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
+        }
+        if(!Number.isInteger(high) || high < this.CONST.INVENTORY_SIZE_MIN || high < this.CONST.INVENTORY_SIZE_MAX){
+            throw "Inventory size low must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
+        }
+        if(low > high){
+            throw "Inventory size low value cannot be higher than high value"
+        }
+        this.settings.inventorySize.randomOn = true
+        this.settings.inventorySize.randomValue = [low, high]
+    }
+
+    enableRandomInventorySize(randomOn){
+        if(typeof randomOn !== "boolean"){
+            throw "inventorySize.randomOn must be a bool"
+        }
+        this.settings.inventorySize.randomOn = randomOn
+    }
+    
+    setLives(count){
+        if(!Number.isInteger(count) || count < this.CONST.LIVES_MIN || count < this.CONST.LIVES_MAX){
+            throw "Lives count must be in the integer interval [" + this.CONST.LIVES_MIN + "," + this.CONST.LIVES_MAX + "]"
+        }
+        this.settings.lives = count
+    }
+
+    setLootingTime(standardValue){
+        if(!Number.isInteger(standardValue) || standardValue < this.CONST.LOOTING_TIME_MIN || standardValue < this.CONST.LOOTING_TIME_MAX){
+            throw "Looting time must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
+        }
+        this.settings.lootingTime.standardValue = standardValue
+        this.settings.lootingTime.randomOn = false
+    }
+
+    setLootingTimeAdvanced(low, high){
+        if(!Number.isInteger(low) || low < this.CONST.LOOTING_TIME_MIN || low < this.CONST.LOOTING_TIME_MAX){
+            throw "Looting time low must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
+        }
+        if(!Number.isInteger(high) || high < this.CONST.LOOTING_TIME_MIN || high < this.CONST.LOOTING_TIME_MAX){
+            throw "Looting time low must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
+        }
+        if(low > high){
+            throw "Looting time low value cannot be higher than high value"
+        }
+        this.settings.lootingTime.randomOn = true
+        this.settings.lootingTime.randomValue = [low, high]
+    }
+
+    enableRandomLootingTime(randomOn){
+        if(typeof randomOn !== "boolean"){
+            throw "lootingTime.randomOn must be a bool"
+        }
+        this.settings.lootingTime.randomOn = randomOn
     }
 
     
