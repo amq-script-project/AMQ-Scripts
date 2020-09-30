@@ -195,7 +195,9 @@ class LobbySettings{
                 MIX: {WATCHED: 80, UNWATCHED: 20, RANDOM: 0},
                 WATCHED: {WATCHED: 100, UNWATCHED: 0, RANDOM: 0},
                 QUANTIFIER: 100 //these ratios sum up to 100, to avoid floating points as much as possible
-            }
+            },
+            GUESS_TIME_MIN:5,
+            GUESS_TIME_MAX:60
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -223,19 +225,19 @@ class LobbySettings{
         this.settings = JSON.parse(JSON.stringify(this.oldSettings))
     }
 
-    setRoomSize(num) {
-        if(num < this.CONST.ROOM_SIZE_MIN || num > this.CONST.ROOM_SIZE_MAX || !Number.isInteger(num)){
+    setRoomSize(roomSize) {
+        if(roomSize < this.CONST.ROOM_SIZE_MIN || roomSize > this.CONST.ROOM_SIZE_MAX || !Number.isInteger(roomSize)){
             throw "Room size must be in the integer interval [" + this.CONST.ROOM_SIZE_MIN + "," + this.CONST.ROOM_SIZE_MAX + "]"
         }
-        this.settings.roomSize = num
-        this.settings.gameMode = num > 1 ? "Multiplayer" : "Solo"
+        this.settings.roomSize = roomSize
+        this.settings.gameMode = roomSize > 1 ? "Multiplayer" : "Solo"
     }
 
-    setTeamSize(num) {
-        if(num < this.CONST.TEAM_SIZE_MIN || num > this.CONST.TEAM_SIZE_MAX || !Number.isInteger(num)){
+    setTeamSize(teamSize) {
+        if(teamSize < this.CONST.TEAM_SIZE_MIN || teamSize > this.CONST.TEAM_SIZE_MAX || !Number.isInteger(teamSize)){
             throw "Team size must be in the integer interval [" + this.CONST.TEAM_SIZE_MIN + "," + this.CONST.TEAM_SIZE_MAX + "]"
         }
-        this.settings.teamSize = num
+        this.settings.teamSize = teamSize
     }
 
     setRoomName(newName) {
@@ -270,55 +272,55 @@ class LobbySettings{
         this.settings.privateRoom = false
     }
 
-    setSongCount(num) {
-        if(num < this.CONST.SONG_COUNT_MIN || num > this.CONST.SONG_COUNT_MAX || !Number.isInteger(num)){
+    setSongCount(numberOfSongs) {
+        if(numberOfSongs < this.CONST.SONG_COUNT_MIN || numberOfSongs > this.CONST.SONG_COUNT_MAX || !Number.isInteger(numberOfSongs)){
             throw "Song count must be in the integer interval [" + this.CONST.SONG_COUNT_MIN + "," + this.CONST.SONG_COUNT_MAX + "]"
         }
-        this.settings.numberOfSongs = num
-        this._calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, num)
+        this.settings.numberOfSongs = numberOfSongs
+        this._calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, numberOfSongs)
     }
 
-    enableSkipGuessing(bool){
-        if(typeof bool !== "boolean"){
-            throw "skipGuessing must be a bool"
+    enableSkipGuessing(skipGuessingOn){
+        if(typeof skipGuessingOn !== "boolean"){
+            throw "skipGuessingOn must be a bool"
         }
-        this.settings.modifiers.skipGuessing = bool
+        this.settings.modifiers.skipGuessing = skipGuessingOn
     }
     
-    enableSkipReplay(bool){
-        if(typeof bool !== "boolean"){
-            throw "skipReplay must be a bool"
+    enableSkipReplay(skipReplayOn){
+        if(typeof skipReplayOn !== "boolean"){
+            throw "skipReplayOn must be a bool"
         }
-        this.settings.modifiers.skipReplay = bool
+        this.settings.modifiers.skipReplay = skipReplayOn
     }
     
-    enableDuplicates(bool){
-        if(typeof bool !== "boolean"){
-            throw "duplicates must be a bool"
+    enableDuplicates(duplicatesOn){
+        if(typeof duplicatesOn !== "boolean"){
+            throw "duplicatesOn must be a bool"
         }
-        this.settings.modifiers.duplicates = bool
+        this.settings.modifiers.duplicates = duplicatesOn
     }
     
-    enableQueueing(bool){
-        if(typeof bool !== "boolean"){
-            throw "queueing must be a bool"
+    enableQueueing(queueingOn){
+        if(typeof queueingOn !== "boolean"){
+            throw "queueingOn must be a bool"
         }
-        this.settings.modifiers.queueing = bool
+        this.settings.modifiers.queueing = queueingOn
     }
     
-    enableLootDropping(bool){
-        if(typeof bool !== "boolean"){
-            throw "lootDropping must be a bool"
+    enableLootDropping(lootDroppingOn){
+        if(typeof lootDroppingOn !== "boolean"){
+            throw "lootDroppingOn must be a bool"
         }
-        this.settings.modifiers.lootDropping = bool
+        this.settings.modifiers.lootDropping = lootDroppingOn
     }
 
-    setSongSelectionStandard(num){
-        if(!Object.values(this.CONST.SONG_SELECTION).includes(num)){
+    setSongSelection(standardValue){
+        if(!Object.values(this.CONST.SONG_SELECTION).includes(standardValue)){
             throw "Please use the values defined in CONST.SONG_SELECTION"
         }
         const ratio = this.CONST.SONG_SELECTION_STANDARD_RATIOS
-        const ratios = [ratio.RANDOM, ratio.MIX, ratio.WATCHED][num-1]
+        const ratios = [ratio.RANDOM, ratio.MIX, ratio.WATCHED][standardValue-1]
         this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.songCount)
     }
 
@@ -391,16 +393,16 @@ class LobbySettings{
         this._calculateTypeDistribution(advancedOpenings, advancedEndings, advancedInserts, advancedRandom, this.settings.songCount)
     }
 
-    enableOpenings(bool){
-        this.setTypes(bool, this.settings.songType.standardValue.endings, this.settings.songType.standardValue.inserts)
+    enableOpenings(openingsOn){
+        this.setTypes(openingsOn, this.settings.songType.standardValue.endings, this.settings.songType.standardValue.inserts)
     }
     
-    enableEndings(bool){
-        this.setTypes(this.settings.songType.standardValue.openings, bool, this.settings.songType.standardValue.inserts)
+    enableEndings(endingsOn){
+        this.setTypes(this.settings.songType.standardValue.openings, endingsOn, this.settings.songType.standardValue.inserts)
     }
     
-    enableInserts(bool){
-        this.setTypes(this.settings.songType.standardValue.openings, this.settings.songType.standardValue.endings, bool)
+    enableInserts(insertsOn){
+        this.setTypes(this.settings.songType.standardValue.openings, this.settings.songType.standardValue.endings, insertsOn)
     }
 
     _calculateTypeDistribution(openingsRatio, endingsRatio, insertsRatio, randomRatio, songCount){
@@ -468,6 +470,35 @@ class LobbySettings{
             }
         }
         this._calculateTypeDistribution(openings, endings, inserts, random, this.settings.songCount)
+    }
+
+    setGuessTime(standardValue) {
+        if(!Number.isInteger(standardValue) || standardValue < this.CONST.GUESS_TIME_MIN || standardValue < this.CONST.GUESS_TIME_MAX){
+            throw "Guess time must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
+        }
+        this.settings.guessTime.randomOn = false
+        this.settings.guessTime.standardValue = standardValue
+    }
+
+    setGuessTimeAdvanced(low, high) {
+        if(!Number.isInteger(low) || low < this.CONST.GUESS_TIME_MIN || low < this.CONST.GUESS_TIME_MAX){
+            throw "Guess time low must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
+        }
+        if(!Number.isInteger(high) || high < this.CONST.GUESS_TIME_MIN || high < this.CONST.GUESS_TIME_MAX){
+            throw "Guess time low must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
+        }
+        if(low > high){
+            throw "Guess time low value cannot be higher than high value"
+        }
+        this.settings.guessTime.randomOn = true
+        this.settings.guessTime.randomValue = [low, high]
+    }
+
+    enableRandomGuessTime(randomOn){
+        if(typeof randomOn !== "boolean"){
+            throw "randomOn must be a bool"
+        }
+        this.settings.guessTime.randomOn = randomOn
     }
 
     
