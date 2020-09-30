@@ -219,6 +219,13 @@ class LobbySettings{
             LIVES_MAX:5,
             LOOTING_TIME_MIN:10,
             LOOTING_TIME_MAX:150,
+            SAMPLE_POINT:{
+                START:1,
+                MIDDLE:2,
+                END:3
+            },
+            SAMPLE_POINT_MIN:0,
+            SAMPLE_POINT_MAX:100
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -635,13 +642,6 @@ class LobbySettings{
         }
         this.settings.inventorySize.randomOn = randomOn
     }
-    
-    setLives(count){
-        if(!Number.isInteger(count) || count < this.CONST.LIVES_MIN || count < this.CONST.LIVES_MAX){
-            throw "Lives count must be in the integer interval [" + this.CONST.LIVES_MIN + "," + this.CONST.LIVES_MAX + "]"
-        }
-        this.settings.lives = count
-    }
 
     setLootingTime(standardValue){
         if(!Number.isInteger(standardValue) || standardValue < this.CONST.LOOTING_TIME_MIN || standardValue < this.CONST.LOOTING_TIME_MAX){
@@ -670,6 +670,54 @@ class LobbySettings{
             throw "lootingTime.randomOn must be a bool"
         }
         this.settings.lootingTime.randomOn = randomOn
+    }
+
+    setLives(count){
+        if(!Number.isInteger(count) || count < this.CONST.LIVES_MIN || count < this.CONST.LIVES_MAX){
+            throw "Lives count must be in the integer interval [" + this.CONST.LIVES_MIN + "," + this.CONST.LIVES_MAX + "]"
+        }
+        this.settings.lives = count
+    }
+
+    setSamplePoint(position){
+        if(!Object.values(this.CONST.GAME_MODE).includes(position)){
+            throw "Please use the values defined in CONST.SAMPLE_POINT"
+        }
+        this.settings.samplePoint.standardValue = position
+        this.settings.samplePoint.randomOn = false
+    }
+
+    setSamplePointStart(){
+        this.setSamplePoint(this.CONST.SAMPLE_POINT.START)
+    }
+    
+    setSamplePointMiddle(){
+        this.setSamplePoint(this.CONST.SAMPLE_POINT.MIDDLE)
+    }
+    
+    setSamplePointEnd(){
+        this.setSamplePoint(this.CONST.SAMPLE_POINT.END)
+    }
+
+    setSamplePointAdvanced(low, high){
+        if(!Number.isInteger(low) || low < this.CONST.SAMPLE_POINT_MIN || low < this.CONST.SAMPLE_POINT_MAX){
+            throw "Looting time low must be in the integer interval [" + this.CONST.SAMPLE_POINT_MIN + "," + this.CONST.SAMPLE_POINT_MAX + "]"
+        }
+        if(!Number.isInteger(high) || high < this.CONST.SAMPLE_POINT_MIN || high < this.CONST.SAMPLE_POINT_MAX){
+            throw "Looting time low must be in the integer interval [" + this.CONST.SAMPLE_POINT_MIN + "," + this.CONST.SAMPLE_POINT_MAX + "]"
+        }
+        if(low > high){
+            throw "Looting time low value cannot be higher than high value"
+        }
+        this.settings.samplePoint.randomOn = true
+        this.settings.samplePoint.randomValue = [low, high]
+    }
+
+    enableRandomSamplePoint(randomOn){
+        if(typeof randomOn !== "boolean"){
+            throw "samplePoint.randomOn must be a bool"
+        }
+        this.settings.samplePoint.randomOn = randomOn
     }
 
     
