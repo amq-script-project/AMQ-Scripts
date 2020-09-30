@@ -225,7 +225,9 @@ class LobbySettings{
                 END:3
             },
             SAMPLE_POINT_MIN:0,
-            SAMPLE_POINT_MAX:100
+            SAMPLE_POINT_MAX:100,
+            PLAYBACK_SPEED_MIN:1.0,
+            PLAYBACK_SPEED_MAX:4.0
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -718,6 +720,48 @@ class LobbySettings{
             throw "samplePoint.randomOn must be a bool"
         }
         this.settings.samplePoint.randomOn = randomOn
+    }
+
+    setPlaybackSpeed(multiplier) {
+        if(typeof multiplier !== "number" || Number.isNaN(multiplier) || multiplier < this.CONST.PLAYBACK_SPEED_MIN || multiplier > this.CONST.PLAYBACK_SPEED_MAX){
+            throw "Playback speed multiplier must be a real number in the interval [" + this.CONST.PLAYBACK_SPEED_MIN + ", " + this.CONST.PLAYBACK_SPEED_MAX + "]"
+        }
+    }
+
+    setPlaybackSpeedAdvanced(enable1=this.playbackSpeed.randomValue[0], enable1_5=this.playbackSpeed.randomValue[1], enable2=this.playbackSpeed.randomValue[2], enable4=this.playbackSpeed.randomValue[3]) {
+        if(typeof enable1 !== "boolean"){
+            throw "playback speed enable1 must be a bool"
+        }
+        if(typeof enable1_5 !== "boolean"){
+            throw "playback speed enable1_5 must be a bool"
+        }
+        if(typeof enable2 !== "boolean"){
+            throw "playback speed enable2 must be a bool"
+        }
+        if(typeof enable4 !== "boolean"){
+            throw "playback speed enable4 must be a bool"
+        }
+        if(!(enable1 || enable1_5 || enable2 || enable4)){
+            throw "At least one advanced playback speed must be chosen"
+        }
+        this.playbackSpeed.randomValue = [enable1, enable1_5, enable2, enable4]
+        this.playbackSpeed.randomOn = true
+    }
+
+    enablePlaybackSpeed1(on){
+        this.setPlaybackSpeedAdvanced(enable1=on)
+    }
+    
+    enablePlaybackSpeed1_5(on){
+        this.setPlaybackSpeedAdvanced(enable1_5=on)
+    }
+    
+    enablePlaybackSpeed2(on){
+        this.setPlaybackSpeedAdvanced(enable2=on)
+    }
+    
+    enablePlaybackSpeed4(on){
+        this.setPlaybackSpeedAdvanced(enable4=on)
     }
 
     
