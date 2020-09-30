@@ -190,10 +190,11 @@ class LobbySettings{
                 MIX:2,
                 WATCHED:3
             },
-            SONG_SELECTION_STANDARD_RATIOS:{ //these ratios sum up to 100, to avoid floating points as much as possible
+            SONG_SELECTION_STANDARD_RATIOS:{ 
                 RANDOM: {WATCHED: 0, UNWATCHED: 0, RANDOM: 100},
                 MIX: {WATCHED: 80, UNWATCHED: 20, RANDOM: 0},
-                WATCHED: {WATCHED: 100, UNWATCHED: 0, RANDOM: 0}
+                WATCHED: {WATCHED: 100, UNWATCHED: 0, RANDOM: 0},
+                QUANTIFIER: 100 //these ratios sum up to 100, to avoid floating points as much as possible
             }
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
@@ -269,7 +270,9 @@ class LobbySettings{
         if(num < this.CONST.SONG_COUNT_MIN || num > this.CONST.SONG_COUNT_MAX || !Number.isInteger(num)){
             throw "Song count must be in the integer interval [" + this.CONST.SONG_COUNT_MIN + "," + this.CONST.SONG_COUNT_MAX + "]"
         }
+        const oldSongCount = this.settings.numberOfSongs
         this.settings.numberOfSongs = num
+        _calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, oldSongCount, this.settings.numberOfSongs)
     }
 
     setSkipGuessing(bool){
@@ -311,23 +314,29 @@ class LobbySettings{
         if(!Object.values(this.CONST.SONG_SELECTION).includes(num)){
             throw "Please use the values defined in CONST.SONG_SELECTION"
         }
-        //this is a bit overengineered, WATCHED and RANDOM are pretty trivial
         const ratio = this.CONST.SONG_SELECTION_STANDARD_RATIOS
-        const ratios = [{}, ratio.RANDOM, ratio.MIX, ratio.WATCHED][num]
-        const songCount = this.settings.songCount
-        let watched = Math.floor(songCount * ratios.WATCHED / 100)
-        let unwatched = Math.floor(songCount * ratios.UNWATCHED / 100)
-        let random = Math.floor(songCount * ratios.RANDOM / 100)
-        let count = 1
-        while(watched + unwatched + random < songCount){ //in this case we know we are in the mix default, which gives a 4:1 watched unwatched ratio
-            if(count%4){
-                watched++
-            }else{
-                unwatched++
-            }
-            count++
-        }
+        const ratios = [ratio.RANDOM, ratio.MIX, ratio.WATCHED][num-1]
         this.settings.songSelection.standardValue = num
+        this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, ratio.QUANTIFIER, this.settings.songCount)
+    }
+
+    _calculateSongDistribution(watchedRatio, unwatchedRatio, randomRatio, ratioQuantifier, songCount){
+        let watched = Math.floor(songCount * watchedRatio / ratioQuantifier)
+        let unwatched = Math.floor(songCount * unwatchedRatio / ratioQuantifier)
+        let random = Math.floor(songCount * randomRatio / ratioQuantifier)
+        while(watched + unwatched + random < songCount){
+            const watchedRatioDiff = watched / songCount - watchedRatio / ratioQuantifier
+            const unwatchedRatioDiff = unwatched / songCount - unwatchedRatio / ratioQuantifier
+            const randomRatioDiff = random / songCount - randomRatio / ratioQuantifier
+            const biggestDiff = Math.min(watchedRatioDiff, unwatchedRatioDiff, randomRatioDiff)
+            if(watchedRatioDiff === biggestDiff){
+                watched++
+            }else if(unwatchedRatioDiff === biggestDiff){
+                unwatched++
+            }else{
+                random++
+            }
+        }
         this.settings.songSelection.advancedValue.watched = watched
         this.settings.songSelection.advancedValue.unwatched = unwatched
         this.settings.songSelection.advancedValue.random = random
