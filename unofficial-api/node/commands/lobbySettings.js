@@ -219,6 +219,10 @@ class LobbySettings{
         return delta
     }
 
+    revert(){
+        this.settings = JSON.parse(JSON.stringify(this.oldSettings))
+    }
+
     setRoomSize(num) {
         if(num < this.CONST.ROOM_SIZE_MIN || num > this.CONST.ROOM_SIZE_MAX || !Number.isInteger(num)){
             throw "Room size must be in the integer interval [" + this.CONST.ROOM_SIZE_MIN + "," + this.CONST.ROOM_SIZE_MAX + "]"
@@ -251,7 +255,7 @@ class LobbySettings{
         if(typeof newPassword !== "string"){
             throw "Password must be string"
         }
-        if(!newPassword){
+        if(newPassword.length === 0){
             return this.clearPassword()
         }
         if(newPassword.length > this.CONST.PASSWORD_MAX_LENGTH){
@@ -270,9 +274,8 @@ class LobbySettings{
         if(num < this.CONST.SONG_COUNT_MIN || num > this.CONST.SONG_COUNT_MAX || !Number.isInteger(num)){
             throw "Song count must be in the integer interval [" + this.CONST.SONG_COUNT_MIN + "," + this.CONST.SONG_COUNT_MAX + "]"
         }
-        const oldSongCount = this.settings.numberOfSongs
         this.settings.numberOfSongs = num
-        this._calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, oldSongCount, this.settings.numberOfSongs)
+        this._calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, num)
     }
 
     enableSkipGuessing(bool){
@@ -316,10 +319,11 @@ class LobbySettings{
         }
         const ratio = this.CONST.SONG_SELECTION_STANDARD_RATIOS
         const ratios = [ratio.RANDOM, ratio.MIX, ratio.WATCHED][num-1]
-        this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, ratio.QUANTIFIER, this.settings.songCount)
+        this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.songCount)
     }
 
-    _calculateSongDistribution(watchedRatio, unwatchedRatio, randomRatio, ratioQuantifier, songCount){
+    _calculateSongDistribution(watchedRatio, unwatchedRatio, randomRatio, songCount){
+        const ratioQuantifier = watchedRatio + unwatchedRatio + randomRatio
         let watched = Math.floor(songCount * watchedRatio / ratioQuantifier)
         let unwatched = Math.floor(songCount * unwatchedRatio / ratioQuantifier)
         let random = Math.floor(songCount * randomRatio / ratioQuantifier)
@@ -349,7 +353,19 @@ class LobbySettings{
     }
 
     setSongSelectionAdvanced(watched, unwatched, random){
-        this._calculateSongDistribution(watched, unwatched, random, watched + unwatched + random, this.settings.songCount)
+        if(!Number.isInteger(watched) || watched < 0){
+            throw "watched argument must be a integer larger or equal to zero"
+        }
+        if(!Number.isInteger(unwatched) || unwatched < 0){
+            throw "unwatched argument must be a integer larger or equal to zero"
+        }
+        if(!Number.isInteger(random) || random < 0){
+            throw "random argument must be a integer larger or equal to zero"
+        }
+        if(watched + unwatched + random === 0){
+            throw "sum of selection must be larger than 0"
+        }
+        this._calculateSongDistribution(watched, unwatched, random, this.settings.songCount)
     }
 
     enableTypes(openings, endings, inserts){
@@ -362,7 +378,7 @@ class LobbySettings{
         if(typeof inserts !== "boolean"){
             throw "inserts argument must be boolean"
         }
-        if(!openings && !endings && !inserts){
+        if(!(openings || endings || inserts)){
             throw "At least one type must be enabled"
         }
         this.settings.songType.standardValue.openings = openings
@@ -384,14 +400,53 @@ class LobbySettings{
     }
     
     enableInserts(bool){
-        this.setTypes(this.settings.songType.standardValue.openings, this.settings.songType.standardValue.endings, bool,)
+        this.setTypes(this.settings.songType.standardValue.openings, this.settings.songType.standardValue.endings, bool)
     }
 
-    _calculateTypeDistribution(openings, endings, inserts, random, songCount){
-        //TODO
+    _calculateTypeDistribution(openingsRatio, endingsRatio, insertsRatio, randomRatio, songCount){
+        const ratioQuantifier = openingsRatio + endingsRatio + insertsRatio + randomRatio
+        let openings = Math.floor(songCount * openingsRatio / ratioQuantifier)
+        let endings = Math.floor(songCount * endingsRatio / ratioQuantifier)
+        let inserts = Math.floor(songCount * insertsRatio / ratioQuantifier)
+        let random = Math.floor(songCount * randomRatio / ratioQuantifier)
+        while(openings + endings + inserts + random < songCount){
+            const openingsRatioDiff = openings / songCount - openingsRatio / ratioQuantifier
+            const endingsRatioDiff = endings / songCount - endingsRatio / ratioQuantifier
+            const insertsRatioDiff = inserts / songCount - insertsRatio / ratioQuantifier
+            const randomRatioDiff = random / songCount - randomRatio / ratioQuantifier
+            const biggestDiff = Math.min(openingsRatioDiff, endingsRatioDiff, insertsRatioDiff, randomRatioDiff)
+            if(openingsRatioDiff === biggestDiff){
+                openings++
+            }else if(endingsRatioDiff === biggestDiff){
+                endings++
+            }else if(insertsRatioDiff === biggestDiff){
+                inserts++
+            }else{
+                random++
+            }
+        }
+        this.settings.songType.advancedValue.openings = openings
+        this.settings.songType.advancedValue.openings = endings
+        this.settings.songType.advancedValue.openings = inserts
+        this.settings.songType.advancedValue.openings = random
     }
 
     setTypeSelectionAdvanced(openings, endings, inserts, random){
+        if(!Number.isInteger(openings) || openings < 0){
+            throw "openings argument must be a integer larger or equal to zero"
+        }
+        if(!Number.isInteger(endings) || endings < 0){
+            throw "endings argument must be a integer larger or equal to zero"
+        }
+        if(!Number.isInteger(inserts) || inserts < 0){
+            throw "inserts argument must be a integer larger or equal to zero"
+        }
+        if(!Number.isInteger(random) || random < 0){
+            throw "random argument must be a integer larger or equal to zero"
+        }
+        if(openings + endings + inserts + random === 0){
+            throw "sum of types must be larger than 0"
+        }
         if(openings){
             this.settings.songType.standardValue.openings = true
         }
@@ -401,7 +456,18 @@ class LobbySettings{
         if(inserts){
             this.settings.songType.standardValue.inserts = true
         }
-        this._calculateTypeDistribution(openings, endings, inserts, random, openings + endings + inserts + random, this.settings.songCount)
+        if(!random){
+            if(!openings){
+                this.settings.songType.standardValue.openings = false
+            }
+            if(!endings){
+                this.settings.songType.standardValue.endings = false
+            }
+            if(!inserts){
+                this.settings.songType.standardValue.inserts = false
+            }
+        }
+        this._calculateTypeDistribution(openings, endings, inserts, random, this.settings.songCount)
     }
 
     
