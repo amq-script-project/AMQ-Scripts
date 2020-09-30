@@ -197,7 +197,22 @@ class LobbySettings{
                 QUANTIFIER: 100 //these ratios sum up to 100, to avoid floating points as much as possible
             },
             GUESS_TIME_MIN:5,
-            GUESS_TIME_MAX:60
+            GUESS_TIME_MAX:60,
+            SCORING:{
+                COUNT:1,
+                SPEED:2,
+                LIVES:3
+            },
+            SHOW_SELECTION:{
+                AUTO:1,
+                LOOTING:2
+            },
+            GAME_MODE:{
+                STANDARD:1,
+                QUICK_DRAW:2,
+                LAST_MAN_STANDING:3,
+                BATTLE_ROYALE:4
+            }
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -322,6 +337,18 @@ class LobbySettings{
         const ratio = this.CONST.SONG_SELECTION_STANDARD_RATIOS
         const ratios = [ratio.RANDOM, ratio.MIX, ratio.WATCHED][standardValue-1]
         this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.songCount)
+    }
+
+    setSongSelectionWatched(){
+        this.setShowSelection(this.CONST.SONG_SELECTION.WATCHED)
+    }
+
+    setSongSelectionMix(){
+        this.setShowSelection(this.CONST.SONG_SELECTION.MIX)
+    }
+
+    setSongSelectionRandom(){
+        this.setShowSelection(this.CONST.SONG_SELECTION.RANDOM)
     }
 
     _calculateSongDistribution(watchedRatio, unwatchedRatio, randomRatio, songCount){
@@ -499,6 +526,79 @@ class LobbySettings{
             throw "randomOn must be a bool"
         }
         this.settings.guessTime.randomOn = randomOn
+    }
+
+    setScoreType(scoreType){
+        if(!Object.values(this.CONST.SCORING).includes(scoreType)){
+            throw "Please use the values defined in CONST.SCORING"
+        }
+        this.settings.scoreType = scoreType
+    }
+
+    setScoreTypeCount(){
+        this.setScoreType(this.CONST.SCORING.COUNT)
+    }
+
+    setScoreTypeSpeed(){
+        this.setScoreType(this.CONST.SCORING.SPEED)
+    }
+
+    setScoreTypeLives(){
+        this.setScoreType(this.CONST.SCORING.LIVES)
+    }
+
+    setShowSelection(showSelection){
+        if(!Object.values(this.CONST.SCORING).includes(showSelection)){
+            throw "Please use the values defined in CONST.SCORING"
+        }
+        this.settings.showSelection = showSelection
+    }
+
+    setShowSelectionAuto(){
+        this.setShowSelection(this.CONST.SHOW_SELECTION.AUTO)
+    }
+
+    setShowSelectionLooting(){
+        this.setShowSelection(this.CONST.SHOW_SELECTION.LOOTING)
+    }
+
+    setGameMode(gameMode){
+        if(!Object.values(this.CONST.GAME_MODE).includes(gameMode)){
+            throw "Please use the values defined in CONST.GAME_MODE"
+        }
+        switch(gameMode){
+            case this.CONST.GAME_MODE.STANDARD:
+                this.setShowSelectionAuto()
+                this.setScoreTypeCount()
+                break
+            case this.CONST.GAME_MODE.QUICK_DRAW:
+                this.setShowSelectionAuto()
+                this.setScoreTypeSpeed()
+                break
+            case this.CONST.GAME_MODE.LAST_MAN_STANDING:
+                this.setShowSelectionAuto()
+                this.setScoreTypeLives()
+                break
+            case this.CONST.GAME_MODE.BATTLE_ROYALE:
+                this.setShowSelectionLooting()
+                this.setScoreTypeLives()
+        }
+    }
+
+    setGameModeStandard(){
+        this.setGameMode(this.CONST.GAME_MODE.STANDARD)
+    }
+
+    setGameModeQuickDraw(){
+        this.setGameMode(this.CONST.GAME_MODE.QUICK_DRAW)
+    }
+
+    setGameModeLastManStanding(){
+        this.setGameMode(this.CONST.GAME_MODE.LAST_MAN_STANDING)
+    }
+
+    setGameModeBattleRoyale(){
+        this.setGameMode(this.CONST.GAME_MODE.BATTLE_ROYALE)
     }
 
     
