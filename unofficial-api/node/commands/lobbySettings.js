@@ -245,7 +245,17 @@ class LobbySettings{
                 FALL:3
             },
             SEASON_MIN:0,
-            SEASON_MAX:3
+            SEASON_MAX:3,
+            GENRE_STATE:{
+                INCLUDE:1,
+                EXCLUDE:2,
+                OPTIONAL:3,
+            },
+            TAG_STATE:{
+                INCLUDE:1,
+                EXCLUDE:2,
+                OPTIONAL:3,
+            },
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -430,7 +440,7 @@ class LobbySettings{
         this._calculateSongDistribution(watched, unwatched, random, this.settings.songCount)
     }
 
-    enableTypes(openings, endings, inserts){
+    enableSongTypes(openings, endings, inserts){
         if(typeof openings !== "boolean"){
             throw "openings argument must be boolean"
         }
@@ -441,7 +451,7 @@ class LobbySettings{
             throw "inserts argument must be boolean"
         }
         if(!(openings || endings || inserts)){
-            throw "At least one type must be enabled"
+            throw "At least one show type must be enabled"
         }
         this.settings.songType.standardValue.openings = openings
         this.settings.songType.standardValue.endings = endings
@@ -450,7 +460,7 @@ class LobbySettings{
         const advancedEndings = endings?this.settings.songType.advancedValue.endings:0
         const advancedInserts = inserts?this.settings.songType.advancedValue.inserts:0
         const advancedRandom = this.settings.songType.advancedValue.random
-        this._calculateTypeDistribution(advancedOpenings, advancedEndings, advancedInserts, advancedRandom, this.settings.songCount)
+        this._calculateSongTypeDistribution(advancedOpenings, advancedEndings, advancedInserts, advancedRandom, this.settings.songCount)
     }
 
     enableOpenings(openingsOn){
@@ -465,7 +475,7 @@ class LobbySettings{
         this.setTypes(this.settings.songType.standardValue.openings, this.settings.songType.standardValue.endings, insertsOn)
     }
 
-    _calculateTypeDistribution(openingsRatio, endingsRatio, insertsRatio, randomRatio, songCount){
+    _calculateSongTypeDistribution(openingsRatio, endingsRatio, insertsRatio, randomRatio, songCount){
         const ratioQuantifier = openingsRatio + endingsRatio + insertsRatio + randomRatio
         let openings = Math.floor(songCount * openingsRatio / ratioQuantifier)
         let endings = Math.floor(songCount * endingsRatio / ratioQuantifier)
@@ -529,7 +539,7 @@ class LobbySettings{
                 this.settings.songType.standardValue.inserts = false
             }
         }
-        this._calculateTypeDistribution(openings, endings, inserts, random, this.settings.songCount)
+        this._calculateSongTypeDistribution(openings, endings, inserts, random, this.settings.songCount)
     }
 
     setGuessTime(standardValue) {
@@ -788,7 +798,7 @@ class LobbySettings{
         this.setPlaybackSpeedAdvanced(undefined, undefined, undefined, on)
     }
 
-    setSongDifficulty(easy=this.settings.songDifficulity.standardValue.easy, medium=this.settings.songDifficulity.standardValue.medium, hard=this.settings.songDifficulity.standardValue.hard){
+    enableSongDifficulty(easy=this.settings.songDifficulity.standardValue.easy, medium=this.settings.songDifficulity.standardValue.medium, hard=this.settings.songDifficulity.standardValue.hard){
         if(typeof easy !== "boolean"){
             throw "easy must be a bool"
         }
@@ -808,15 +818,15 @@ class LobbySettings{
     }
 
     enableSongDifficultyEasy(on){
-        this.setSongDifficulty(on)
+        this.enableSongDifficulty(on)
     }
     
     enableSongDifficultyMedium(on){
-        this.setSongDifficulty(undefined, on)
+        this.enableSongDifficulty(undefined, on)
     }
     
     enableSongDifficultyHard(on){
-        this.setSongDifficulty(undefined, undefined, on)
+        this.enableSongDifficulty(undefined, undefined, on)
     }
 
     setSongDifficultyAdvanced(low, high){
@@ -837,7 +847,7 @@ class LobbySettings{
         this.settings.songDifficulity.advancedOn = advancedOn
     }
 
-    setSongPopularity(disliked=this.settings.songPopularity.standardValue.disliked, mixed=this.settings.songPopularity.standardValue.mixed, liked=this.settings.songPopularity.standardValue.liked){
+    enableSongPopularity(disliked=this.settings.songPopularity.standardValue.disliked, mixed=this.settings.songPopularity.standardValue.mixed, liked=this.settings.songPopularity.standardValue.liked){
         if(typeof disliked !== "boolean"){
             throw "disliked must be a bool"
         }
@@ -857,15 +867,15 @@ class LobbySettings{
     }
 
     enableSongPopularityDisliked(on){
-        this.setSongPopularity(on)
+        this.enableSongPopularity(on)
     }
     
     enableSongPopularityMixed(on){
-        this.setSongPopularity(undefined, on)
+        this.enableSongPopularity(undefined, on)
     }
     
     enableSongPopularityLiked(on){
-        this.setSongPopularity(undefined, undefined, on)
+        this.enableSongPopularity(undefined, undefined, on)
     }
 
     setSongPopularityAdvanced(low, high){
@@ -1133,6 +1143,8 @@ class LobbySettings{
         if(seasonLow > seasonHigh){
             throw "Season low value cannot be higher than high value"
         }
+        this.settings.vintage.standardValue.years = [yearLow, yearHigh]
+        this.settings.vintage.standardValue.seasons = [seasonLow, seasonHigh]
         if(add){
             if(this.settings.vintage.advancedValueList.some((entry) => entry.years[0] === yearLow && entry.years[1] === yearHigh && entry.seasons[0] === seasonLow && entry.seasons[1] === seasonHigh)){
                 throw "vintage already in list"
@@ -1141,8 +1153,6 @@ class LobbySettings{
         }else{
             this.settings.vintage.advancedValueList = []
         }
-        this.settings.vintage.standardValue.years = [yearLow, yearHigh]
-        this.settings.vintage.standardValue.seasons = [seasonLow, seasonHigh]
     }
 
     resetVintage() {
@@ -1151,6 +1161,158 @@ class LobbySettings{
 
     addVintage(yearLow, yearHigh, seasonLow, seasonHigh) {
         this.setVintage(yearLow, yearHigh, seasonLow, seasonHigh, true)
+    }
+
+    enableShowTypes(tv=this.settings.type.tv, movie=this.settings.type.movie, ova=this.settings.type.ova, ona=this.settings.type.ona, special=this.settings.type.special){
+        if(typeof tv !== "boolean"){
+            throw "show type tv must be a bool"
+        }
+        if(typeof movie !== "boolean"){
+            throw "show type movie must be a bool"
+        }
+        if(typeof ova !== "boolean"){
+            throw "show type ova must be a bool"
+        }
+        if(typeof ona !== "boolean"){
+            throw "show type ona must be a bool"
+        }
+        if(typeof special !== "boolean"){
+            throw "show type special must be a bool"
+        }
+        if(!(tv || movie || ova || ona || special)){
+            throw "At least one show type must be enabled"
+        }
+        this.settings.type.tv = tv
+        this.settings.type.movie = movie
+        this.settings.type.ova = ova
+        this.settings.type.ona = ona
+        this.settings.type.special = special
+    }
+
+    enableAllShowTypes(){
+        this.enableShowTypes(true,true,true,true,true)
+    }
+
+    addGenre(id, state){ //keeping a list of genres is beyond the scope of the settings
+        if(typeof id !== "string"){
+            throw "genre id must be a string"
+        }
+        if(!Object.values(this.CONST.GENRE_STATE).includes(state)){
+            throw "Please use the values defined in CONST.GENRE_STATE"
+        }
+        if(this.settings.genre.some(entry => entry.id === id)){
+            throw "genre already in filter"
+        }
+        this.settings.genre.push({id, state})
+    }
+
+    includeGenre(id){
+        try{
+            this.addGenre(id, this.CONST.GENRE_STATE.INCLUDE)
+        }catch{
+            this.changeGenreState(id, this.CONST.GENRE_STATE.INCLUDE)
+        }
+    }
+    
+    excludeGenre(id){
+        try{
+            this.addGenre(id, this.CONST.GENRE_STATE.EXCLUDE)
+        }catch{
+            this.changeGenreState(id, this.CONST.GENRE_STATE.EXCLUDE)
+        }
+    }
+    
+    optionalGenre(id){
+        try{
+            this.addGenre(id, this.CONST.GENRE_STATE.OPTIONAL)
+        }catch{
+            this.changeGenreState(id, this.CONST.GENRE_STATE.OPTIONAL)
+        }
+    }
+
+    changeGenreState(id, state){
+        if(typeof id !== "string"){
+            throw "genre id must be a string"
+        }
+        if(!Object.values(this.CONST.GENRE_STATE).includes(state)){
+            throw "Please use the values defined in CONST.GENRE_STATE"
+        }
+        if(!this.settings.genre.some(entry => entry.id === id)){
+            throw "genre not in filter"
+        }
+        this.settings.genre.find(entry => entry.id === id).state = state
+    }
+
+    removeGenre(id){
+        if(!this.settings.genre.some(entry => entry.id === id)){
+            throw "genre not in filter"
+        }
+        this.settings.genre = this.settings.genre.filter(entry => entry.id !== id)
+    }
+
+    clearGenres(){
+        this.settings.genre = []
+    }
+    
+    addTag(id, state){ //keeping a list of tags is beyond the scope of the settings
+        if(typeof id !== "string"){
+            throw "tag id must be a string"
+        }
+        if(!Object.values(this.CONST.TAG_STATE).includes(state)){
+            throw "Please use the values defined in CONST.TAG_STATE"
+        }
+        if(this.settings.tags.some(entry => entry.id === id)){
+            throw "tag already in filter"
+        }
+        this.settings.tags.push({id, state})
+    }
+
+    includeTag(id){
+        try{
+            this.addTag(id, this.CONST.TAG_STATE.INCLUDE)
+        }catch{
+            this.changeTagState(id, this.CONST.TAG_STATE.INCLUDE)
+        }
+    }
+    
+    excludeTag(id){
+        try{
+            this.addTag(id, this.CONST.TAG_STATE.EXCLUDE)
+        }catch{
+            this.changeTagState(id, this.CONST.TAG_STATE.EXCLUDE)
+        }
+    }
+    
+    optionalTag(id){
+        try{
+            this.addTag(id, this.CONST.TAG_STATE.OPTIONAL)
+        }catch{
+            this.changeTagState(id, this.CONST.TAG_STATE.OPTIONAL)
+        }
+    }
+
+    changeTagState(id, state){
+        if(typeof id !== "string"){
+            throw "tag id must be a string"
+        }
+        if(!Object.values(this.CONST.TAG_STATE).includes(state)){
+            throw "Please use the values defined in CONST.TAG_STATE"
+        }
+        if(!this.settings.tags.some(entry => entry.id === id)){
+            throw "tag not in filter"
+        }
+        this.settings.tags.find(entry => entry.id === id).state = state
+    }
+
+    removeTag(id){
+        if(!this.settings.tags.some(entry => entry.id === id)){
+            throw "tag not in filter"
+        }
+        this.settings.tags = this.settings.tags.filter(entry => entry.id !== id)
+    }
+
+    clearTags(){
+        this.settings.tags = []
     }
 }
 module.exports = LobbySettings
