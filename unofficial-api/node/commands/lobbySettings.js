@@ -176,89 +176,142 @@ class LobbySettings{
                 this.settings[key] = override[key]
             }
         })
-        this.CONST = {
-            ROOM_NAME_MAX_LENGTH:20,
-            PASSWORD_MAX_LENGTH:50,
-            ROOM_SIZE_MIN:1,
-            ROOM_SIZE_MAX:40,
-            SONG_COUNT_MIN:5,
-            SONG_COUNT_MAX:100,
-            TEAM_SIZE_MIN:1,
-            TEAM_SIZE_MAX:8,
-            SONG_SELECTION:{
-                RANDOM:1,
-                MIX:2,
-                WATCHED:3
-            },
-            SONG_SELECTION_STANDARD_RATIOS:{ 
-                RANDOM: {WATCHED: 0, UNWATCHED: 0, RANDOM: 100},
-                MIX: {WATCHED: 80, UNWATCHED: 20, RANDOM: 0},
-                WATCHED: {WATCHED: 100, UNWATCHED: 0, RANDOM: 0},
-                QUANTIFIER: 100 //these ratios sum up to 100, to avoid floating points as much as possible
-            },
-            GUESS_TIME_MIN:5,
-            GUESS_TIME_MAX:60,
-            SCORING:{
-                COUNT:1,
-                SPEED:2,
-                LIVES:3
-            },
-            SHOW_SELECTION:{
-                AUTO:1,
-                LOOTING:2
-            },
-            GAME_MODE:{
-                STANDARD:1,
-                QUICK_DRAW:2,
-                LAST_MAN_STANDING:3,
-                BATTLE_ROYALE:4
-            },
-            INVENTORY_SIZE_MIN:1,
-            INVENTORY_SIZE_MAX:99,
-            LIVES_MIN:1,
-            LIVES_MAX:5,
-            LOOTING_TIME_MIN:10,
-            LOOTING_TIME_MAX:150,
-            SAMPLE_POINT:{
-                START:1,
-                MIDDLE:2,
-                END:3
-            },
-            SAMPLE_POINT_MIN:0,
-            SAMPLE_POINT_MAX:100,
-            PLAYBACK_SPEED_MIN:1.0,
-            PLAYBACK_SPEED_MAX:4.0,
-            DIFFICULTY_MIN:0,
-            DIFFICULTY_MAX:100,
-            POPULARITY_MIN:0,
-            POPULARITY_MAX:100,
-            PLAYER_SCORE_MIN:1,
-            PLAYER_SCORE_MAX:10,
-            ANIME_SCORE_MIN:2,
-            ANIME_SCORE_MAX:10,
-            YEAR_MIN:1944,
-            YEAR_MAX:new Date().getFullYear(), //future-proofing
-            SEASON:{ //no idea why this particular list is 0-indexed
-                WINTER:0,
-                SPRING:1,
-                SUMMER:2,
-                FALL:3
-            },
-            SEASON_MIN:0,
-            SEASON_MAX:3,
-            GENRE_STATE:{
-                INCLUDE:1,
-                EXCLUDE:2,
-                OPTIONAL:3,
-            },
-            TAG_STATE:{
-                INCLUDE:1,
-                EXCLUDE:2,
-                OPTIONAL:3,
-            },
-        }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
+
+    static validate(settings){
+        const dummy = new this()
+        dummy.setRoomName(settings.roomName)
+        if(settings.privateRoom && !settings.password){
+            throw "privateRoom without password"
+        }
+        dummy.setPassword(settings.password)
+        dummy.setRoomSize(settings.roomSize)
+        dummy.setSongCount(settings.numberOfSongs)
+        dummy.setTeamSize(settings.teamSize) //game does not care if team size exceeds room size
+        dummy.enableSkipGuessing(settings.modifiers.skipGuessing)
+        dummy.enableSkipReplay(settings.modifiers.skipReplay)
+        dummy.enableDuplicates(settings.modifiers.duplicates)
+        dummy.enableQueueing(settings.modifiers.queueing)
+        dummy.enableLootDropping(settings.modifiers.lootDropping)
+        { //songSelection
+            const sss = settings.songSelection.standardValue
+            const ssa = settings.songSelection.advancedValue
+            dummy.setSongSelection(sss)
+            if(ssa.watched+ssa.unwatched+ssa.random !== settings.numberOfSongs){
+                throw "song selection count mismatch"
+            }
+            if((ssa.unwatched || (ssa.watched && ssa.random)) && sss !== this.CONST.SONG_SELECTION.MIXED){
+                throw "song selection mixed distribution, but not mixed standardvalue"
+            }else if(ssa.watched && sss !== this.CONST.SONG_SELECTION.WATCHED){
+                throw "song selection watched distribution, but not watched standardvalue"
+            }else if(sss !== this.CONST.SONG_SELECTION.RANDOM){
+                throw "song selection random distribution, but not random standardvalue"
+            }
+            dummy.setSongSelectionAdvanced(ssa.watched, ssa.unwatched, ssa.random)
+        }
+        { //songType
+            const sts = settings.songType.standardValue
+            const sta = settings.songType.advancedValue
+            dummy.enableSongTypes(sts.openings, sts.endings, sts.inserts)
+            dummy.setSongTypeSelectionAdvanced(sta.openings, sta.endings, sta.inserts, sta.random)
+            if(!sts.openings && Boolean(sta.openings)){
+                throw "openings disabled but openings count has non-zero value"
+            }
+            if(!sts.endings && Boolean(sta.endings)){
+                throw "endings disabled but endings count has non-zero value"
+            }
+            if(!sts.inserts && Boolean(sta.inserts)){
+                throw "inserts disabled but inserts count has non-zero value"
+            }
+            if(sta.openings+sta.endings+sta.inserts+sta.random !== settings.numberOfSongs){
+                throw "song type selection count mismatch"
+            }
+        }
+    }
+
+    static CONST = {
+        ROOM_NAME_MAX_LENGTH:20,
+        PASSWORD_MAX_LENGTH:50,
+        ROOM_SIZE_MIN:1,
+        ROOM_SIZE_MAX:40,
+        SONG_COUNT_MIN:5,
+        SONG_COUNT_MAX:100,
+        TEAM_SIZE_MIN:1,
+        TEAM_SIZE_MAX:8,
+        SONG_SELECTION:{
+            RANDOM:1,
+            MIX:2,
+            WATCHED:3
+        },
+        SONG_SELECTION_STANDARD_RATIOS:{ 
+            RANDOM: {WATCHED: 0, UNWATCHED: 0, RANDOM: 100},
+            MIX: {WATCHED: 80, UNWATCHED: 20, RANDOM: 0},
+            WATCHED: {WATCHED: 100, UNWATCHED: 0, RANDOM: 0},
+            QUANTIFIER: 100 //these ratios sum up to 100, to avoid floating points as much as possible
+        },
+        GUESS_TIME_MIN:5,
+        GUESS_TIME_MAX:60,
+        SCORING:{
+            COUNT:1,
+            SPEED:2,
+            LIVES:3
+        },
+        SHOW_SELECTION:{
+            AUTO:1,
+            LOOTING:2
+        },
+        GAME_MODE:{
+            STANDARD:1,
+            QUICK_DRAW:2,
+            LAST_MAN_STANDING:3,
+            BATTLE_ROYALE:4
+        },
+        INVENTORY_SIZE_MIN:1,
+        INVENTORY_SIZE_MAX:99,
+        LIVES_MIN:1,
+        LIVES_MAX:5,
+        LOOTING_TIME_MIN:10,
+        LOOTING_TIME_MAX:150,
+        SAMPLE_POINT:{
+            START:1,
+            MIDDLE:2,
+            END:3
+        },
+        SAMPLE_POINT_MIN:0,
+        SAMPLE_POINT_MAX:100,
+        PLAYBACK_SPEED_MIN:1.0,
+        PLAYBACK_SPEED_MAX:4.0,
+        DIFFICULTY_MIN:0,
+        DIFFICULTY_MAX:100,
+        POPULARITY_MIN:0,
+        POPULARITY_MAX:100,
+        PLAYER_SCORE_MIN:1,
+        PLAYER_SCORE_MAX:10,
+        ANIME_SCORE_MIN:2,
+        ANIME_SCORE_MAX:10,
+        YEAR_MIN:1944,
+        YEAR_MAX:new Date().getFullYear(), //future-proofing
+        SEASON:{ //no idea why this particular list is 0-indexed
+            WINTER:0,
+            SPRING:1,
+            SUMMER:2,
+            FALL:3
+        },
+        SEASON_MIN:0,
+        SEASON_MAX:3,
+        GENRE_STATE:{
+            INCLUDE:1,
+            EXCLUDE:2,
+            OPTIONAL:3,
+        },
+        TAG_STATE:{
+            INCLUDE:1,
+            EXCLUDE:2,
+            OPTIONAL:3,
+        },
+    }
+
     getSettings(){
         return JSON.parse(JSON.stringify(this.settings))
     }
@@ -503,7 +556,7 @@ class LobbySettings{
         this.settings.songType.advancedValue.openings = random
     }
 
-    setTypeSelectionAdvanced(openings, endings, inserts, random){
+    setSongTypeSelectionAdvanced(openings, endings, inserts, random){
         if(!Number.isInteger(openings) || openings < 0){
             throw "openings argument must be a integer larger or equal to zero"
         }
@@ -529,15 +582,9 @@ class LobbySettings{
             this.settings.songType.standardValue.inserts = true
         }
         if(!random){
-            if(!openings){
-                this.settings.songType.standardValue.openings = false
-            }
-            if(!endings){
-                this.settings.songType.standardValue.endings = false
-            }
-            if(!inserts){
-                this.settings.songType.standardValue.inserts = false
-            }
+            this.settings.songType.standardValue.openings = Boolean(openings)
+            this.settings.songType.standardValue.endings = Boolean(endings)
+            this.settings.songType.standardValue.inserts = Boolean(inserts)
         }
         this._calculateSongTypeDistribution(openings, endings, inserts, random, this.settings.songCount)
     }
