@@ -227,7 +227,107 @@ class LobbySettings{
             if(sta.openings+sta.endings+sta.inserts+sta.random !== settings.numberOfSongs){
                 throw "song type selection count mismatch"
             }
+            if(sts.openings === undefined){
+                throw "openings can not be undefined"
+            }
+            if(sts.endings === undefined){
+                throw "endings can not be undefined"
+            }
+            if(sts.inserts === undefined){
+                throw "inserts can not be undefined"
+            }
         }
+        const invalidList = ["a","a","a","a","a","a","a","a","a","a","a","a"] //this is a list to reveal too short lists
+        dummy.setGuessTime(settings.guessTime.standardValue)
+        dummy.setGuessTimeAdvanced(...settings.guessTime.randomValue, ...invalidList)
+        dummy.enableRandomGuessTime(settings.guessTime.randomOn)
+        dummy.setScoreType(settings.guessTime.scoreType)
+        dummy.setShowSelection(settings.guessTime.showSelection)
+        dummy.setInventorySize(settings.inventorySize.standardValue)
+        dummy.setInventorySizeAdvanced(...settings.inventorySize.randomValue, ...invalidList)
+        dummy.enableRandomInventorySize(settings.inventorySize.randomOn)
+        dummy.setLootingTime(settings.lootingTime.standardValue)
+        dummy.setLootingTimeAdvanced(...settings.lootingTime.randomValue, ...invalidList)
+        dummy.enableRandomLootingTime(settings.lootingTime.randomOn)
+        dummy.setLives(settings.lives)
+        dummy.setSamplePoint(settings.samplePoint.standardValue)
+        dummy.setSamplePointAdvanced(...settings.samplePoint.randomValue, ...invalidList)
+        dummy.enableRandomSamplePoint(settings.samplePoint.randomOn)
+        dummy.setPlaybackSpeed(settings.playbackSpeed.standardValue)
+        dummy.setPlaybackSpeedAdvanced(...settings.playbackSpeed.randomValue, ...invalidList)
+        if(settings.playbackSpeed.randomValue.some(entry => entry === undefined)){
+            throw "playback speed advanced must not contained undefined variables"
+        }
+        dummy.enableRandomPlaybackSpeed(settings.playbackSpeed.randomOn)
+        dummy.enableSongDifficulty(settings.songDifficulity.standardValue.easy, settings.songDifficulity.standardValue.medium, settings.songDifficulity.standardValue.hard)
+        dummy.setSongDifficultyAdvanced(...settings.songDifficulity.advancedValue, ...invalidList)
+        dummy.enableSongDifficultyAdvanced(settings.songDifficulity.advancedOn)
+        {
+            const s = settings.songDifficulity.standardValue
+            if(s.easy === undefined){
+                throw "easy can not be undefined"
+            }
+            if(s.medium === undefined){
+                throw "medium can not be undefined"
+            }
+            if(s.hard === undefined){
+                throw "hard can not be undefined"
+            }
+        }
+        dummy.enableSongPopularity(settings.songPopularity.standardValue.easy, settings.songPopularity.standardValue.medium, settings.songPopularity.standardValue.hard)
+        dummy.setSongPopularityAdvanced(...settings.songPopularity.advancedValue, ...invalidList)
+        dummy.enableSongPopularityAdvanced(settings.songPopularity.advancedOn)
+        {
+            const p = settings.songPopularity.standardValue
+            if(p.disliked === undefined){
+                throw "disliked can not be undefined"
+            }
+            if(p.mixed === undefined){
+                throw "mixed can not be undefined"
+            }
+            if(p.liked === undefined){
+                throw "liked can not be undefined"
+            }
+        }
+        dummy.setPlayerScore(...settings.playerScore.standardValue, ...invalidList)
+        dummy.setPlayerScoreAdvanced(...settings.playerScore.advancedValue, ...invalidList)
+        dummy.enablePlayerScoreAdvanced(settings.playerScore.advancedOn)
+        if(settings.playerScore.advancedValue.some(entry => entry === undefined)){
+            throw "player score advanced must not contained undefined variables"
+        }
+        dummy.setAnimeScore(...settings.animeScore.standardValue, ...invalidList)
+        dummy.setAnimeScoreAdvanced(...settings.animeScore.advancedValue, ...invalidList)
+        if(settings.animeScore.advancedValue.some(entry => entry === undefined)){
+            throw "anime score advanced must not contained undefined variables"
+        }
+        dummy.enableAnimeScoreAdvanced(settings.animeScore.advancedOn)
+        { //vintage
+            const vs = settings.vintage.standardValue
+            const va = settings.vintage.advancedValueList
+            dummy.setVintage(vs.years[0], vs.years[1], vs.seasons[0], vs.seasons[1])
+            va.forEach(entry => {dummy.addVintage(entry.years[0], entry.years[1], entry.seasons[0], entry.seasons[1])})
+        }
+        { //showtypes
+            const t = settings.type
+            if(t.tv === undefined){
+                throw "tv can not be undefined"
+            }
+            if(t.movie === undefined){
+                throw "movie can not be undefined"
+            }
+            if(t.ova === undefined){
+                throw "ova can not be undefined"
+            }
+            if(t.ona === undefined){
+                throw "ona can not be undefined"
+            }
+            if(t.special === undefined){
+                throw "special can not be undefined"
+            }
+            dummy.enableShowTypes(t.tv, t.movie, t.ova, t.ona, t.special)
+        }
+        settings.genre.forEach(entry => {dummy.addGenre(entry.id, entry.state)})
+        settings.tags.forEach(entry => {dummy.addTag(entry.id, entry.state)})
     }
 
     static CONST = {
