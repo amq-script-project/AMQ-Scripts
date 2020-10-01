@@ -328,6 +328,12 @@ class LobbySettings{
         }
         settings.genre.forEach(entry => {dummy.addGenre(entry.id, entry.state)})
         settings.tags.forEach(entry => {dummy.addTag(entry.id, entry.state)})
+        if(settings.gameMode !== "Solo" && settings.gameMode !== "Multiplayer"){
+            throw "game mode argument invalid"
+        } 
+        if((settings.roomSize>1?"Multiplayer":"Solo" !== settings.gameMode)){
+            throw "game mode does not correspond to amount of players"
+        }
     }
 
     static CONST = {
