@@ -80,7 +80,7 @@ class LobbySettings{
                     true
                 ]
             },
-            songDifficulity:{
+            songDifficulity:{ // sic
                 advancedOn:false,
                 standardValue:{
                     easy:true,
@@ -227,7 +227,11 @@ class LobbySettings{
             SAMPLE_POINT_MIN:0,
             SAMPLE_POINT_MAX:100,
             PLAYBACK_SPEED_MIN:1.0,
-            PLAYBACK_SPEED_MAX:4.0
+            PLAYBACK_SPEED_MAX:4.0,
+            DIFFICULTY_MIN:0,
+            DIFFICULTY_MAX:100,
+            POPULARITY_MIN:0,
+            POPULARITY_MAX:100,
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -527,7 +531,7 @@ class LobbySettings{
             throw "Guess time low must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
         }
         if(!Number.isInteger(high) || high < this.CONST.GUESS_TIME_MIN || high < this.CONST.GUESS_TIME_MAX){
-            throw "Guess time low must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
+            throw "Guess time high must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
         }
         if(low > high){
             throw "Guess time low value cannot be higher than high value"
@@ -629,7 +633,7 @@ class LobbySettings{
             throw "Inventory size low must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
         }
         if(!Number.isInteger(high) || high < this.CONST.INVENTORY_SIZE_MIN || high < this.CONST.INVENTORY_SIZE_MAX){
-            throw "Inventory size low must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
+            throw "Inventory size high must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
         }
         if(low > high){
             throw "Inventory size low value cannot be higher than high value"
@@ -658,7 +662,7 @@ class LobbySettings{
             throw "Looting time low must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
         }
         if(!Number.isInteger(high) || high < this.CONST.LOOTING_TIME_MIN || high < this.CONST.LOOTING_TIME_MAX){
-            throw "Looting time low must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
+            throw "Looting time high must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
         }
         if(low > high){
             throw "Looting time low value cannot be higher than high value"
@@ -706,7 +710,7 @@ class LobbySettings{
             throw "Looting time low must be in the integer interval [" + this.CONST.SAMPLE_POINT_MIN + "," + this.CONST.SAMPLE_POINT_MAX + "]"
         }
         if(!Number.isInteger(high) || high < this.CONST.SAMPLE_POINT_MIN || high < this.CONST.SAMPLE_POINT_MAX){
-            throw "Looting time low must be in the integer interval [" + this.CONST.SAMPLE_POINT_MIN + "," + this.CONST.SAMPLE_POINT_MAX + "]"
+            throw "Looting time high must be in the integer interval [" + this.CONST.SAMPLE_POINT_MIN + "," + this.CONST.SAMPLE_POINT_MAX + "]"
         }
         if(low > high){
             throw "Looting time low value cannot be higher than high value"
@@ -726,6 +730,8 @@ class LobbySettings{
         if(typeof multiplier !== "number" || Number.isNaN(multiplier) || multiplier < this.CONST.PLAYBACK_SPEED_MIN || multiplier > this.CONST.PLAYBACK_SPEED_MAX){
             throw "Playback speed multiplier must be a real number in the interval [" + this.CONST.PLAYBACK_SPEED_MIN + ", " + this.CONST.PLAYBACK_SPEED_MAX + "]"
         }
+        this.settings.playbackSpeed.standardValue = multiplier
+        this.playbackSpeed.randomOn = false
     }
 
     setPlaybackSpeedAdvanced(enable1=this.playbackSpeed.randomValue[0], enable1_5=this.playbackSpeed.randomValue[1], enable2=this.playbackSpeed.randomValue[2], enable4=this.playbackSpeed.randomValue[3]) {
@@ -742,26 +748,128 @@ class LobbySettings{
             throw "playback speed enable4 must be a bool"
         }
         if(!(enable1 || enable1_5 || enable2 || enable4)){
-            throw "At least one advanced playback speed must be chosen"
+            throw "At least one advanced playback speed must be enabled"
         }
         this.playbackSpeed.randomValue = [enable1, enable1_5, enable2, enable4]
         this.playbackSpeed.randomOn = true
     }
 
+    enableRandomPlaybackSpeed(randomOn) {
+        this.playbackSpeed.randomOn = randomOn
+    }
+
     enablePlaybackSpeed1(on){
-        this.setPlaybackSpeedAdvanced(enable1=on)
+        this.setPlaybackSpeedAdvanced(on)
     }
     
     enablePlaybackSpeed1_5(on){
-        this.setPlaybackSpeedAdvanced(enable1_5=on)
+        this.setPlaybackSpeedAdvanced(undefined, on)
     }
     
     enablePlaybackSpeed2(on){
-        this.setPlaybackSpeedAdvanced(enable2=on)
+        this.setPlaybackSpeedAdvanced(undefined, undefined, on)
     }
     
     enablePlaybackSpeed4(on){
-        this.setPlaybackSpeedAdvanced(enable4=on)
+        this.setPlaybackSpeedAdvanced(undefined, undefined, undefined, on)
+    }
+
+    setSongDifficulty(easy=this.settings.songDifficulity.standardValue.easy, medium=this.settings.songDifficulity.standardValue.medium, hard=this.settings.songDifficulity.standardValue.hard){
+        if(typeof easy !== "boolean"){
+            throw "easy must be a bool"
+        }
+        if(typeof medium !== "boolean"){
+            throw "medium must be a bool"
+        }
+        if(typeof hard !== "boolean"){
+            throw "hard must be a bool"
+        }
+        if(!(easy || medium || hard)){
+            throw "At least one difficulty must be enabled"
+        }
+        this.settings.songDifficulity.standardValue.easy = easy
+        this.settings.songDifficulity.standardValue.medium = medium
+        this.settings.songDifficulity.standardValue.hard = hard
+        this.settings.songDifficulity.advancedOn = false
+    }
+
+    enableSongDifficultyEasy(on){
+        this.setSongDifficulty(on)
+    }
+    
+    enableSongDifficultyMedium(on){
+        this.setSongDifficulty(undefined, on)
+    }
+    
+    enableSongDifficultyHard(on){
+        this.setSongDifficulty(undefined, undefined, on)
+    }
+
+    setSongDifficultyAdvanced(low, high){
+        if(!Number.isInteger(low) || low < this.CONST.DIFFICULTY_MIN || low < this.CONST.DIFFICULTY_MAX){
+            throw "Difficulty low must be in the integer interval [" + this.CONST.DIFFICULTY_MIN + "," + this.CONST.DIFFICULTY_MAX + "]"
+        }
+        if(!Number.isInteger(high) || high < this.CONST.DIFFICULTY_MIN || high < this.CONST.DIFFICULTY_MAX){
+            throw "Difficulty high must be in the integer interval [" + this.CONST.DIFFICULTY_MIN + "," + this.CONST.DIFFICULTY_MAX + "]"
+        }
+        if(low > high){
+            throw "Difficulty low value cannot be higher than high value"
+        }
+        this.settings.songDifficulity.advancedOn = true
+        this.settings.songDifficulity.advancedValue = [low, high]
+    }
+
+    enableSongDifficultyAdvanced(advancedOn){
+        this.settings.songDifficulity.advancedOn = advancedOn
+    }
+
+    setSongPopularity(disliked=this.settings.songPopularity.standardValue.disliked, mixed=this.settings.songPopularity.standardValue.mixed, liked=this.settings.songPopularity.standardValue.liked){
+        if(typeof disliked !== "boolean"){
+            throw "disliked must be a bool"
+        }
+        if(typeof mixed !== "boolean"){
+            throw "mixed must be a bool"
+        }
+        if(typeof liked !== "boolean"){
+            throw "liked must be a bool"
+        }
+        if(!(disliked || mixed || liked)){
+            throw "At least one popularity must be enabled"
+        }
+        this.settings.songPopularity.standardValue.disliked = disliked
+        this.settings.songPopularity.standardValue.mixed = mixed
+        this.settings.songPopularity.standardValue.liked = liked
+        this.settings.songPopularity.advancedOn = false
+    }
+
+    enableSongPopularityDisliked(on){
+        this.setSongPopularity(on)
+    }
+    
+    enableSongPopularityMixed(on){
+        this.setSongPopularity(undefined, on)
+    }
+    
+    enableSongPopularityLiked(on){
+        this.setSongPopularity(undefined, undefined, on)
+    }
+
+    setSongPopularityAdvanced(low, high){
+        if(!Number.isInteger(low) || low < this.CONST.POPULARITY_MIN || low < this.CONST.POPULARITY_MAX){
+            throw "Popularity low must be in the integer interval [" + this.CONST.POPULARITY_MIN + "," + this.CONST.POPULARITY_MAX + "]"
+        }
+        if(!Number.isInteger(high) || high < this.CONST.POPULARITY_MIN || high < this.CONST.POPULARITY_MAX){
+            throw "Popularity high must be in the integer interval [" + this.CONST.POPULARITY_MIN + "," + this.CONST.POPULARITY_MAX + "]"
+        }
+        if(low > high){
+            throw "Popularity low value cannot be higher than high value"
+        }
+        this.settings.songPopularity.advancedOn = true
+        this.settings.songPopularity.advancedValue = [low, high]
+    }
+
+    enableSongPopularityAdvanced(advancedOn){
+        this.settings.songPopularity.advancedOn = advancedOn
     }
 
     
