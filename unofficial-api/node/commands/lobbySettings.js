@@ -236,6 +236,16 @@ class LobbySettings{
             PLAYER_SCORE_MAX:10,
             ANIME_SCORE_MIN:2,
             ANIME_SCORE_MAX:10,
+            YEAR_MIN:1944,
+            YEAR_MAX:new Date().getFullYear(), //future-proofing
+            SEASON:{ //no idea why this particular list is 0-indexed
+                WINTER:0,
+                SPRING:1,
+                SUMMER:2,
+                FALL:3
+            },
+            SEASON_MIN:0,
+            SEASON_MAX:3
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -1103,5 +1113,44 @@ class LobbySettings{
     //anime score end
 
     //scores end
+
+    setVintage(yearLow, yearHigh, seasonLow, seasonHigh, add=false) {
+        if(!Number.isInteger(yearLow) || yearLow < this.CONST.YEAR_MIN || yearLow < this.CONST.YEAR_MAX){
+            throw "Year low must be in the integer interval [" + this.CONST.YEAR_MIN + "," + this.CONST.YEAR_MAX + "]"
+        }
+        if(!Number.isInteger(yearHigh) || yearHigh < this.CONST.YEAR_MIN || yearHigh < this.CONST.YEAR_MAX){
+            throw "Year high must be in the integer interval [" + this.CONST.YEAR_MIN + "," + this.CONST.YEAR_MAX + "]"
+        }
+        if(yearLow > yearHigh){
+            throw "Year low value cannot be higher than high value"
+        }
+        if(!Number.isInteger(seasonLow) || seasonLow < this.CONST.SEASON_MIN || seasonLow < this.CONST.SEASON_MAX){
+            throw "Season low must be in the integer interval [" + this.CONST.SEASON_MIN + "," + this.CONST.SEASON_MAX + "]"
+        }
+        if(!Number.isInteger(seasonHigh) || seasonHigh < this.CONST.SEASON_MIN || seasonHigh < this.CONST.SEASON_MAX){
+            throw "Season high must be in the integer interval [" + this.CONST.SEASON_MIN + "," + this.CONST.SEASON_MAX + "]"
+        }
+        if(seasonLow > seasonHigh){
+            throw "Season low value cannot be higher than high value"
+        }
+        if(add){
+            if(this.settings.vintage.advancedValueList.some((entry) => entry.years[0] === yearLow && entry.years[1] === yearHigh && entry.seasons[0] === seasonLow && entry.seasons[1] === seasonHigh)){
+                throw "vintage already in list"
+            }
+            this.settings.vintage.advancedValueList.push({years:[yearLow, yearHigh], seasons:[seasonLow, seasonHigh]})
+        }else{
+            this.settings.vintage.advancedValueList = []
+        }
+        this.settings.vintage.standardValue.years = [yearLow, yearHigh]
+        this.settings.vintage.standardValue.seasons = [seasonLow, seasonHigh]
+    }
+
+    resetVintage() {
+        this.setVintage(this.CONST.YEAR_MIN, this.CONST.YEAR_MAX, this.CONST.SEASON_MIN, this.CONST.SEASON_MAX)
+    }
+
+    addVintage(yearLow, yearHigh, seasonLow, seasonHigh) {
+        this.setVintage(yearLow, yearHigh, seasonLow, seasonHigh, true)
+    }
 }
 module.exports = LobbySettings
