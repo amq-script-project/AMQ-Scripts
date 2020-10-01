@@ -232,6 +232,10 @@ class LobbySettings{
             DIFFICULTY_MAX:100,
             POPULARITY_MIN:0,
             POPULARITY_MAX:100,
+            PLAYER_SCORE_MIN:1,
+            PLAYER_SCORE_MAX:10,
+            ANIME_SCORE_MIN:2,
+            ANIME_SCORE_MAX:10,
         }
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
@@ -871,7 +875,233 @@ class LobbySettings{
     enableSongPopularityAdvanced(advancedOn){
         this.settings.songPopularity.advancedOn = advancedOn
     }
+    //scores start
+    //player score start
 
+    setPlayerScore(low, high){
+        if(!Number.isInteger(low) || low < this.CONST.PLAYER_SCORE_MIN || low < this.CONST.PLAYER_SCORE_MAX){
+            throw "Player score low must be in the integer interval [" + this.CONST.PLAYER_SCORE_MIN + "," + this.CONST.PLAYER_SCORE_MAX + "]"
+        }
+        if(!Number.isInteger(high) || high < this.CONST.PLAYER_SCORE_MIN || high < this.CONST.PLAYER_SCORE_MAX){
+            throw "Player score high must be in the integer interval [" + this.CONST.PLAYER_SCORE_MIN + "," + this.CONST.PLAYER_SCORE_MAX + "]"
+        }
+        if(low > high){
+            throw "Player score low value cannot be higher than high value"
+        }
+        this.settings.playerScore.advancedOn = false
+        this.settings.playerScore.standardValue = [low, high]
+    }
+
+    resetPlayerScore() { //this is added as a special QoL case, because unscored anime gets excluded by player score
+        this.setPlayerScore(this.CONST.PLAYER_SCORE_MIN, this.CONST.PLAYER_SCORE_MAX)
+    }
+
+    enablePlayerScoreAdvanced(advancedOn){
+        this.settings.playerScore.advancedOn = advancedOn
+    }
+
+    setPlayerScoreAdvanced(
+        enable1=this.settings.playerScore.advancedValue[0],
+        enable2=this.settings.playerScore.advancedValue[1],
+        enable3=this.settings.playerScore.advancedValue[2],
+        enable4=this.settings.playerScore.advancedValue[3],
+        enable5=this.settings.playerScore.advancedValue[4],
+        enable6=this.settings.playerScore.advancedValue[5],
+        enable7=this.settings.playerScore.advancedValue[6],
+        enable8=this.settings.playerScore.advancedValue[7],
+        enable9=this.settings.playerScore.advancedValue[8],
+        enable10=this.settings.playerScore.advancedValue[9]
+    ) {
+        if(typeof enable1 !== "boolean"){
+            throw "player score enable1 must be a bool"
+        }
+        if(typeof enable2 !== "boolean"){
+            throw "player score enable2 must be a bool"
+        }
+        if(typeof enable3 !== "boolean"){
+            throw "player score enable3 must be a bool"
+        }
+        if(typeof enable4 !== "boolean"){
+            throw "player score enable4 must be a bool"
+        }
+        if(typeof enable5 !== "boolean"){
+            throw "player score enable5 must be a bool"
+        }
+        if(typeof enable6 !== "boolean"){
+            throw "player score enable6 must be a bool"
+        }
+        if(typeof enable7 !== "boolean"){
+            throw "player score enable7 must be a bool"
+        }
+        if(typeof enable8 !== "boolean"){
+            throw "player score enable8 must be a bool"
+        }
+        if(typeof enable9 !== "boolean"){
+            throw "player score enable9 must be a bool"
+        }
+        if(typeof enable10 !== "boolean"){
+            throw "player score enable10 must be a bool"
+        }
+        if(!(enable1 || enable2 || enable3 || enable4 || enable5 || enable6 || enable7 || enable8 || enable9 || enable10)){
+            throw "At least one player score must be enabled"
+        }
+        this.settings.playerScore.advancedOn = true
+        this.settings.playerScore.advancedValue = [enable1, enable2, enable3, enable4, enable5, enable6, enable7, enable8, enable9, enable10]
+    }
+
+    enablePlayerScore1(on){
+        this.setPlayerScoreAdvanced(on)
+    }
+
+    enablePlayerScore2(on){
+        this.setPlayerScoreAdvanced(undefined, on)
+    }
     
+    enablePlayerScore3(on){
+        this.setPlayerScoreAdvanced(undefined, undefined, on)
+    }
+    
+    enablePlayerScore4(on){
+        this.setPlayerScoreAdvanced(undefined, undefined, undefined, on)
+    }
+    
+    enablePlayerScore5(on){
+        this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, on)
+    }
+    
+    enablePlayerScore6(on){
+        this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, on)
+    }
+    
+    enablePlayerScore7(on){
+        this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, on)
+    }
+    
+    enablePlayerScore8(on){
+        this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
+    }
+
+    enablePlayerScore9(on){
+        this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
+    }
+
+    enablePlayerScore10(on){
+        this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
+    }
+
+    //player score end
+
+    //anime score start
+
+    setAnimeScore(low, high){
+        if(!Number.isInteger(low) || low < this.CONST.ANIME_SCORE_MIN || low < this.CONST.ANIME_SCORE_MAX){
+            throw "Anime score low must be in the integer interval [" + this.CONST.ANIME_SCORE_MIN + "," + this.CONST.ANIME_SCORE_MAX + "]"
+        }
+        if(!Number.isInteger(high) || high < this.CONST.ANIME_SCORE_MIN || high < this.CONST.ANIME_SCORE_MAX){
+            throw "Anime score high must be in the integer interval [" + this.CONST.ANIME_SCORE_MIN + "," + this.CONST.ANIME_SCORE_MAX + "]"
+        }
+        if(low > high){
+            throw "Anime score low value cannot be higher than high value"
+        }
+        this.settings.animeScore.advancedOn = false
+        this.settings.animeScore.standardValue = [low, high]
+    }
+
+    resetAnimeScore() { //this is added as a special QoL case, because unscored anime gets excluded by anime score
+        this.setAnimeScore(this.CONST.ANIME_SCORE_MIN, this.CONST.ANIME_SCORE_MAX)
+    }
+
+    enableAnimeScoreAdvanced(advancedOn){
+        this.settings.animeScore.advancedOn = advancedOn
+    }
+
+    setAnimeScoreAdvanced(
+        enable2=this.settings.animeScore.advancedValue[0],
+        enable3=this.settings.animeScore.advancedValue[1],
+        enable4=this.settings.animeScore.advancedValue[2],
+        enable5=this.settings.animeScore.advancedValue[3],
+        enable6=this.settings.animeScore.advancedValue[4],
+        enable7=this.settings.animeScore.advancedValue[5],
+        enable8=this.settings.animeScore.advancedValue[6],
+        enable9=this.settings.animeScore.advancedValue[7],
+        enable10=this.settings.animeScore.advancedValue[8]
+    ) {
+        if(typeof enable2 !== "boolean"){
+            throw "anime score enable2 must be a bool"
+        }
+        if(typeof enable3 !== "boolean"){
+            throw "anime score enable3 must be a bool"
+        }
+        if(typeof enable4 !== "boolean"){
+            throw "anime score enable4 must be a bool"
+        }
+        if(typeof enable5 !== "boolean"){
+            throw "anime score enable5 must be a bool"
+        }
+        if(typeof enable6 !== "boolean"){
+            throw "anime score enable6 must be a bool"
+        }
+        if(typeof enable7 !== "boolean"){
+            throw "anime score enable7 must be a bool"
+        }
+        if(typeof enable8 !== "boolean"){
+            throw "anime score enable8 must be a bool"
+        }
+        if(typeof enable9 !== "boolean"){
+            throw "anime score enable9 must be a bool"
+        }
+        if(typeof enable10 !== "boolean"){
+            throw "anime score enable10 must be a bool"
+        }
+        if(!(enable2 || enable3 || enable4 || enable5 || enable6 || enable7 || enable8 || enable9 || enable10)){
+            throw "At least one anime score must be enabled"
+        }
+        this.settings.animeScore.advancedOn = true
+        this.settings.animeScore.advancedValue = [enable2, enable3, enable4, enable5, enable6, enable7, enable8, enable9, enable10]
+    }
+
+    enableAnimeScore1(on){
+        this.setAnimeScoreAdvanced(on)
+    }
+
+    enableAnimeScore2(on){
+        this.setAnimeScoreAdvanced(on)
+    }
+    
+    enableAnimeScore3(on){
+        this.setAnimeScoreAdvanced(undefined, on)
+    }
+    
+    enableAnimeScore4(on){
+        this.setAnimeScoreAdvanced(undefined, undefined, on)
+    }
+    
+    enableAnimeScore5(on){
+        this.setAnimeScoreAdvanced(undefined, undefined, undefined, on)
+    }
+    
+    enableAnimeScore6(on){
+        this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, on)
+    }
+    
+    enableAnimeScore7(on){
+        this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, undefined, on)
+    }
+    
+    enableAnimeScore8(on){
+        this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, on)
+    }
+
+    enableAnimeScore9(on){
+        this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
+    }
+
+    enableAnimeScore10(on){
+        this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
+    }
+
+    //anime score end
+
+    //scores end
 }
 module.exports = LobbySettings
