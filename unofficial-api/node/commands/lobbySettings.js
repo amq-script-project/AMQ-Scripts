@@ -1472,7 +1472,42 @@ class LobbySettings{
     }
 
     static test() {
-        this.validate(new this().getSettings())
+        const dummy = new this() 
+        this.validate(dummy.getSettings()) //test that valid settings work
+        //this.validate(new this(dummy.getSettings()).getSettings()) //test that valid override works
+
+        this.verifyFailList(dummy.setRoomName, ["", 4, "a".repeat(this.CONST.ROOM_NAME_MAX_LENGTH + 1)])
+        this.verifyFailList(dummy.setRoomSize, ["4", this.CONST.ROOM_SIZE_MIN-1, this.CONST.ROOM_SIZE_MAX+1,8.5])
+        this.verifyFailList(dummy.setTeamSize , ["4", this.CONST.TEAM_SIZE_MIN-1, this.CONST.TEAM_SIZE_MAX+1,3.5])
+        //this.verifyFailList(dummy. , [])
+        //this.verifyFailList(dummy. , [])
+        //this.verifyFailList(dummy. , [])
+        //this.verifyFailList(dummy. , [])
+        //this.verifyFailList(dummy. , [])
+        console.log("All tests passed successfully")
+    }
+
+    static verifyFailList(func, ...listOfArgs) {
+        listOfArgs.forEach((arg) => {
+            if(Array.isArray(arg)){
+                this.verifyFail(func, ...arg)
+            }else{
+                this.verifyFail(func, arg)
+            }
+        })
+    }
+
+    static verifyFail(func, ...args) {
+        let success
+        try{
+            func(...args)
+            success = true
+        }catch{
+            success = false
+        }
+        if(success){
+            throw func.name + " succeeded with arguments [" + args.join(", ") + "]"
+        }
     }
 }
 module.exports = LobbySettings
