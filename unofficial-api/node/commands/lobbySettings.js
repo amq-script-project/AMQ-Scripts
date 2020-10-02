@@ -1,3 +1,5 @@
+const { exit } = require("process")
+
 class LobbySettings{
     constructor(override={}){
         this.settings = {
@@ -412,13 +414,13 @@ class LobbySettings{
         GENRE_STATE:{
             INCLUDE:1,
             EXCLUDE:2,
-            OPTIONAL:3,
+            OPTIONAL:3
         },
         TAG_STATE:{
             INCLUDE:1,
             EXCLUDE:2,
-            OPTIONAL:3,
-        },
+            OPTIONAL:3
+        }
     }
 
     getSettings = () => {
@@ -602,7 +604,7 @@ class LobbySettings{
         this._calculateSongDistribution(watched, unwatched, random, this.settings.songCount)
     }
 
-    enableSongTypes = (openings, endings, inserts) => {
+    enableSongTypes = (openings=this.settings.songType.standardValue.openings, endings=this.settings.songType.standardValue.endings, inserts=this.settings.songType.standardValue.inserts) => {
         if(typeof openings !== "boolean"){
             throw "openings argument must be boolean"
         }
@@ -626,15 +628,15 @@ class LobbySettings{
     }
 
     enableOpenings = (openingsOn) => {
-        this.setTypes(openingsOn, this.settings.songType.standardValue.endings, this.settings.songType.standardValue.inserts)
+        this.setTypes(openingsOn)
     }
     
     enableEndings = (endingsOn) => {
-        this.setTypes(this.settings.songType.standardValue.openings, endingsOn, this.settings.songType.standardValue.inserts)
+        this.setTypes(undefined, endingsOn)
     }
     
     enableInserts = (insertsOn) => {
-        this.setTypes(this.settings.songType.standardValue.openings, this.settings.songType.standardValue.endings, insertsOn)
+        this.setTypes(undefined, undefined, insertsOn)
     }
 
     _calculateSongTypeDistribution = (openingsRatio, endingsRatio, insertsRatio, randomRatio, songCount) => {
@@ -747,8 +749,8 @@ class LobbySettings{
     }
 
     setShowSelection = (showSelection) => {
-        if(!Object.values(this.CONST.SCORING).includes(showSelection)){
-            throw "Please use the values defined in CONST.SCORING"
+        if(!Object.values(this.CONST.SHOW_SELECTION).includes(showSelection)){
+            throw "Please use the values defined in CONST.SHOW_SELECTION"
         }
         this.settings.showSelection = showSelection
     }
@@ -762,9 +764,6 @@ class LobbySettings{
     }
 
     setGameMode = (gameMode) => {
-        if(!Object.values(this.CONST.GAME_MODE).includes(gameMode)){
-            throw "Please use the values defined in CONST.GAME_MODE"
-        }
         switch(gameMode){
             case this.CONST.GAME_MODE.STANDARD:
                 this.setShowSelectionAuto()
@@ -781,6 +780,9 @@ class LobbySettings{
             case this.CONST.GAME_MODE.BATTLE_ROYALE:
                 this.setShowSelectionLooting()
                 this.setScoreTypeLives()
+                break
+            default:
+                throw "Please use the values defined in CONST.GAME_MODE"
         }
     }
 
@@ -866,7 +868,7 @@ class LobbySettings{
     }
 
     setSamplePoint = (position) => {
-        if(!Object.values(this.CONST.GAME_MODE).includes(position)){
+        if(!Object.values(this.CONST.SAMPLE_POINT).includes(position)){
             throw "Please use the values defined in CONST.SAMPLE_POINT"
         }
         this.settings.samplePoint.standardValue = position
@@ -1472,7 +1474,8 @@ class LobbySettings{
     }
 
     static verboseTests = false
-    static test = (verbose=false) => {
+    static test = (verbose=this.verboseTests) => {
+        const oldVerbose = this.verboseTests
         this.verboseTests = verbose
         const dummy = new this() 
         this.validate(dummy.getSettings()) //test that valid settings work
@@ -1483,14 +1486,38 @@ class LobbySettings{
         this.verifyFailList(dummy.setRoomSize, "4", this.CONST.ROOM_SIZE_MIN-1, this.CONST.ROOM_SIZE_MAX+1,8.5)
         this.verifyFailList(dummy.setTeamSize,  "4", this.CONST.TEAM_SIZE_MIN-1, this.CONST.TEAM_SIZE_MAX+1,3.5)
         this.verifyFailList(dummy.setSongCount, "4", this.CONST.SONG_COUNT_MIN-1, this.CONST.SONG_COUNT_MAX+1,10.5)
-        this.verifyFailList(dummy.enableSkipGuessing, 1, 0, "", undefined, true)
-        //this.verifyFailList(dummy.enable , [1, 0, "", undefined])
-        //this.verifyFailList(dummy.enable , [1, 0, "", undefined])
-        //this.verifyFailList(dummy.enable , [1, 0, "", undefined])
-        //this.verifyFailList(dummy. , [])
-        //this.verifyFailList(dummy. , [])
-        //this.verifyFailList(dummy. , [])
+        this.verifyFailList(dummy.enableSkipGuessing, 1, 0, "", undefined)
+        this.verifyFailList(dummy.enableSkipReplay, 1, 0, "", undefined)
+        this.verifyFailList(dummy.enableDuplicates, 1, 0, "", undefined)
+        this.verifyFailList(dummy.enableQueueing, 1, 0, "", undefined)
+        this.verifyFailList(dummy.enableLootDropping, 1, 0, "", undefined)
+        this.verifyFailList(dummy.setSongSelection, 0, 4)
+        this.verifyFailList(dummy.setSongSelectionAdvanced, [0,0,0], [-1,14,14], [0,-1,4], [4,4,-1], [-1,-1,-1])
+        this.verifyFailList(dummy.enableSongTypes, [false, false, false], [1], [undefined, 1], [undefined, undefined, 1])
+        this.verifyFailList(dummy.setSongTypeSelectionAdvanced, [0,0,0,0], [-1,14,14,15], [0,-1,4,4], [4,4,-1,0], [4,4,0,-1], [-1,-1,-1, -1], [undefined])
+        this.verifyFailList(dummy.setGuessTime, "4", this.CONST.GUESS_TIME_MIN-1, this.CONST.GUESS_TIME_MAX+1,10.5)
+        this.verifyFailList(dummy.setGuessTimeAdvanced, [this.CONST.GUESS_TIME_MIN,"4"], ["4",this.CONST.GUESS_TIME_MAX], [this.CONST.GUESS_TIME_MIN-1, this.CONST.GUESS_TIME_MAX],[this.CONST.GUESS_TIME_MIN, this.CONST.GUESS_TIME_MAX+1], [this.CONST.GUESS_TIME_MAX, this.CONST.GUESS_TIME_MIN])
+        this.verifyFailList(dummy.enableRandomGuessTime, 1, 0, "", undefined)
+        this.verifyFailList(dummy.setScoreType, 0, 4, "a", undefined)
+        this.verifyFailList(dummy.setShowSelection, 0, 3, "a", undefined)
+        this.verifyFailList(dummy.setGameMode, 0, 5, "a", undefined)
+        this.verifyFailList(dummy.setInventorySize, "4", this.CONST.INVENTORY_SIZE_MIN-1, this.CONST.INVENTORY_SIZE_MAX+1,10.5)
+        this.verifyFailList(dummy.setInventorySizeAdvanced, [this.CONST.INVENTORY_SIZE_MIN,"4"], ["4",this.CONST.INVENTORY_SIZE_MAX], [this.CONST.INVENTORY_SIZE_MIN-1, this.CONST.INVENTORY_SIZE_MAX],[this.CONST.INVENTORY_SIZE_MIN, this.CONST.INVENTORY_SIZE_MAX+1], [this.CONST.INVENTORY_SIZE_MAX, this.CONST.INVENTORY_SIZE_MIN])
+        this.verifyFailList(dummy.enableRandomInventorySize, 1, 0, "", undefined)
+        this.verifyFailList(dummy.setLootingTime, "4", this.CONST.LOOTING_TIME_MIN-1, this.CONST.LOOTING_TIME_MAX+1,10.5)
+        this.verifyFailList(dummy.setLootingTimeAdvanced, [this.CONST.LOOTING_TIME_MIN,"4"], ["4",this.CONST.LOOTING_TIME_MAX], [this.CONST.LOOTING_TIME_MIN-1, this.CONST.LOOTING_TIME_MAX],[this.CONST.LOOTING_TIME_MIN, this.CONST.LOOTING_TIME_MAX+1], [this.CONST.LOOTING_TIME_MAX, this.CONST.LOOTING_TIME_MIN])
+        this.verifyFailList(dummy.enableRandomLootingTime, 1, 0, "", undefined)
+        this.verifyFailList(dummy.setLives, "4", this.CONST.LIVES_MIN-1, this.CONST.LIVES_MAX+1,4.5)
+        this.verifyFailList(dummy.setSamplePoint, 0, 4, "a", undefined)
+        this.verifyFailList(dummy.setSamplePointAdvanced, [this.CONST.SAMPLE_POINT_MIN,"4"], ["4",this.CONST.SAMPLE_POINT_MAX], [this.CONST.SAMPLE_POINT_MIN-1, this.CONST.SAMPLE_POINT_MAX],[this.CONST.SAMPLE_POINT_MIN, this.CONST.SAMPLE_POINT_MAX+1], [this.CONST.SAMPLE_POINT_MAX, this.CONST.SAMPLE_POINT_MIN])
+        this.verifyFailList(dummy.enableRandomSamplePoint, 1, 0, "", undefined)
+        //this.verifyFailList(dummy.enable, 1, 0, "", undefined)
+        // this.verifyFailList(dummy. , )
+        //this.verifyFailList(dummy. , )
+        //this.verifyFailList(dummy. , )
         console.log("All tests passed successfully")
+        this.verboseTests = oldVerbose
+        exit()
     }
 
     static verifyFailList = (func, ...listOfArgs) => {
@@ -1523,4 +1550,5 @@ class LobbySettings{
         }
     }
 }
+LobbySettings.test(true)
 module.exports = LobbySettings
