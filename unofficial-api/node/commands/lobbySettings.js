@@ -180,7 +180,7 @@ class LobbySettings{
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
 
-    static validate(settings){
+    static validate = (settings) => {
         const dummy = new this()
         dummy.setRoomName(settings.roomName)
         if(settings.privateRoom && !settings.password){
@@ -421,11 +421,11 @@ class LobbySettings{
         },
     }
 
-    getSettings(){
+    getSettings = () => {
         return JSON.parse(JSON.stringify(this.settings))
     }
 
-    getDelta(){
+    getDelta = () => {
         const delta = {}
         Object.keys(this.settings).forEach((key) => {
             if(JSON.stringify(this.settings[key]) !== JSON.stringify(this.oldSettings[key])){
@@ -435,17 +435,17 @@ class LobbySettings{
         return delta
     }
 
-    commit(){
+    commit = () => {
         const delta = this.getDelta()
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
         return delta
     }
 
-    revert(){
+    revert = () => {
         this.settings = JSON.parse(JSON.stringify(this.oldSettings))
     }
 
-    setRoomSize(roomSize) {
+    setRoomSize = (roomSize) => {
         if(roomSize < this.CONST.ROOM_SIZE_MIN || roomSize > this.CONST.ROOM_SIZE_MAX || !Number.isInteger(roomSize)){
             throw "Room size must be in the integer interval [" + this.CONST.ROOM_SIZE_MIN + "," + this.CONST.ROOM_SIZE_MAX + "]"
         }
@@ -453,14 +453,14 @@ class LobbySettings{
         this.settings.gameMode = roomSize > 1 ? "Multiplayer" : "Solo"
     }
 
-    setTeamSize(teamSize) {
+    setTeamSize = (teamSize) => {
         if(teamSize < this.CONST.TEAM_SIZE_MIN || teamSize > this.CONST.TEAM_SIZE_MAX || !Number.isInteger(teamSize)){
             throw "Team size must be in the integer interval [" + this.CONST.TEAM_SIZE_MIN + "," + this.CONST.TEAM_SIZE_MAX + "]"
         }
         this.settings.teamSize = teamSize
     }
 
-    setRoomName(newName) {
+    setRoomName = (newName) => {
         if(typeof newName !== "string"){
             throw "Room name must be string"
         }
@@ -473,7 +473,7 @@ class LobbySettings{
         this.settings.roomName = newName
     }
 
-    setPassword(newPassword){
+    setPassword = (newPassword) => {
         if(typeof newPassword !== "string"){
             throw "Password must be string"
         }
@@ -487,12 +487,12 @@ class LobbySettings{
         this.settings.privateRoom = true
     }
 
-    clearPassword(){
+    clearPassword = () => {
         this.settings.password = ""
         this.settings.privateRoom = false
     }
 
-    setSongCount(numberOfSongs) {
+    setSongCount = (numberOfSongs) => {
         if(numberOfSongs < this.CONST.SONG_COUNT_MIN || numberOfSongs > this.CONST.SONG_COUNT_MAX || !Number.isInteger(numberOfSongs)){
             throw "Song count must be in the integer interval [" + this.CONST.SONG_COUNT_MIN + "," + this.CONST.SONG_COUNT_MAX + "]"
         }
@@ -500,42 +500,42 @@ class LobbySettings{
         this._calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, numberOfSongs)
     }
 
-    enableSkipGuessing(skipGuessingOn){
+    enableSkipGuessing = (skipGuessingOn) => {
         if(typeof skipGuessingOn !== "boolean"){
             throw "skipGuessingOn must be a bool"
         }
         this.settings.modifiers.skipGuessing = skipGuessingOn
     }
     
-    enableSkipReplay(skipReplayOn){
+    enableSkipReplay = (skipReplayOn) => {
         if(typeof skipReplayOn !== "boolean"){
             throw "skipReplayOn must be a bool"
         }
         this.settings.modifiers.skipReplay = skipReplayOn
     }
     
-    enableDuplicates(duplicatesOn){
+    enableDuplicates = (duplicatesOn) => {
         if(typeof duplicatesOn !== "boolean"){
             throw "duplicatesOn must be a bool"
         }
         this.settings.modifiers.duplicates = duplicatesOn
     }
     
-    enableQueueing(queueingOn){
+    enableQueueing = (queueingOn) => {
         if(typeof queueingOn !== "boolean"){
             throw "queueingOn must be a bool"
         }
         this.settings.modifiers.queueing = queueingOn
     }
     
-    enableLootDropping(lootDroppingOn){
+    enableLootDropping = (lootDroppingOn) => {
         if(typeof lootDroppingOn !== "boolean"){
             throw "lootDroppingOn must be a bool"
         }
         this.settings.modifiers.lootDropping = lootDroppingOn
     }
 
-    setSongSelection(standardValue){
+    setSongSelection = (standardValue) => {
         if(!Object.values(this.CONST.SONG_SELECTION).includes(standardValue)){
             throw "Please use the values defined in CONST.SONG_SELECTION"
         }
@@ -544,19 +544,19 @@ class LobbySettings{
         this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.songCount)
     }
 
-    setSongSelectionWatched(){
+    setSongSelectionWatched = () => {
         this.setShowSelection(this.CONST.SONG_SELECTION.WATCHED)
     }
 
-    setSongSelectionMix(){
+    setSongSelectionMix = () => {
         this.setShowSelection(this.CONST.SONG_SELECTION.MIX)
     }
 
-    setSongSelectionRandom(){
+    setSongSelectionRandom = () => {
         this.setShowSelection(this.CONST.SONG_SELECTION.RANDOM)
     }
 
-    _calculateSongDistribution(watchedRatio, unwatchedRatio, randomRatio, songCount){
+    _calculateSongDistribution = (watchedRatio, unwatchedRatio, randomRatio, songCount) => {
         const ratioQuantifier = watchedRatio + unwatchedRatio + randomRatio
         let watched = Math.floor(songCount * watchedRatio / ratioQuantifier)
         let unwatched = Math.floor(songCount * unwatchedRatio / ratioQuantifier)
@@ -586,7 +586,7 @@ class LobbySettings{
         }
     }
 
-    setSongSelectionAdvanced(watched, unwatched, random){
+    setSongSelectionAdvanced = (watched, unwatched, random) => {
         if(!Number.isInteger(watched) || watched < 0){
             throw "watched argument must be a integer larger or equal to zero"
         }
@@ -602,7 +602,7 @@ class LobbySettings{
         this._calculateSongDistribution(watched, unwatched, random, this.settings.songCount)
     }
 
-    enableSongTypes(openings, endings, inserts){
+    enableSongTypes = (openings, endings, inserts) => {
         if(typeof openings !== "boolean"){
             throw "openings argument must be boolean"
         }
@@ -625,19 +625,19 @@ class LobbySettings{
         this._calculateSongTypeDistribution(advancedOpenings, advancedEndings, advancedInserts, advancedRandom, this.settings.songCount)
     }
 
-    enableOpenings(openingsOn){
+    enableOpenings = (openingsOn) => {
         this.setTypes(openingsOn, this.settings.songType.standardValue.endings, this.settings.songType.standardValue.inserts)
     }
     
-    enableEndings(endingsOn){
+    enableEndings = (endingsOn) => {
         this.setTypes(this.settings.songType.standardValue.openings, endingsOn, this.settings.songType.standardValue.inserts)
     }
     
-    enableInserts(insertsOn){
+    enableInserts = (insertsOn) => {
         this.setTypes(this.settings.songType.standardValue.openings, this.settings.songType.standardValue.endings, insertsOn)
     }
 
-    _calculateSongTypeDistribution(openingsRatio, endingsRatio, insertsRatio, randomRatio, songCount){
+    _calculateSongTypeDistribution = (openingsRatio, endingsRatio, insertsRatio, randomRatio, songCount) => {
         const ratioQuantifier = openingsRatio + endingsRatio + insertsRatio + randomRatio
         let openings = Math.floor(songCount * openingsRatio / ratioQuantifier)
         let endings = Math.floor(songCount * endingsRatio / ratioQuantifier)
@@ -665,7 +665,7 @@ class LobbySettings{
         this.settings.songType.advancedValue.openings = random
     }
 
-    setSongTypeSelectionAdvanced(openings, endings, inserts, random){
+    setSongTypeSelectionAdvanced = (openings, endings, inserts, random) => {
         if(!Number.isInteger(openings) || openings < 0){
             throw "openings argument must be a integer larger or equal to zero"
         }
@@ -698,7 +698,7 @@ class LobbySettings{
         this._calculateSongTypeDistribution(openings, endings, inserts, random, this.settings.songCount)
     }
 
-    setGuessTime(standardValue) {
+    setGuessTime = (standardValue) => {
         if(!Number.isInteger(standardValue) || standardValue < this.CONST.GUESS_TIME_MIN || standardValue > this.CONST.GUESS_TIME_MAX){
             throw "Guess time must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
         }
@@ -706,7 +706,7 @@ class LobbySettings{
         this.settings.guessTime.standardValue = standardValue
     }
 
-    setGuessTimeAdvanced(low, high) {
+    setGuessTimeAdvanced = (low, high) => {
         if(!Number.isInteger(low) || low < this.CONST.GUESS_TIME_MIN || low > this.CONST.GUESS_TIME_MAX){
             throw "Guess time low must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
         }
@@ -720,48 +720,48 @@ class LobbySettings{
         this.settings.guessTime.randomValue = [low, high]
     }
 
-    enableRandomGuessTime(randomOn){
+    enableRandomGuessTime = (randomOn) => {
         if(typeof randomOn !== "boolean"){
             throw "guessTime.randomOn must be a bool"
         }
         this.settings.guessTime.randomOn = randomOn
     }
 
-    setScoreType(scoreType){
+    setScoreType = (scoreType) => {
         if(!Object.values(this.CONST.SCORING).includes(scoreType)){
             throw "Please use the values defined in CONST.SCORING"
         }
         this.settings.scoreType = scoreType
     }
 
-    setScoreTypeCount(){
+    setScoreTypeCount = () => {
         this.setScoreType(this.CONST.SCORING.COUNT)
     }
 
-    setScoreTypeSpeed(){
+    setScoreTypeSpeed = () => {
         this.setScoreType(this.CONST.SCORING.SPEED)
     }
 
-    setScoreTypeLives(){
+    setScoreTypeLives = () => {
         this.setScoreType(this.CONST.SCORING.LIVES)
     }
 
-    setShowSelection(showSelection){
+    setShowSelection = (showSelection) => {
         if(!Object.values(this.CONST.SCORING).includes(showSelection)){
             throw "Please use the values defined in CONST.SCORING"
         }
         this.settings.showSelection = showSelection
     }
 
-    setShowSelectionAuto(){
+    setShowSelectionAuto = () => {
         this.setShowSelection(this.CONST.SHOW_SELECTION.AUTO)
     }
 
-    setShowSelectionLooting(){
+    setShowSelectionLooting = () => {
         this.setShowSelection(this.CONST.SHOW_SELECTION.LOOTING)
     }
 
-    setGameMode(gameMode){
+    setGameMode = (gameMode) => {
         if(!Object.values(this.CONST.GAME_MODE).includes(gameMode)){
             throw "Please use the values defined in CONST.GAME_MODE"
         }
@@ -784,23 +784,23 @@ class LobbySettings{
         }
     }
 
-    setGameModeStandard(){
+    setGameModeStandard = () => {
         this.setGameMode(this.CONST.GAME_MODE.STANDARD)
     }
 
-    setGameModeQuickDraw(){
+    setGameModeQuickDraw = () => {
         this.setGameMode(this.CONST.GAME_MODE.QUICK_DRAW)
     }
 
-    setGameModeLastManStanding(){
+    setGameModeLastManStanding = () => {
         this.setGameMode(this.CONST.GAME_MODE.LAST_MAN_STANDING)
     }
 
-    setGameModeBattleRoyale(){
+    setGameModeBattleRoyale = () => {
         this.setGameMode(this.CONST.GAME_MODE.BATTLE_ROYALE)
     }
 
-    setInventorySize(standardValue){
+    setInventorySize = (standardValue) => {
         if(!Number.isInteger(standardValue) || standardValue < this.CONST.INVENTORY_SIZE_MIN || standardValue > this.CONST.INVENTORY_SIZE_MAX){
             throw "Inventory size must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
         }
@@ -808,7 +808,7 @@ class LobbySettings{
         this.settings.inventorySize.randomOn = false
     }
 
-    setInventorySizeAdvanced(low, high){
+    setInventorySizeAdvanced = (low, high) => {
         if(!Number.isInteger(low) || low < this.CONST.INVENTORY_SIZE_MIN || low > this.CONST.INVENTORY_SIZE_MAX){
             throw "Inventory size low must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
         }
@@ -822,14 +822,14 @@ class LobbySettings{
         this.settings.inventorySize.randomValue = [low, high]
     }
 
-    enableRandomInventorySize(randomOn){
+    enableRandomInventorySize = (randomOn) => {
         if(typeof randomOn !== "boolean"){
             throw "inventorySize.randomOn must be a bool"
         }
         this.settings.inventorySize.randomOn = randomOn
     }
 
-    setLootingTime(standardValue){
+    setLootingTime = (standardValue) => {
         if(!Number.isInteger(standardValue) || standardValue < this.CONST.LOOTING_TIME_MIN || standardValue > this.CONST.LOOTING_TIME_MAX){
             throw "Looting time must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
         }
@@ -837,7 +837,7 @@ class LobbySettings{
         this.settings.lootingTime.randomOn = false
     }
 
-    setLootingTimeAdvanced(low, high){
+    setLootingTimeAdvanced = (low, high) => {
         if(!Number.isInteger(low) || low < this.CONST.LOOTING_TIME_MIN || low > this.CONST.LOOTING_TIME_MAX){
             throw "Looting time low must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
         }
@@ -851,21 +851,21 @@ class LobbySettings{
         this.settings.lootingTime.randomValue = [low, high]
     }
 
-    enableRandomLootingTime(randomOn){
+    enableRandomLootingTime = (randomOn) => {
         if(typeof randomOn !== "boolean"){
             throw "lootingTime.randomOn must be a bool"
         }
         this.settings.lootingTime.randomOn = randomOn
     }
 
-    setLives(count){
+    setLives = (count) => {
         if(!Number.isInteger(count) || count < this.CONST.LIVES_MIN || count > this.CONST.LIVES_MAX){
             throw "Lives count must be in the integer interval [" + this.CONST.LIVES_MIN + "," + this.CONST.LIVES_MAX + "]"
         }
         this.settings.lives = count
     }
 
-    setSamplePoint(position){
+    setSamplePoint = (position) => {
         if(!Object.values(this.CONST.GAME_MODE).includes(position)){
             throw "Please use the values defined in CONST.SAMPLE_POINT"
         }
@@ -873,19 +873,19 @@ class LobbySettings{
         this.settings.samplePoint.randomOn = false
     }
 
-    setSamplePointStart(){
+    setSamplePointStart = () => {
         this.setSamplePoint(this.CONST.SAMPLE_POINT.START)
     }
     
-    setSamplePointMiddle(){
+    setSamplePointMiddle = () => {
         this.setSamplePoint(this.CONST.SAMPLE_POINT.MIDDLE)
     }
     
-    setSamplePointEnd(){
+    setSamplePointEnd = () => {
         this.setSamplePoint(this.CONST.SAMPLE_POINT.END)
     }
 
-    setSamplePointAdvanced(low, high){
+    setSamplePointAdvanced = (low, high) => {
         if(!Number.isInteger(low) || low < this.CONST.SAMPLE_POINT_MIN || low > this.CONST.SAMPLE_POINT_MAX){
             throw "Looting time low must be in the integer interval [" + this.CONST.SAMPLE_POINT_MIN + "," + this.CONST.SAMPLE_POINT_MAX + "]"
         }
@@ -899,14 +899,14 @@ class LobbySettings{
         this.settings.samplePoint.randomValue = [low, high]
     }
 
-    enableRandomSamplePoint(randomOn){
+    enableRandomSamplePoint = (randomOn) => {
         if(typeof randomOn !== "boolean"){
             throw "samplePoint.randomOn must be a bool"
         }
         this.settings.samplePoint.randomOn = randomOn
     }
 
-    setPlaybackSpeed(multiplier) {
+    setPlaybackSpeed = (multiplier) => {
         if(typeof multiplier !== "number" || Number.isNaN(multiplier) || multiplier < this.CONST.PLAYBACK_SPEED_MIN || multiplier > this.CONST.PLAYBACK_SPEED_MAX){
             throw "Playback speed multiplier must be a real number in the interval [" + this.CONST.PLAYBACK_SPEED_MIN + ", " + this.CONST.PLAYBACK_SPEED_MAX + "]"
         }
@@ -914,7 +914,7 @@ class LobbySettings{
         this.settings.playbackSpeed.randomOn = false
     }
 
-    setPlaybackSpeedAdvanced(enable1=this.playbackSpeed.randomValue[0], enable1_5=this.playbackSpeed.randomValue[1], enable2=this.playbackSpeed.randomValue[2], enable4=this.playbackSpeed.randomValue[3]) {
+    setPlaybackSpeedAdvanced = (enable1=this.playbackSpeed.randomValue[0], enable1_5=this.playbackSpeed.randomValue[1], enable2=this.playbackSpeed.randomValue[2], enable4=this.playbackSpeed.randomValue[3]) => {
         if(typeof enable1 !== "boolean"){
             throw "playback speed enable1 must be a bool"
         }
@@ -934,27 +934,27 @@ class LobbySettings{
         this.settings.playbackSpeed.randomOn = true
     }
 
-    enableRandomPlaybackSpeed(randomOn) {
+    enableRandomPlaybackSpeed = (randomOn) => {
         this.settings.playbackSpeed.randomOn = randomOn
     }
 
-    enablePlaybackSpeed1(on){
+    enablePlaybackSpeed1 = (on) => {
         this.setPlaybackSpeedAdvanced(on)
     }
     
-    enablePlaybackSpeed1_5(on){
+    enablePlaybackSpeed1_5 = (on) => {
         this.setPlaybackSpeedAdvanced(undefined, on)
     }
     
-    enablePlaybackSpeed2(on){
+    enablePlaybackSpeed2 = (on) => {
         this.setPlaybackSpeedAdvanced(undefined, undefined, on)
     }
     
-    enablePlaybackSpeed4(on){
+    enablePlaybackSpeed4 = (on) => {
         this.setPlaybackSpeedAdvanced(undefined, undefined, undefined, on)
     }
 
-    enableSongDifficulty(easy=this.settings.songDifficulity.standardValue.easy, medium=this.settings.songDifficulity.standardValue.medium, hard=this.settings.songDifficulity.standardValue.hard){
+    enableSongDifficulty = (easy=this.settings.songDifficulity.standardValue.easy, medium=this.settings.songDifficulity.standardValue.medium, hard=this.settings.songDifficulity.standardValue.hard) => {
         if(typeof easy !== "boolean"){
             throw "easy must be a bool"
         }
@@ -973,19 +973,19 @@ class LobbySettings{
         this.settings.songDifficulity.advancedOn = false
     }
 
-    enableSongDifficultyEasy(on){
+    enableSongDifficultyEasy = (on) => {
         this.enableSongDifficulty(on)
     }
     
-    enableSongDifficultyMedium(on){
+    enableSongDifficultyMedium = (on) => {
         this.enableSongDifficulty(undefined, on)
     }
     
-    enableSongDifficultyHard(on){
+    enableSongDifficultyHard = (on) => {
         this.enableSongDifficulty(undefined, undefined, on)
     }
 
-    setSongDifficultyAdvanced(low, high){
+    setSongDifficultyAdvanced = (low, high) => {
         if(!Number.isInteger(low) || low < this.CONST.DIFFICULTY_MIN || low > this.CONST.DIFFICULTY_MAX){
             throw "Difficulty low must be in the integer interval [" + this.CONST.DIFFICULTY_MIN + "," + this.CONST.DIFFICULTY_MAX + "]"
         }
@@ -999,11 +999,11 @@ class LobbySettings{
         this.settings.songDifficulity.advancedValue = [low, high]
     }
 
-    enableSongDifficultyAdvanced(advancedOn){
+    enableSongDifficultyAdvanced = (advancedOn) => {
         this.settings.songDifficulity.advancedOn = advancedOn
     }
 
-    enableSongPopularity(disliked=this.settings.songPopularity.standardValue.disliked, mixed=this.settings.songPopularity.standardValue.mixed, liked=this.settings.songPopularity.standardValue.liked){
+    enableSongPopularity = (disliked=this.settings.songPopularity.standardValue.disliked, mixed=this.settings.songPopularity.standardValue.mixed, liked=this.settings.songPopularity.standardValue.liked) => {
         if(typeof disliked !== "boolean"){
             throw "disliked must be a bool"
         }
@@ -1022,19 +1022,19 @@ class LobbySettings{
         this.settings.songPopularity.advancedOn = false
     }
 
-    enableSongPopularityDisliked(on){
+    enableSongPopularityDisliked = (on) => {
         this.enableSongPopularity(on)
     }
     
-    enableSongPopularityMixed(on){
+    enableSongPopularityMixed = (on) => {
         this.enableSongPopularity(undefined, on)
     }
     
-    enableSongPopularityLiked(on){
+    enableSongPopularityLiked = (on) => {
         this.enableSongPopularity(undefined, undefined, on)
     }
 
-    setSongPopularityAdvanced(low, high){
+    setSongPopularityAdvanced = (low, high) => {
         if(!Number.isInteger(low) || low < this.CONST.POPULARITY_MIN || low > this.CONST.POPULARITY_MAX){
             throw "Popularity low must be in the integer interval [" + this.CONST.POPULARITY_MIN + "," + this.CONST.POPULARITY_MAX + "]"
         }
@@ -1048,13 +1048,13 @@ class LobbySettings{
         this.settings.songPopularity.advancedValue = [low, high]
     }
 
-    enableSongPopularityAdvanced(advancedOn){
+    enableSongPopularityAdvanced = (advancedOn) => {
         this.settings.songPopularity.advancedOn = advancedOn
     }
     //scores start
     //player score start
 
-    setPlayerScore(low, high){
+    setPlayerScore = (low, high) => {
         if(!Number.isInteger(low) || low < this.CONST.PLAYER_SCORE_MIN || low > this.CONST.PLAYER_SCORE_MAX){
             throw "Player score low must be in the integer interval [" + this.CONST.PLAYER_SCORE_MIN + "," + this.CONST.PLAYER_SCORE_MAX + "]"
         }
@@ -1068,15 +1068,15 @@ class LobbySettings{
         this.settings.playerScore.standardValue = [low, high]
     }
 
-    resetPlayerScore() { //this is added as a special QoL case, because unscored anime gets excluded by player score
+    resetPlayerScore = () => { //this is added as a special QoL case, because unscored anime gets excluded by player score
         this.setPlayerScore(this.CONST.PLAYER_SCORE_MIN, this.CONST.PLAYER_SCORE_MAX)
     }
 
-    enablePlayerScoreAdvanced(advancedOn){
+    enablePlayerScoreAdvanced = (advancedOn) => {
         this.settings.playerScore.advancedOn = advancedOn
     }
 
-    setPlayerScoreAdvanced(
+    setPlayerScoreAdvanced = (
         enable1=this.settings.playerScore.advancedValue[0],
         enable2=this.settings.playerScore.advancedValue[1],
         enable3=this.settings.playerScore.advancedValue[2],
@@ -1087,7 +1087,7 @@ class LobbySettings{
         enable8=this.settings.playerScore.advancedValue[7],
         enable9=this.settings.playerScore.advancedValue[8],
         enable10=this.settings.playerScore.advancedValue[9]
-    ) {
+    ) => {
         if(typeof enable1 !== "boolean"){
             throw "player score enable1 must be a bool"
         }
@@ -1125,43 +1125,43 @@ class LobbySettings{
         this.settings.playerScore.advancedValue = [enable1, enable2, enable3, enable4, enable5, enable6, enable7, enable8, enable9, enable10]
     }
 
-    enablePlayerScore1(on){
+    enablePlayerScore1 = (on) => {
         this.setPlayerScoreAdvanced(on)
     }
 
-    enablePlayerScore2(on){
+    enablePlayerScore2 = (on) => {
         this.setPlayerScoreAdvanced(undefined, on)
     }
     
-    enablePlayerScore3(on){
+    enablePlayerScore3 = (on) => {
         this.setPlayerScoreAdvanced(undefined, undefined, on)
     }
     
-    enablePlayerScore4(on){
+    enablePlayerScore4 = (on) => {
         this.setPlayerScoreAdvanced(undefined, undefined, undefined, on)
     }
     
-    enablePlayerScore5(on){
+    enablePlayerScore5 = (on) => {
         this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, on)
     }
     
-    enablePlayerScore6(on){
+    enablePlayerScore6 = (on) => {
         this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, on)
     }
     
-    enablePlayerScore7(on){
+    enablePlayerScore7 = (on) => {
         this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, on)
     }
     
-    enablePlayerScore8(on){
+    enablePlayerScore8 = (on) => {
         this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
     }
 
-    enablePlayerScore9(on){
+    enablePlayerScore9 = (on) => {
         this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
     }
 
-    enablePlayerScore10(on){
+    enablePlayerScore10 = (on) => {
         this.setPlayerScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
     }
 
@@ -1169,7 +1169,7 @@ class LobbySettings{
 
     //anime score start
 
-    setAnimeScore(low, high){
+    setAnimeScore = (low, high) => {
         if(!Number.isInteger(low) || low < this.CONST.ANIME_SCORE_MIN || low > this.CONST.ANIME_SCORE_MAX){
             throw "Anime score low must be in the integer interval [" + this.CONST.ANIME_SCORE_MIN + "," + this.CONST.ANIME_SCORE_MAX + "]"
         }
@@ -1183,15 +1183,15 @@ class LobbySettings{
         this.settings.animeScore.standardValue = [low, high]
     }
 
-    resetAnimeScore() { //this is added as a special QoL case, because unscored anime gets excluded by anime score
+    resetAnimeScore = () => { //this is added as a special QoL case, because unscored anime gets excluded by anime score
         this.setAnimeScore(this.CONST.ANIME_SCORE_MIN, this.CONST.ANIME_SCORE_MAX)
     }
 
-    enableAnimeScoreAdvanced(advancedOn){
+    enableAnimeScoreAdvanced = (advancedOn) => {
         this.settings.animeScore.advancedOn = advancedOn
     }
 
-    setAnimeScoreAdvanced(
+    setAnimeScoreAdvanced = (
         enable2=this.settings.animeScore.advancedValue[0],
         enable3=this.settings.animeScore.advancedValue[1],
         enable4=this.settings.animeScore.advancedValue[2],
@@ -1201,7 +1201,7 @@ class LobbySettings{
         enable8=this.settings.animeScore.advancedValue[6],
         enable9=this.settings.animeScore.advancedValue[7],
         enable10=this.settings.animeScore.advancedValue[8]
-    ) {
+    ) => {
         if(typeof enable2 !== "boolean"){
             throw "anime score enable2 must be a bool"
         }
@@ -1236,43 +1236,43 @@ class LobbySettings{
         this.settings.animeScore.advancedValue = [enable2, enable3, enable4, enable5, enable6, enable7, enable8, enable9, enable10]
     }
 
-    enableAnimeScore1(on){
+    enableAnimeScore1 = (on) => {
         this.setAnimeScoreAdvanced(on)
     }
 
-    enableAnimeScore2(on){
+    enableAnimeScore2 = (on) => {
         this.setAnimeScoreAdvanced(on)
     }
     
-    enableAnimeScore3(on){
+    enableAnimeScore3 = (on) => {
         this.setAnimeScoreAdvanced(undefined, on)
     }
     
-    enableAnimeScore4(on){
+    enableAnimeScore4 = (on) => {
         this.setAnimeScoreAdvanced(undefined, undefined, on)
     }
     
-    enableAnimeScore5(on){
+    enableAnimeScore5 = (on) => {
         this.setAnimeScoreAdvanced(undefined, undefined, undefined, on)
     }
     
-    enableAnimeScore6(on){
+    enableAnimeScore6 = (on) => {
         this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, on)
     }
     
-    enableAnimeScore7(on){
+    enableAnimeScore7 = (on) => {
         this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, undefined, on)
     }
     
-    enableAnimeScore8(on){
+    enableAnimeScore8 = (on) => {
         this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, on)
     }
 
-    enableAnimeScore9(on){
+    enableAnimeScore9 = (on) => {
         this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
     }
 
-    enableAnimeScore10(on){
+    enableAnimeScore10 = (on) => {
         this.setAnimeScoreAdvanced(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, on)
     }
 
@@ -1280,7 +1280,7 @@ class LobbySettings{
 
     //scores end
 
-    setVintage(yearLow, yearHigh, seasonLow, seasonHigh, add=false) {
+    setVintage = (yearLow, yearHigh, seasonLow, seasonHigh, add=false) => {
         if(!Number.isInteger(yearLow) || yearLow < this.CONST.YEAR_MIN || yearLow > this.CONST.YEAR_MAX){
             throw "Year low must be in the integer interval [" + this.CONST.YEAR_MIN + "," + this.CONST.YEAR_MAX + "]"
         }
@@ -1311,15 +1311,15 @@ class LobbySettings{
         }
     }
 
-    resetVintage() {
+    resetVintage = () => {
         this.setVintage(this.CONST.YEAR_MIN, this.CONST.YEAR_MAX, this.CONST.SEASON_MIN, this.CONST.SEASON_MAX)
     }
 
-    addVintage(yearLow, yearHigh, seasonLow, seasonHigh) {
+    addVintage = (yearLow, yearHigh, seasonLow, seasonHigh) => {
         this.setVintage(yearLow, yearHigh, seasonLow, seasonHigh, true)
     }
 
-    enableShowTypes(tv=this.settings.type.tv, movie=this.settings.type.movie, ova=this.settings.type.ova, ona=this.settings.type.ona, special=this.settings.type.special){
+    enableShowTypes = (tv=this.settings.type.tv, movie=this.settings.type.movie, ova=this.settings.type.ova, ona=this.settings.type.ona, special=this.settings.type.special) => {
         if(typeof tv !== "boolean"){
             throw "show type tv must be a bool"
         }
@@ -1345,11 +1345,11 @@ class LobbySettings{
         this.settings.type.special = special
     }
 
-    enableAllShowTypes(){
+    enableAllShowTypes = () => {
         this.enableShowTypes(true,true,true,true,true)
     }
 
-    addGenre(id, state){ //keeping a list of genres is beyond the scope of the settings
+    addGenre = (id, state) => { //keeping a list of genres is beyond the scope of the settings
         if(typeof id !== "string"){
             throw "genre id must be a string"
         }
@@ -1362,7 +1362,7 @@ class LobbySettings{
         this.settings.genre.push({id, state})
     }
 
-    includeGenre(id){
+    includeGenre = (id) => {
         try{
             this.addGenre(id, this.CONST.GENRE_STATE.INCLUDE)
         }catch{
@@ -1370,7 +1370,7 @@ class LobbySettings{
         }
     }
     
-    excludeGenre(id){
+    excludeGenre = (id) => {
         try{
             this.addGenre(id, this.CONST.GENRE_STATE.EXCLUDE)
         }catch{
@@ -1378,7 +1378,7 @@ class LobbySettings{
         }
     }
     
-    optionalGenre(id){
+    optionalGenre = (id) => {
         try{
             this.addGenre(id, this.CONST.GENRE_STATE.OPTIONAL)
         }catch{
@@ -1386,7 +1386,7 @@ class LobbySettings{
         }
     }
 
-    changeGenreState(id, state){
+    changeGenreState = (id, state) => {
         if(typeof id !== "string"){
             throw "genre id must be a string"
         }
@@ -1399,18 +1399,18 @@ class LobbySettings{
         this.settings.genre.find(entry => entry.id === id).state = state
     }
 
-    removeGenre(id){
+    removeGenre = (id) => {
         if(!this.settings.genre.some(entry => entry.id === id)){
             throw "genre not in filter"
         }
         this.settings.genre = this.settings.genre.filter(entry => entry.id !== id)
     }
 
-    clearGenres(){
+    clearGenres = () => {
         this.settings.genre = []
     }
     
-    addTag(id, state){ //keeping a list of tags is beyond the scope of the settings
+    addTag = (id, state) => { //keeping a list of tags is beyond the scope of the settings
         if(typeof id !== "string"){
             throw "tag id must be a string"
         }
@@ -1423,7 +1423,7 @@ class LobbySettings{
         this.settings.tags.push({id, state})
     }
 
-    includeTag(id){
+    includeTag = (id) => {
         try{
             this.addTag(id, this.CONST.TAG_STATE.INCLUDE)
         }catch{
@@ -1431,7 +1431,7 @@ class LobbySettings{
         }
     }
     
-    excludeTag(id){
+    excludeTag = (id) => {
         try{
             this.addTag(id, this.CONST.TAG_STATE.EXCLUDE)
         }catch{
@@ -1439,7 +1439,7 @@ class LobbySettings{
         }
     }
     
-    optionalTag(id){
+    optionalTag = (id) => {
         try{
             this.addTag(id, this.CONST.TAG_STATE.OPTIONAL)
         }catch{
@@ -1447,7 +1447,7 @@ class LobbySettings{
         }
     }
 
-    changeTagState(id, state){
+    changeTagState = (id, state) => {
         if(typeof id !== "string"){
             throw "tag id must be a string"
         }
@@ -1460,34 +1460,40 @@ class LobbySettings{
         this.settings.tags.find(entry => entry.id === id).state = state
     }
 
-    removeTag(id){
+    removeTag = (id) => {
         if(!this.settings.tags.some(entry => entry.id === id)){
             throw "tag not in filter"
         }
         this.settings.tags = this.settings.tags.filter(entry => entry.id !== id)
     }
 
-    clearTags(){
+    clearTags = () => {
         this.settings.tags = []
     }
 
-    static test() {
+    static verboseTests = false
+    static test = (verbose=false) => {
+        this.verboseTests = verbose
         const dummy = new this() 
         this.validate(dummy.getSettings()) //test that valid settings work
-        //this.validate(new this(dummy.getSettings()).getSettings()) //test that valid override works
+        this.validate(new this(dummy.getSettings()).getSettings()) //test that valid override works
 
-        this.verifyFailList(dummy.setRoomName, ["", 4, "a".repeat(this.CONST.ROOM_NAME_MAX_LENGTH + 1)])
-        this.verifyFailList(dummy.setRoomSize, ["4", this.CONST.ROOM_SIZE_MIN-1, this.CONST.ROOM_SIZE_MAX+1,8.5])
-        this.verifyFailList(dummy.setTeamSize , ["4", this.CONST.TEAM_SIZE_MIN-1, this.CONST.TEAM_SIZE_MAX+1,3.5])
-        //this.verifyFailList(dummy. , [])
-        //this.verifyFailList(dummy. , [])
+        this.verifyFailList(dummy.setRoomName, "", 4, "a".repeat(this.CONST.ROOM_NAME_MAX_LENGTH + 1))
+        this.verifyFailList(dummy.setPassword, 4, "a".repeat(this.CONST.PASSWORD_MAX_LENGTH + 1))
+        this.verifyFailList(dummy.setRoomSize, "4", this.CONST.ROOM_SIZE_MIN-1, this.CONST.ROOM_SIZE_MAX+1,8.5)
+        this.verifyFailList(dummy.setTeamSize,  "4", this.CONST.TEAM_SIZE_MIN-1, this.CONST.TEAM_SIZE_MAX+1,3.5)
+        this.verifyFailList(dummy.setSongCount, "4", this.CONST.SONG_COUNT_MIN-1, this.CONST.SONG_COUNT_MAX+1,10.5)
+        this.verifyFailList(dummy.enableSkipGuessing, 1, 0, "", undefined, true)
+        //this.verifyFailList(dummy.enable , [1, 0, "", undefined])
+        //this.verifyFailList(dummy.enable , [1, 0, "", undefined])
+        //this.verifyFailList(dummy.enable , [1, 0, "", undefined])
         //this.verifyFailList(dummy. , [])
         //this.verifyFailList(dummy. , [])
         //this.verifyFailList(dummy. , [])
         console.log("All tests passed successfully")
     }
 
-    static verifyFailList(func, ...listOfArgs) {
+    static verifyFailList = (func, ...listOfArgs) => {
         listOfArgs.forEach((arg) => {
             if(Array.isArray(arg)){
                 this.verifyFail(func, ...arg)
@@ -1497,12 +1503,19 @@ class LobbySettings{
         })
     }
 
-    static verifyFail(func, ...args) {
-        let success
+    static verifyFail = (func, ...args) => {
+        let success = false
         try{
+            //console.log(args, ...args)
             func(...args)
+            if(this.verboseTests){
+                console.log(func.name, ...args, "SUCCEEDED, FAIL!")
+            }
             success = true
-        }catch{
+        }catch(err){
+            if(this.verboseTests){
+                console.log(func.name, ...args, "FAILED, SUCCESS!", err)
+            }
             success = false
         }
         if(success){
