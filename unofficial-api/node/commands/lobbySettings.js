@@ -171,6 +171,7 @@ class LobbySettings{
             ],
             gameMode:"Multiplayer"
         }
+        this.CONST = LobbySettings.CONST
         Object.keys(override).forEach((key) => {
             if(key in this.settings){
                 this.settings[key] = override[key]
@@ -201,11 +202,13 @@ class LobbySettings{
             if(ssa.watched+ssa.unwatched+ssa.random !== settings.numberOfSongs){
                 throw "song selection count mismatch"
             }
-            if((ssa.unwatched || (ssa.watched && ssa.random)) && sss !== this.CONST.SONG_SELECTION.MIXED){
-                throw "song selection mixed distribution, but not mixed standardvalue"
-            }else if(ssa.watched && sss !== this.CONST.SONG_SELECTION.WATCHED){
+            if((ssa.unwatched || (ssa.watched && ssa.random)) && sss !== this.CONST.SONG_SELECTION.MIX){
+                throw "song selection mix distribution, but not mix standardvalue"
+            }
+            if(ssa.watched && !ssa.unwatched && !ssa.random && sss !== this.CONST.SONG_SELECTION.WATCHED){
                 throw "song selection watched distribution, but not watched standardvalue"
-            }else if(sss !== this.CONST.SONG_SELECTION.RANDOM){
+            }
+            if(ssa.random && !ssa.watched && !ssa.unwatched && sss !== this.CONST.SONG_SELECTION.RANDOM){
                 throw "song selection random distribution, but not random standardvalue"
             }
             dummy.setSongSelectionAdvanced(ssa.watched, ssa.unwatched, ssa.random)
@@ -241,8 +244,8 @@ class LobbySettings{
         dummy.setGuessTime(settings.guessTime.standardValue)
         dummy.setGuessTimeAdvanced(...settings.guessTime.randomValue, ...invalidList)
         dummy.enableRandomGuessTime(settings.guessTime.randomOn)
-        dummy.setScoreType(settings.guessTime.scoreType)
-        dummy.setShowSelection(settings.guessTime.showSelection)
+        dummy.setScoreType(settings.scoreType)
+        dummy.setShowSelection(settings.showSelection)
         dummy.setInventorySize(settings.inventorySize.standardValue)
         dummy.setInventorySizeAdvanced(...settings.inventorySize.randomValue, ...invalidList)
         dummy.enableRandomInventorySize(settings.inventorySize.randomOn)
@@ -330,8 +333,8 @@ class LobbySettings{
         settings.tags.forEach(entry => {dummy.addTag(entry.id, entry.state)})
         if(settings.gameMode !== "Solo" && settings.gameMode !== "Multiplayer"){
             throw "game mode argument invalid"
-        } 
-        if((settings.roomSize>1?"Multiplayer":"Solo" !== settings.gameMode)){
+        }
+        if((settings.roomSize>1?"Multiplayer":"Solo") !== settings.gameMode){
             throw "game mode does not correspond to amount of players"
         }
     }
@@ -696,7 +699,7 @@ class LobbySettings{
     }
 
     setGuessTime(standardValue) {
-        if(!Number.isInteger(standardValue) || standardValue < this.CONST.GUESS_TIME_MIN || standardValue < this.CONST.GUESS_TIME_MAX){
+        if(!Number.isInteger(standardValue) || standardValue < this.CONST.GUESS_TIME_MIN || standardValue > this.CONST.GUESS_TIME_MAX){
             throw "Guess time must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
         }
         this.settings.guessTime.randomOn = false
@@ -704,10 +707,10 @@ class LobbySettings{
     }
 
     setGuessTimeAdvanced(low, high) {
-        if(!Number.isInteger(low) || low < this.CONST.GUESS_TIME_MIN || low < this.CONST.GUESS_TIME_MAX){
+        if(!Number.isInteger(low) || low < this.CONST.GUESS_TIME_MIN || low > this.CONST.GUESS_TIME_MAX){
             throw "Guess time low must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
         }
-        if(!Number.isInteger(high) || high < this.CONST.GUESS_TIME_MIN || high < this.CONST.GUESS_TIME_MAX){
+        if(!Number.isInteger(high) || high < this.CONST.GUESS_TIME_MIN || high > this.CONST.GUESS_TIME_MAX){
             throw "Guess time high must be in the integer interval [" + this.CONST.GUESS_TIME_MIN + "," + this.CONST.GUESS_TIME_MAX + "]"
         }
         if(low > high){
@@ -798,7 +801,7 @@ class LobbySettings{
     }
 
     setInventorySize(standardValue){
-        if(!Number.isInteger(standardValue) || standardValue < this.CONST.INVENTORY_SIZE_MIN || standardValue < this.CONST.INVENTORY_SIZE_MAX){
+        if(!Number.isInteger(standardValue) || standardValue < this.CONST.INVENTORY_SIZE_MIN || standardValue > this.CONST.INVENTORY_SIZE_MAX){
             throw "Inventory size must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
         }
         this.settings.inventorySize.standardValue = standardValue
@@ -806,10 +809,10 @@ class LobbySettings{
     }
 
     setInventorySizeAdvanced(low, high){
-        if(!Number.isInteger(low) || low < this.CONST.INVENTORY_SIZE_MIN || low < this.CONST.INVENTORY_SIZE_MAX){
+        if(!Number.isInteger(low) || low < this.CONST.INVENTORY_SIZE_MIN || low > this.CONST.INVENTORY_SIZE_MAX){
             throw "Inventory size low must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
         }
-        if(!Number.isInteger(high) || high < this.CONST.INVENTORY_SIZE_MIN || high < this.CONST.INVENTORY_SIZE_MAX){
+        if(!Number.isInteger(high) || high < this.CONST.INVENTORY_SIZE_MIN || high > this.CONST.INVENTORY_SIZE_MAX){
             throw "Inventory size high must be in the integer interval [" + this.CONST.INVENTORY_SIZE_MIN + "," + this.CONST.INVENTORY_SIZE_MAX + "]"
         }
         if(low > high){
@@ -827,7 +830,7 @@ class LobbySettings{
     }
 
     setLootingTime(standardValue){
-        if(!Number.isInteger(standardValue) || standardValue < this.CONST.LOOTING_TIME_MIN || standardValue < this.CONST.LOOTING_TIME_MAX){
+        if(!Number.isInteger(standardValue) || standardValue < this.CONST.LOOTING_TIME_MIN || standardValue > this.CONST.LOOTING_TIME_MAX){
             throw "Looting time must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
         }
         this.settings.lootingTime.standardValue = standardValue
@@ -835,10 +838,10 @@ class LobbySettings{
     }
 
     setLootingTimeAdvanced(low, high){
-        if(!Number.isInteger(low) || low < this.CONST.LOOTING_TIME_MIN || low < this.CONST.LOOTING_TIME_MAX){
+        if(!Number.isInteger(low) || low < this.CONST.LOOTING_TIME_MIN || low > this.CONST.LOOTING_TIME_MAX){
             throw "Looting time low must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
         }
-        if(!Number.isInteger(high) || high < this.CONST.LOOTING_TIME_MIN || high < this.CONST.LOOTING_TIME_MAX){
+        if(!Number.isInteger(high) || high < this.CONST.LOOTING_TIME_MIN || high > this.CONST.LOOTING_TIME_MAX){
             throw "Looting time high must be in the integer interval [" + this.CONST.LOOTING_TIME_MIN + "," + this.CONST.LOOTING_TIME_MAX + "]"
         }
         if(low > high){
@@ -856,7 +859,7 @@ class LobbySettings{
     }
 
     setLives(count){
-        if(!Number.isInteger(count) || count < this.CONST.LIVES_MIN || count < this.CONST.LIVES_MAX){
+        if(!Number.isInteger(count) || count < this.CONST.LIVES_MIN || count > this.CONST.LIVES_MAX){
             throw "Lives count must be in the integer interval [" + this.CONST.LIVES_MIN + "," + this.CONST.LIVES_MAX + "]"
         }
         this.settings.lives = count
@@ -883,10 +886,10 @@ class LobbySettings{
     }
 
     setSamplePointAdvanced(low, high){
-        if(!Number.isInteger(low) || low < this.CONST.SAMPLE_POINT_MIN || low < this.CONST.SAMPLE_POINT_MAX){
+        if(!Number.isInteger(low) || low < this.CONST.SAMPLE_POINT_MIN || low > this.CONST.SAMPLE_POINT_MAX){
             throw "Looting time low must be in the integer interval [" + this.CONST.SAMPLE_POINT_MIN + "," + this.CONST.SAMPLE_POINT_MAX + "]"
         }
-        if(!Number.isInteger(high) || high < this.CONST.SAMPLE_POINT_MIN || high < this.CONST.SAMPLE_POINT_MAX){
+        if(!Number.isInteger(high) || high < this.CONST.SAMPLE_POINT_MIN || high > this.CONST.SAMPLE_POINT_MAX){
             throw "Looting time high must be in the integer interval [" + this.CONST.SAMPLE_POINT_MIN + "," + this.CONST.SAMPLE_POINT_MAX + "]"
         }
         if(low > high){
@@ -908,7 +911,7 @@ class LobbySettings{
             throw "Playback speed multiplier must be a real number in the interval [" + this.CONST.PLAYBACK_SPEED_MIN + ", " + this.CONST.PLAYBACK_SPEED_MAX + "]"
         }
         this.settings.playbackSpeed.standardValue = multiplier
-        this.playbackSpeed.randomOn = false
+        this.settings.playbackSpeed.randomOn = false
     }
 
     setPlaybackSpeedAdvanced(enable1=this.playbackSpeed.randomValue[0], enable1_5=this.playbackSpeed.randomValue[1], enable2=this.playbackSpeed.randomValue[2], enable4=this.playbackSpeed.randomValue[3]) {
@@ -927,12 +930,12 @@ class LobbySettings{
         if(!(enable1 || enable1_5 || enable2 || enable4)){
             throw "At least one advanced playback speed must be enabled"
         }
-        this.playbackSpeed.randomValue = [enable1, enable1_5, enable2, enable4]
-        this.playbackSpeed.randomOn = true
+        this.settings.playbackSpeed.randomValue = [enable1, enable1_5, enable2, enable4]
+        this.settings.playbackSpeed.randomOn = true
     }
 
     enableRandomPlaybackSpeed(randomOn) {
-        this.playbackSpeed.randomOn = randomOn
+        this.settings.playbackSpeed.randomOn = randomOn
     }
 
     enablePlaybackSpeed1(on){
@@ -983,10 +986,10 @@ class LobbySettings{
     }
 
     setSongDifficultyAdvanced(low, high){
-        if(!Number.isInteger(low) || low < this.CONST.DIFFICULTY_MIN || low < this.CONST.DIFFICULTY_MAX){
+        if(!Number.isInteger(low) || low < this.CONST.DIFFICULTY_MIN || low > this.CONST.DIFFICULTY_MAX){
             throw "Difficulty low must be in the integer interval [" + this.CONST.DIFFICULTY_MIN + "," + this.CONST.DIFFICULTY_MAX + "]"
         }
-        if(!Number.isInteger(high) || high < this.CONST.DIFFICULTY_MIN || high < this.CONST.DIFFICULTY_MAX){
+        if(!Number.isInteger(high) || high < this.CONST.DIFFICULTY_MIN || high > this.CONST.DIFFICULTY_MAX){
             throw "Difficulty high must be in the integer interval [" + this.CONST.DIFFICULTY_MIN + "," + this.CONST.DIFFICULTY_MAX + "]"
         }
         if(low > high){
@@ -1032,10 +1035,10 @@ class LobbySettings{
     }
 
     setSongPopularityAdvanced(low, high){
-        if(!Number.isInteger(low) || low < this.CONST.POPULARITY_MIN || low < this.CONST.POPULARITY_MAX){
+        if(!Number.isInteger(low) || low < this.CONST.POPULARITY_MIN || low > this.CONST.POPULARITY_MAX){
             throw "Popularity low must be in the integer interval [" + this.CONST.POPULARITY_MIN + "," + this.CONST.POPULARITY_MAX + "]"
         }
-        if(!Number.isInteger(high) || high < this.CONST.POPULARITY_MIN || high < this.CONST.POPULARITY_MAX){
+        if(!Number.isInteger(high) || high < this.CONST.POPULARITY_MIN || high > this.CONST.POPULARITY_MAX){
             throw "Popularity high must be in the integer interval [" + this.CONST.POPULARITY_MIN + "," + this.CONST.POPULARITY_MAX + "]"
         }
         if(low > high){
@@ -1052,10 +1055,10 @@ class LobbySettings{
     //player score start
 
     setPlayerScore(low, high){
-        if(!Number.isInteger(low) || low < this.CONST.PLAYER_SCORE_MIN || low < this.CONST.PLAYER_SCORE_MAX){
+        if(!Number.isInteger(low) || low < this.CONST.PLAYER_SCORE_MIN || low > this.CONST.PLAYER_SCORE_MAX){
             throw "Player score low must be in the integer interval [" + this.CONST.PLAYER_SCORE_MIN + "," + this.CONST.PLAYER_SCORE_MAX + "]"
         }
-        if(!Number.isInteger(high) || high < this.CONST.PLAYER_SCORE_MIN || high < this.CONST.PLAYER_SCORE_MAX){
+        if(!Number.isInteger(high) || high < this.CONST.PLAYER_SCORE_MIN || high > this.CONST.PLAYER_SCORE_MAX){
             throw "Player score high must be in the integer interval [" + this.CONST.PLAYER_SCORE_MIN + "," + this.CONST.PLAYER_SCORE_MAX + "]"
         }
         if(low > high){
@@ -1167,10 +1170,10 @@ class LobbySettings{
     //anime score start
 
     setAnimeScore(low, high){
-        if(!Number.isInteger(low) || low < this.CONST.ANIME_SCORE_MIN || low < this.CONST.ANIME_SCORE_MAX){
+        if(!Number.isInteger(low) || low < this.CONST.ANIME_SCORE_MIN || low > this.CONST.ANIME_SCORE_MAX){
             throw "Anime score low must be in the integer interval [" + this.CONST.ANIME_SCORE_MIN + "," + this.CONST.ANIME_SCORE_MAX + "]"
         }
-        if(!Number.isInteger(high) || high < this.CONST.ANIME_SCORE_MIN || high < this.CONST.ANIME_SCORE_MAX){
+        if(!Number.isInteger(high) || high < this.CONST.ANIME_SCORE_MIN || high > this.CONST.ANIME_SCORE_MAX){
             throw "Anime score high must be in the integer interval [" + this.CONST.ANIME_SCORE_MIN + "," + this.CONST.ANIME_SCORE_MAX + "]"
         }
         if(low > high){
@@ -1278,19 +1281,19 @@ class LobbySettings{
     //scores end
 
     setVintage(yearLow, yearHigh, seasonLow, seasonHigh, add=false) {
-        if(!Number.isInteger(yearLow) || yearLow < this.CONST.YEAR_MIN || yearLow < this.CONST.YEAR_MAX){
+        if(!Number.isInteger(yearLow) || yearLow < this.CONST.YEAR_MIN || yearLow > this.CONST.YEAR_MAX){
             throw "Year low must be in the integer interval [" + this.CONST.YEAR_MIN + "," + this.CONST.YEAR_MAX + "]"
         }
-        if(!Number.isInteger(yearHigh) || yearHigh < this.CONST.YEAR_MIN || yearHigh < this.CONST.YEAR_MAX){
+        if(!Number.isInteger(yearHigh) || yearHigh < this.CONST.YEAR_MIN || yearHigh > this.CONST.YEAR_MAX){
             throw "Year high must be in the integer interval [" + this.CONST.YEAR_MIN + "," + this.CONST.YEAR_MAX + "]"
         }
         if(yearLow > yearHigh){
             throw "Year low value cannot be higher than high value"
         }
-        if(!Number.isInteger(seasonLow) || seasonLow < this.CONST.SEASON_MIN || seasonLow < this.CONST.SEASON_MAX){
+        if(!Number.isInteger(seasonLow) || seasonLow < this.CONST.SEASON_MIN || seasonLow > this.CONST.SEASON_MAX){
             throw "Season low must be in the integer interval [" + this.CONST.SEASON_MIN + "," + this.CONST.SEASON_MAX + "]"
         }
-        if(!Number.isInteger(seasonHigh) || seasonHigh < this.CONST.SEASON_MIN || seasonHigh < this.CONST.SEASON_MAX){
+        if(!Number.isInteger(seasonHigh) || seasonHigh < this.CONST.SEASON_MIN || seasonHigh > this.CONST.SEASON_MAX){
             throw "Season high must be in the integer interval [" + this.CONST.SEASON_MIN + "," + this.CONST.SEASON_MAX + "]"
         }
         if(seasonLow > seasonHigh){
@@ -1466,6 +1469,10 @@ class LobbySettings{
 
     clearTags(){
         this.settings.tags = []
+    }
+
+    static test() {
+        this.validate(new this().getSettings())
     }
 }
 module.exports = LobbySettings
