@@ -8,7 +8,7 @@ class RoomBrowser extends Commands {
 		if(doNotValidate){
 			command = "host room"
 		}else{
-			LobbySettings().validate(settings)
+			LobbySettings.validate(settings)
 			command = settings.gameMode === "Solo" ? "host solo room" : "host room"
 		}
 		return this._sendCommand({type:"roombrowser",command, data: settings}, EVENTS.HOST_GAME)
