@@ -937,6 +937,9 @@ class LobbySettings{
     }
 
     enableRandomPlaybackSpeed = (randomOn) => {
+        if(typeof randomOn !== "boolean"){
+            throw "playbackSpeed.randomOn must be a bool"
+        }
         this.settings.playbackSpeed.randomOn = randomOn
     }
 
@@ -1002,6 +1005,9 @@ class LobbySettings{
     }
 
     enableSongDifficultyAdvanced = (advancedOn) => {
+        if(typeof advancedOn !== "boolean"){
+            throw "SongDifficulty.advancedOn must be a bool"
+        }
         this.settings.songDifficulity.advancedOn = advancedOn
     }
 
@@ -1051,6 +1057,9 @@ class LobbySettings{
     }
 
     enableSongPopularityAdvanced = (advancedOn) => {
+        if(typeof advancedOn !== "boolean"){
+            throw "SongPopularity.advancedOn must be a bool"
+        }
         this.settings.songPopularity.advancedOn = advancedOn
     }
     //scores start
@@ -1075,6 +1084,9 @@ class LobbySettings{
     }
 
     enablePlayerScoreAdvanced = (advancedOn) => {
+        if(typeof advancedOn !== "boolean"){
+            throw "playerScore.advancedOn must be a bool"
+        }
         this.settings.playerScore.advancedOn = advancedOn
     }
 
@@ -1190,6 +1202,9 @@ class LobbySettings{
     }
 
     enableAnimeScoreAdvanced = (advancedOn) => {
+        if(typeof advancedOn !== "boolean"){
+            throw "animeScore.advancedOn must be a bool"
+        }
         this.settings.animeScore.advancedOn = advancedOn
     }
 
@@ -1402,6 +1417,9 @@ class LobbySettings{
     }
 
     removeGenre = (id) => {
+        if(typeof id !== "string"){
+            throw "genre id must be a string"
+        }
         if(!this.settings.genre.some(entry => entry.id === id)){
             throw "genre not in filter"
         }
@@ -1463,6 +1481,9 @@ class LobbySettings{
     }
 
     removeTag = (id) => {
+        if(typeof id !== "string"){
+            throw "tag id must be a string"
+        }
         if(!this.settings.tags.some(entry => entry.id === id)){
             throw "tag not in filter"
         }
@@ -1493,7 +1514,7 @@ class LobbySettings{
         this.verifyFailList(dummy.enableLootDropping, 1, 0, "", undefined)
         this.verifyFailList(dummy.setSongSelection, 0, 4)
         this.verifyFailList(dummy.setSongSelectionAdvanced, [0,0,0], [-1,14,14], [0,-1,4], [4,4,-1], [-1,-1,-1])
-        this.verifyFailList(dummy.enableSongTypes, [false, false, false], [1], [undefined, 1], [undefined, undefined, 1])
+        this.verifyFailList(dummy.enableSongTypes, [false, false, false], [1, true, true], [true, 1, true], [true, true, 1])
         this.verifyFailList(dummy.setSongTypeSelectionAdvanced, [0,0,0,0], [-1,14,14,15], [0,-1,4,4], [4,4,-1,0], [4,4,0,-1], [-1,-1,-1, -1], [undefined])
         this.verifyFailList(dummy.setGuessTime, "4", this.CONST.GUESS_TIME_MIN-1, this.CONST.GUESS_TIME_MAX+1,10.5)
         this.verifyFailList(dummy.setGuessTimeAdvanced, [this.CONST.GUESS_TIME_MIN,"4"], ["4",this.CONST.GUESS_TIME_MAX], [this.CONST.GUESS_TIME_MIN-1, this.CONST.GUESS_TIME_MAX],[this.CONST.GUESS_TIME_MIN, this.CONST.GUESS_TIME_MAX+1], [this.CONST.GUESS_TIME_MAX, this.CONST.GUESS_TIME_MIN])
@@ -1511,13 +1532,86 @@ class LobbySettings{
         this.verifyFailList(dummy.setSamplePoint, 0, 4, "a", undefined)
         this.verifyFailList(dummy.setSamplePointAdvanced, [this.CONST.SAMPLE_POINT_MIN,"4"], ["4",this.CONST.SAMPLE_POINT_MAX], [this.CONST.SAMPLE_POINT_MIN-1, this.CONST.SAMPLE_POINT_MAX],[this.CONST.SAMPLE_POINT_MIN, this.CONST.SAMPLE_POINT_MAX+1], [this.CONST.SAMPLE_POINT_MAX, this.CONST.SAMPLE_POINT_MIN])
         this.verifyFailList(dummy.enableRandomSamplePoint, 1, 0, "", undefined)
+        this.verifyFailList(dummy.setPlaybackSpeed, this.CONST.PLAYBACK_SPEED_MIN-0.5, this.CONST.PLAYBACK_SPEED_MAX+0.5, "4", undefined)
+        this.verifyFailList(dummy.setPlaybackSpeedAdvanced, [false, false, false, false], [1, true, true, true], [true, 1, true, true], [true, true, 1, true], [true, true, true, 1])
+        this.verifyFailList(dummy.enableRandomPlaybackSpeed, 1, 0, "", undefined)
+        this.verifyFailList(dummy.enableSongDifficulty, [false, false, false], [1, true, true], [true, 1, true], [true, true, 1])
+        this.verifyFailList(dummy.setSongDifficultyAdvanced, [this.CONST.DIFFICULTY_MIN,"4"], ["4",this.CONST.DIFFICULTY_MAX], [this.CONST.DIFFICULTY_MIN-1, this.CONST.DIFFICULTY_MAX],[this.CONST.DIFFICULTY_MIN, this.CONST.DIFFICULTY_MAX+1], [this.CONST.DIFFICULTY_MAX, this.CONST.DIFFICULTY_MIN])
+        this.verifyFailList(dummy.enableSongDifficultyAdvanced, 1, 0, "", undefined)
+        this.verifyFailList(dummy.enableSongPopularity, [false, false, false], [1, true, true], [true, 1, true], [true, true, 1])
+        this.verifyFailList(dummy.setSongPopularityAdvanced, [this.CONST.POPULARITY_MIN,"4"], ["4",this.CONST.POPULARITY_MAX], [this.CONST.POPULARITY_MIN-1, this.CONST.POPULARITY_MAX],[this.CONST.POPULARITY_MIN, this.CONST.POPULARITY_MAX+1], [this.CONST.POPULARITY_MAX, this.CONST.POPULARITY_MIN])
+        this.verifyFailList(dummy.enableSongPopularityAdvanced, 1, 0, "", undefined)
+        this.verifyFailList(dummy.setPlayerScore, [this.CONST.PLAYER_SCORE_MIN,"4"], ["4",this.CONST.PLAYER_SCORE_MAX], [this.CONST.PLAYER_SCORE_MIN-1, this.CONST.PLAYER_SCORE_MAX],[this.CONST.PLAYER_SCORE_MIN, this.CONST.PLAYER_SCORE_MAX+1], [this.CONST.PLAYER_SCORE_MAX, this.CONST.PLAYER_SCORE_MIN])
+        this.verifyFailList(dummy.enablePlayerScoreAdvanced, 1, 0, "", undefined)
+        { //player score advanced
+            const argList = []
+            argList.push([false,false,false,false,false,false,false,false,false,false])
+            for(let i = 0; i < 10; i++){
+                const arr = [true, true, true, true, true, true, true, true, true, true]
+                arr[i] = 1
+                argList.push(arr)
+            }
+            
+            this.verifyFailList(dummy.setPlayerScoreAdvanced, ...argList)
+        }
+        this.verifyFailList(dummy.setAnimeScore, [this.CONST.ANIME_SCORE_MIN,"4"], ["4",this.CONST.ANIME_SCORE_MAX], [this.CONST.ANIME_SCORE_MIN-1, this.CONST.ANIME_SCORE_MAX],[this.CONST.ANIME_SCORE_MIN, this.CONST.ANIME_SCORE_MAX+1], [this.CONST.ANIME_SCORE_MAX, this.CONST.ANIME_SCORE_MIN])
+        this.verifyFailList(dummy.enableAnimeScoreAdvanced, 1, 0, "", undefined)
+        { //anime score advanced
+            const argList = []
+            argList.push([false,false,false,false,false,false,false,false,false])
+            for(let i = 0; i < 9; i++){
+                const arr = [true, true, true, true, true, true, true, true, true]
+                arr[i] = 1
+                argList.push(arr)
+            }
+            
+            this.verifyFailList(dummy.setAnimeScoreAdvanced, ...argList)
+        }
+        { //vintage
+            dummy.resetVintage()
+            dummy.addVintage(1999, 2001, 1, 3)
+            dummy.addVintage(1944, 2020, 0, 3)
+            dummy.addVintage(1955, 2002, 1, 2)
+            this.verifyFailList(dummy.addVintage, [1999, 2001, 1, 3], [1944, 2020, 0, 3], [1955, 2002, 1, 2])
+            dummy.resetVintage()
+            this.verifyFailList(dummy.setVintage, 
+                [this.CONST.YEAR_MIN-1, this.CONST.YEAR_MAX, this.CONST.SEASON_MIN, this.CONST.SEASON_MAX],
+                [this.CONST.YEAR_MIN, this.CONST.YEAR_MAX+1, this.CONST.SEASON_MIN, this.CONST.SEASON_MAX],
+                [this.CONST.YEAR_MIN, this.CONST.YEAR_MAX, this.CONST.SEASON_MIN-1, this.CONST.SEASON_MAX],
+                [this.CONST.YEAR_MIN, this.CONST.YEAR_MAX, this.CONST.SEASON_MIN, this.CONST.SEASON_MAX+1],
+                [this.CONST.YEAR_MAX, this.CONST.YEAR_MIN, this.CONST.SEASON_MIN, this.CONST.SEASON_MAX],
+                [this.CONST.YEAR_MIN, this.CONST.YEAR_MAX, this.CONST.SEASON_MAX, this.CONST.SEASON_MIN],
+            )
+        }
+        this.verifyFailList(dummy.enableShowTypes,
+            ["true",true,true,true,true],
+            [true,"true",true,true,true],
+            [true,true,"true",true,true],
+            [true,true,true,"true",true],
+            [true,true,true,true,"true"],
+            [false,false,false,false,false],
+        )
+        {//genres
+            dummy.clearGenres()
+            dummy.addGenre("5", 2)
+            this.verifyFailList(dummy.removeGenre, 5, "4")
+            this.verifyFailList(dummy.changeGenreState, [4, 2], ["4", 4], ["0", 0], ["0", "1"], ["0", 1])
+            this.verifyFailList(dummy.addGenre, ["5", 2], [0, 1], ["0", 0], ["0", 4])
+        }
+        {//tags
+            dummy.clearTags()
+            dummy.addTag("5", 2)
+            this.verifyFailList(dummy.removeTag, 5, "4")
+            this.verifyFailList(dummy.changeTagState, [4, 2], ["4", 4], ["0", 0], ["0", "1"], ["0", 1])
+            this.verifyFailList(dummy.addTag, ["5", 2], [0, 1], ["0", 0], ["0", 4])
+        }
         //this.verifyFailList(dummy.enable, 1, 0, "", undefined)
         // this.verifyFailList(dummy. , )
         //this.verifyFailList(dummy. , )
         //this.verifyFailList(dummy. , )
         console.log("All tests passed successfully")
         this.verboseTests = oldVerbose
-        exit()
+        //exit()
     }
 
     static verifyFailList = (func, ...listOfArgs) => {
@@ -1528,6 +1622,9 @@ class LobbySettings{
                 this.verifyFail(func, arg)
             }
         })
+        if(this.verboseTests){
+            console.log(func.name, "SUCCESS", listOfArgs.length, "cases tested\n")
+        }
     }
 
     static verifyFail = (func, ...args) => {
@@ -1550,5 +1647,5 @@ class LobbySettings{
         }
     }
 }
-LobbySettings.test(true)
+//LobbySettings.test(true)
 module.exports = LobbySettings
