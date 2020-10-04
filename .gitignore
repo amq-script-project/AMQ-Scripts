@@ -24,7 +24,7 @@ outputfiles/*
 *dummy*
 currentnumber.txt
 *.bat
-
+*.vs
 debug/animes.js
 
 ##Feel free to add anything I missed##
