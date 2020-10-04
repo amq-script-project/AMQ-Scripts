@@ -1,7 +1,12 @@
 class LobbySettings{
     constructor(override={}){
-        this.settings = Object.assign({}, defaultSettings, override);
-        this.settings.vintage.standardValue.years[1] = new Date().getFullYear();
+        this.settings = JSON.parse(JSON.stringify(defaultSettings))
+        Object.keys(override).forEach((key) => {
+            if(key in this.settings){
+                this.settings[key] = JSON.parse(JSON.stringify(override[key]))
+            }
+        })
+        this.settings.vintage.standardValue.years[1] = new Date().getFullYear()
         this.oldSettings = JSON.parse(JSON.stringify(this.settings))
     }
 
@@ -119,13 +124,13 @@ class LobbySettings{
             }
         }
         dummy.setPlayerScore(...settings.playerScore.standardValue, ...invalidList)
-        settings.playerScore.advancedValue.forEach((val, idx) => dummy.setPlayerScoreAdvanced(idx + 1, val));
+        settings.playerScore.advancedValue.forEach((val, idx) => dummy.setPlayerScoreAdvanced(idx + CONST_VALUES.PLAYER_SCORE_MIN, val))
         dummy.enablePlayerScoreAdvanced(settings.playerScore.advancedOn)
         if(settings.playerScore.advancedValue.some(entry => entry === undefined)){
             throw "player score advanced must not contained undefined variables"
         }
         dummy.setAnimeScore(...settings.animeScore.standardValue, ...invalidList)
-        settings.animeScore.advancedValue.forEach((val, idx) => dummy.setAnimeScoreAdvanced(idx + 1, val));
+        settings.animeScore.advancedValue.forEach((val, idx) => dummy.setAnimeScoreAdvanced(idx + CONST_VALUES.ANIME_SCORE_MIN, val))
         if(settings.animeScore.advancedValue.some(entry => entry === undefined)){
             throw "anime score advanced must not contained undefined variables"
         }
@@ -166,9 +171,9 @@ class LobbySettings{
     }
 
     getSettings = (validate=true) => {
-        let settings = JSON.parse(JSON.stringify(this.settings));
-        if (validate) LobbySettings.validate(settings);
-        return settings;
+        const settings = JSON.parse(JSON.stringify(this.settings))
+        if (validate) LobbySettings.validate(settings)
+        return settings
     }
 
     getDelta = () => {
@@ -192,13 +197,13 @@ class LobbySettings{
     }
 
     setRoomSize = (roomSize) => {
-        assertInInterval(roomSize, "Room size", CONST_VALUES.ROOM_SIZE_MIN, CONST_VALUES.ROOM_SIZE_MAX);
+        assertInInterval(roomSize, "Room size", CONST_VALUES.ROOM_SIZE_MIN, CONST_VALUES.ROOM_SIZE_MAX)
         this.settings.roomSize = roomSize
         this.settings.gameMode = roomSize > 1 ? "Multiplayer" : "Solo"
     }
 
     setTeamSize = (teamSize) => {
-        assertInInterval(teamSize, "Team size", CONST_VALUES.TEAM_SIZE_MIN, CONST_VALUES.TEAM_SIZE_MAX);
+        assertInInterval(teamSize, "Team size", CONST_VALUES.TEAM_SIZE_MIN, CONST_VALUES.TEAM_SIZE_MAX)
         this.settings.teamSize = teamSize
     }
 
@@ -235,45 +240,43 @@ class LobbySettings{
     }
 
     setSongCount = (numberOfSongs) => {
-        assertInInterval(numberOfSongs, "Song count", CONST_VALUES.SONG_COUNT_MIN, CONST_VALUES.SONG_COUNT_MAX);
+        assertInInterval(numberOfSongs, "Song count", CONST_VALUES.SONG_COUNT_MIN, CONST_VALUES.SONG_COUNT_MAX)
         this.settings.numberOfSongs = numberOfSongs
         this._calculateSongDistribution(this.settings.songSelection.advancedValue.watched, this.settings.songSelection.advancedValue.unwatched, this.settings.songSelection.advancedValue.random, numberOfSongs)
     }
 
     enableSkipGuessing = (skipGuessingOn) => {
-        assertBooleans({skipGuessingOn});
+        assertBooleans({skipGuessingOn})
 
         this.settings.modifiers.skipGuessing = skipGuessingOn
     }
-    
+
     enableSkipReplay = (skipReplayOn) => {
-        assertBooleans({skipReplayOn});
+        assertBooleans({skipReplayOn})
 
         this.settings.modifiers.skipReplay = skipReplayOn
     }
-    
+
     enableDuplicates = (duplicatesOn) => {
-        assertBooleans({duplicatesOn});
+        assertBooleans({duplicatesOn})
 
         this.settings.modifiers.duplicates = duplicatesOn
     }
-    
+
     enableQueueing = (queueingOn) => {
-        assertBooleans({queueingOn});
+        assertBooleans({queueingOn})
 
         this.settings.modifiers.queueing = queueingOn
     }
-    
+
     enableLootDropping = (lootDroppingOn) => {
-        assertBooleans({lootDroppingOn});
+        assertBooleans({lootDroppingOn})
 
         this.settings.modifiers.lootDropping = lootDroppingOn
     }
 
     setSongSelection = (standardValue) => {
-        if(!Object.values(CONST_VALUES.SONG_SELECTION).includes(standardValue)){
-            throw "Please use the values defined in CONST.SONG_SELECTION"
-        }
+        assertInDictionary(standardValue, CONST_VALUES.SONG_SELECTION, "CONST_VALUES.SONG_SELECTION")
         const ratio = CONST_VALUES.SONG_SELECTION_STANDARD_RATIOS
         const ratios = [ratio.RANDOM, ratio.MIX, ratio.WATCHED][standardValue-1]
         console.log(ratio, standardValue, ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.songCount)
@@ -310,8 +313,8 @@ class LobbySettings{
                 random++
             }
         }
-        console.log(songCount, randomRatio, ratioQuantifier)
-        console.trace()
+        //console.log(songCount, randomRatio, ratioQuantifier)
+        //console.trace()
         this.settings.songSelection.advancedValue.watched = watched
         this.settings.songSelection.advancedValue.unwatched = unwatched
         this.settings.songSelection.advancedValue.random = random
@@ -325,7 +328,7 @@ class LobbySettings{
     }
 
     setSongSelectionAdvanced = (watched, unwatched, random) => {
-        assertNotNegative({watched, unwatched, random});
+        assertNotNegative({watched, unwatched, random})
         if(watched + unwatched + random === 0){
             throw "sum of selection must be larger than 0"
         }
@@ -333,7 +336,7 @@ class LobbySettings{
     }
 
     enableSongTypes = (openings=this.settings.songType.standardValue.openings, endings=this.settings.songType.standardValue.endings, inserts=this.settings.songType.standardValue.inserts) => {
-        assertBooleans({openings, endings, inserts});
+        assertBooleans({openings, endings, inserts})
 
         if(!(openings || endings || inserts)){
             throw "At least one show type must be enabled"
@@ -351,11 +354,11 @@ class LobbySettings{
     enableOpenings = (openingsOn) => {
         this.setTypes(openingsOn)
     }
-    
+
     enableEndings = (endingsOn) => {
         this.setTypes(undefined, endingsOn)
     }
-    
+
     enableInserts = (insertsOn) => {
         this.setTypes(undefined, undefined, insertsOn)
     }
@@ -389,7 +392,7 @@ class LobbySettings{
     }
 
     setSongTypeSelectionAdvanced = (openings, endings, inserts, random) => {
-        assertNotNegative({openings, endings, inserts, random});
+        assertNotNegative({openings, endings, inserts, random})
         if(openings + endings + inserts + random === 0){
             throw "sum of types must be larger than 0"
         }
@@ -402,7 +405,7 @@ class LobbySettings{
     }
 
     setGuessTime = (standardValue) => {
-        assertInInterval(standardValue, "Guess time", CONST_VALUES.GUESS_TIME_MIN, CONST_VALUES.GUESS_TIME_MAX);
+        assertInInterval(standardValue, "Guess time", CONST_VALUES.GUESS_TIME_MIN, CONST_VALUES.GUESS_TIME_MAX)
         this.settings.guessTime.randomOn = false
         this.settings.guessTime.standardValue = standardValue
     }
@@ -414,15 +417,13 @@ class LobbySettings{
     }
 
     enableRandomGuessTime = (randomOn) => {
-        assertBooleans({"guessTime.randomOn": randomOn});
+        assertBooleans({"guessTime.randomOn": randomOn})
 
         this.settings.guessTime.randomOn = randomOn
     }
 
     setScoreType = (scoreType) => {
-        if(!Object.values(CONST_VALUES.SCORING).includes(scoreType)){
-            throw "Please use the values defined in CONST.SCORING"
-        }
+        assertInDictionary(scoreType, CONST_VALUES.SCORING, "CONST_VALUES.SCORING")
         this.settings.scoreType = scoreType
     }
 
@@ -439,9 +440,7 @@ class LobbySettings{
     }
 
     setShowSelection = (showSelection) => {
-        if(!Object.values(CONST_VALUES.SHOW_SELECTION).includes(showSelection)){
-            throw "Please use the values defined in CONST.SHOW_SELECTION"
-        }
+        assertInDictionary(showSelection, CONST_VALUES.SHOW_SELECTION, "CONST_VALUES.SHOW_SELECTION")
         this.settings.showSelection = showSelection
     }
 
@@ -454,6 +453,7 @@ class LobbySettings{
     }
 
     setGameMode = (gameMode) => {
+        assertInDictionary(gameMode, CONST_VALUES.GAME_MODE, "CONST_VALUES.GAME_MODE")
         switch(gameMode){
             case CONST_VALUES.GAME_MODE.STANDARD:
                 this.setShowSelectionAuto()
@@ -472,7 +472,7 @@ class LobbySettings{
                 this.setScoreTypeLives()
                 break
             default:
-                throw "Please use the values defined in CONST.GAME_MODE"
+                throw "Error in setGameMode, value " + gameMode + " not implemented"
         }
     }
 
@@ -493,27 +493,27 @@ class LobbySettings{
     }
 
     setInventorySize = (standardValue) => {
-        assertInInterval(standardValue, "Inventory size", CONST_VALUES.INVENTORY_SIZE_MIN, CONST_VALUES.INVENTORY_SIZE_MAX);
+        assertInInterval(standardValue, "Inventory size", CONST_VALUES.INVENTORY_SIZE_MIN, CONST_VALUES.INVENTORY_SIZE_MAX)
 
         this.settings.inventorySize.standardValue = standardValue
         this.settings.inventorySize.randomOn = false
     }
 
     setInventorySizeAdvanced = (low, high) => {
-        assertIsInterval(low, "Inventory size low", high, "Inventory size high", CONST_VALUES.INVENTORY_SIZE_MIN, CONST_VALUES.INVENTORY_SIZE_MAX);
-    
+        assertIsInterval(low, "Inventory size low", high, "Inventory size high", CONST_VALUES.INVENTORY_SIZE_MIN, CONST_VALUES.INVENTORY_SIZE_MAX)
+
         this.settings.inventorySize.randomOn = true
         this.settings.inventorySize.randomValue = [low, high]
     }
 
     enableRandomInventorySize = (randomOn) => {
-        assertBooleans({"inventorySize.randomOn": randomOn});
+        assertBooleans({"inventorySize.randomOn": randomOn})
 
         this.settings.inventorySize.randomOn = randomOn
     }
 
     setLootingTime = (standardValue) => {
-        assertInInterval(standardValue, "Looting time", CONST_VALUES.LOOTING_TIME_MIN, CONST_VALUES.LOOTING_TIME_MAX);
+        assertInInterval(standardValue, "Looting time", CONST_VALUES.LOOTING_TIME_MIN, CONST_VALUES.LOOTING_TIME_MAX)
 
         this.settings.lootingTime.standardValue = standardValue
         this.settings.lootingTime.randomOn = false
@@ -527,20 +527,18 @@ class LobbySettings{
     }
 
     enableRandomLootingTime = (randomOn) => {
-        assertBooleans({"lootingTime.randomOn": randomOn});
+        assertBooleans({"lootingTime.randomOn": randomOn})
 
         this.settings.lootingTime.randomOn = randomOn
     }
 
     setLives = (count) => {
-        assertInInterval(count, "Lives count", CONST_VALUES.LIVES_MIN, CONST_VALUES.LIVES_MAX);
+        assertInInterval(count, "Lives count", CONST_VALUES.LIVES_MIN, CONST_VALUES.LIVES_MAX)
         this.settings.lives = count
     }
 
     setSamplePoint = (position) => {
-        if(!Object.values(CONST_VALUES.SAMPLE_POINT).includes(position)){
-            throw "Please use the values defined in CONST.SAMPLE_POINT"
-        }
+        assertInDictionary(position, CONST_VALUES.SAMPLE_POINT, "CONST_VALUES.SAMPLE_POINT")
         this.settings.samplePoint.standardValue = position
         this.settings.samplePoint.randomOn = false
     }
@@ -548,17 +546,17 @@ class LobbySettings{
     setSamplePointStart = () => {
         this.setSamplePoint(CONST_VALUES.SAMPLE_POINT.START)
     }
-    
+
     setSamplePointMiddle = () => {
         this.setSamplePoint(CONST_VALUES.SAMPLE_POINT.MIDDLE)
     }
-    
+
     setSamplePointEnd = () => {
         this.setSamplePoint(CONST_VALUES.SAMPLE_POINT.END)
     }
 
     setSamplePointAdvanced = (low, high) => {
-        assertIsInterval(low, "Looting time low", high, "Looting time high", CONST_VALUES.SAMPLE_POINT_MIN, CONST_VALUES.SAMPLE_POINT_MAX);
+        assertIsInterval(low, "Looting time low", high, "Looting time high", CONST_VALUES.SAMPLE_POINT_MIN, CONST_VALUES.SAMPLE_POINT_MAX)
 
         this.settings.samplePoint.randomOn = true
         this.settings.samplePoint.randomValue = [low, high]
@@ -579,7 +577,7 @@ class LobbySettings{
     }
 
     setPlaybackSpeedAdvanced = (enable1=this.playbackSpeed.randomValue[0], enable1_5=this.playbackSpeed.randomValue[1], enable2=this.playbackSpeed.randomValue[2], enable4=this.playbackSpeed.randomValue[3]) => {
-        assertBooleans({enable1, enable1_5, enable2, enable4});
+        assertBooleans({enable1, enable1_5, enable2, enable4})
         if(!(enable1 || enable1_5 || enable2 || enable4)){
             throw "At least one advanced playback speed must be enabled"
         }
@@ -588,7 +586,7 @@ class LobbySettings{
     }
 
     enableRandomPlaybackSpeed = (randomOn) => {
-        assertBooleans({"playbackSpeed.randomOn": randomOn});
+        assertBooleans({"playbackSpeed.randomOn": randomOn})
 
         this.settings.playbackSpeed.randomOn = randomOn
     }
@@ -596,21 +594,21 @@ class LobbySettings{
     enablePlaybackSpeed1 = (on) => {
         this.setPlaybackSpeedAdvanced(on)
     }
-    
+
     enablePlaybackSpeed1_5 = (on) => {
         this.setPlaybackSpeedAdvanced(undefined, on)
     }
-    
+
     enablePlaybackSpeed2 = (on) => {
         this.setPlaybackSpeedAdvanced(undefined, undefined, on)
     }
-    
+
     enablePlaybackSpeed4 = (on) => {
         this.setPlaybackSpeedAdvanced(undefined, undefined, undefined, on)
     }
 
     enableSongDifficulty = (easy=this.settings.songDifficulity.standardValue.easy, medium=this.settings.songDifficulity.standardValue.medium, hard=this.settings.songDifficulity.standardValue.hard) => {
-        assertBooleans({easy, medium, hard});
+        assertBooleans({easy, medium, hard})
 
         if(!(easy || medium || hard)){
             throw "At least one difficulty must be enabled"
@@ -624,30 +622,30 @@ class LobbySettings{
     enableSongDifficultyEasy = (on) => {
         this.enableSongDifficulty(on)
     }
-    
+
     enableSongDifficultyMedium = (on) => {
         this.enableSongDifficulty(undefined, on)
     }
-    
+
     enableSongDifficultyHard = (on) => {
         this.enableSongDifficulty(undefined, undefined, on)
     }
 
     setSongDifficultyAdvanced = (low, high) => {
-        assertIsInterval(low, "Difficulty low", high, "Difficulty high", CONST_VALUES.DIFFICULTY_MIN, CONST_VALUES.DIFFICULTY_MAX);
-       
+        assertIsInterval(low, "Difficulty low", high, "Difficulty high", CONST_VALUES.DIFFICULTY_MIN, CONST_VALUES.DIFFICULTY_MAX)
+
         this.settings.songDifficulity.advancedOn = true
         this.settings.songDifficulity.advancedValue = [low, high]
     }
 
     enableSongDifficultyAdvanced = (advancedOn) => {
-        assertBooleans({"SongDifficulty.advancedOn": advancedOn});
+        assertBooleans({"SongDifficulty.advancedOn": advancedOn})
 
         this.settings.songDifficulity.advancedOn = advancedOn
     }
 
     enableSongPopularity = (disliked=this.settings.songPopularity.standardValue.disliked, mixed=this.settings.songPopularity.standardValue.mixed, liked=this.settings.songPopularity.standardValue.liked) => {
-        assertBooleans({disliked, mixed, liked});
+        assertBooleans({disliked, mixed, liked})
 
         if(!(disliked || mixed || liked)){
             throw "At least one popularity must be enabled"
@@ -661,17 +659,17 @@ class LobbySettings{
     enableSongPopularityDisliked = (on) => {
         this.enableSongPopularity(on)
     }
-    
+
     enableSongPopularityMixed = (on) => {
         this.enableSongPopularity(undefined, on)
     }
-    
+
     enableSongPopularityLiked = (on) => {
         this.enableSongPopularity(undefined, undefined, on)
     }
 
     setSongPopularityAdvanced = (low, high) => {
-        assertIsInterval(low, "Popularity low", high, "Popularity high", CONST_VALUES.POPULARITY_MIN, CONST_VALUES.POPULARITY_MAX);
+        assertIsInterval(low, "Popularity low", high, "Popularity high", CONST_VALUES.POPULARITY_MIN, CONST_VALUES.POPULARITY_MAX)
 
         this.settings.songPopularity.advancedOn = true
         this.settings.songPopularity.advancedValue = [low, high]
@@ -686,7 +684,7 @@ class LobbySettings{
     //player score start
 
     setPlayerScore = (low, high) => {
-        assertIsInterval(low, "Player score low", high, "Player score high", CONST_VALUES.PLAYER_SCORE_MIN, CONST_VALUES.PLAYER_SCORE_MAX);
+        assertIsInterval(low, "Player score low", high, "Player score high", CONST_VALUES.PLAYER_SCORE_MIN, CONST_VALUES.PLAYER_SCORE_MAX)
 
         this.settings.playerScore.advancedOn = false
         this.settings.playerScore.standardValue = [low, high]
@@ -698,22 +696,22 @@ class LobbySettings{
 
     enablePlayerScoreAdvanced = (advancedOn) => {
         assertBooleans({"playerScore.advancedOn": advancedOn})
- 
+
         this.settings.playerScore.advancedOn = advancedOn
     }
 
     setPlayerScoreAdvanced = (score, enable) => {
-        assertBooleans({enable});
-        assertInInterval(score, "score", 1, 10);
-        this.settings.playerScore.advancedValue[score - 1] = enable;
-        this.settings.playerScore.advancedOn = this.settings.playerScore.advancedValue.find(s => s) != null;
+        assertBooleans({enable})
+        assertInInterval(score, "player score", CONST_VALUES.PLAYER_SCORE_MIN, CONST_VALUES.PLAYER_SCORE_MAX)
+        this.settings.playerScore.advancedValue[score - CONST_VALUES.PLAYER_SCORE_MIN] = enable
+        this.settings.playerScore.advancedOn = !this.settings.playerScore.advancedValue.some(s => s)
     }
     //player score end
 
     //anime score start
 
     setAnimeScore = (low, high) => {
-        assertIsInterval(low, "Anime score low", high, "Anime score high", CONST_VALUES.ANIME_SCORE_MIN, CONST_VALUES.ANIME_SCORE_MAX);
+        assertIsInterval(low, "Anime score low", high, "Anime score high", CONST_VALUES.ANIME_SCORE_MIN, CONST_VALUES.ANIME_SCORE_MAX)
 
         this.settings.animeScore.advancedOn = false
         this.settings.animeScore.standardValue = [low, high]
@@ -725,23 +723,23 @@ class LobbySettings{
 
     enableAnimeScoreAdvanced = (advancedOn) => {
         assertBooleans({"animeScore.advancedOn": advancedOn})
- 
+
         this.settings.animeScore.advancedOn = advancedOn
     }
 
     setAnimeScoreAdvanced = (score, enable) => {
-        assertBooleans({enable});
-        assertInInterval(score, "score", 1, 10);
-        this.settings.animeScore.advancedValue[score - 1] = enable;
-        this.settings.animeScore.advancedOn = this.settings.animeScore.advancedValue.find(s => s) != null;
+        assertBooleans({enable})
+        assertInInterval(score, "anime score", CONST_VALUES.ANIME_SCORE_MIN, CONST_VALUES.ANIME_SCORE_MAX)
+        this.settings.animeScore.advancedValue[score - CONST_VALUES.ANIME_SCORE_MIN] = enable
+        this.settings.animeScore.advancedOn = this.settings.animeScore.advancedValue.some(s => s)
     }
     //anime score end
 
     //scores end
 
     setVintage = (yearLow, yearHigh, seasonLow, seasonHigh, add=false) => {
-        assertIsInterval(yearLow, "Year low", yearHigh, "Year high", CONST_VALUES.YEAR_MIN, CONST_VALUES.YEAR_MAX);
-        assertIsInterval(seasonLow, "Season low", seasonHigh, "Season high", CONST_VALUES.SEASON_MIN, CONST_VALUES.SEASON_MAX);
+        assertIsInterval(yearLow, "Year low", yearHigh, "Year high", CONST_VALUES.YEAR_MIN, CONST_VALUES.YEAR_MAX)
+        assertIsInterval(seasonLow, "Season low", seasonHigh, "Season high", CONST_VALUES.SEASON_MIN, CONST_VALUES.SEASON_MAX)
 
         this.settings.vintage.standardValue.years = [yearLow, yearHigh]
         this.settings.vintage.standardValue.seasons = [seasonLow, seasonHigh]
@@ -765,14 +763,14 @@ class LobbySettings{
     }
 
     enableShowTypes = (tv=this.settings.type.tv, movie=this.settings.type.movie, ova=this.settings.type.ova, ona=this.settings.type.ona, special=this.settings.type.special) => {
-        let params = {tv, movie, ova, ona, special};
-        assertBooleans(params);
+        let params = {tv, movie, ova, ona, special}
+        assertBooleans(params)
 
-        if(Object.values(params).find(v => v) == null) {
+        if(!Object.values(params).some(v => v)) {
             throw "At least one show type must be enabled"
         }
 
-        Object.assign(this.settings.type, params);
+        Object.assign(this.settings.type, params)
     }
 
     enableAllShowTypes = () => {
@@ -783,9 +781,7 @@ class LobbySettings{
         if(typeof id !== "string"){
             throw "genre id must be a string"
         }
-        if(!Object.values(CONST_VALUES.GENRE_STATE).includes(state)){
-            throw "Please use the values defined in CONST.GENRE_STATE"
-        }
+        assertInDictionary(state, CONST_VALUES.GENRE_STATE, "CONST_VALUES.GENRE_STATE")
         if(this.settings.genre.some(entry => entry.id === id)){
             throw "genre already in filter"
         }
@@ -799,7 +795,7 @@ class LobbySettings{
             this.changeGenreState(id, CONST_VALUES.GENRE_STATE.INCLUDE)
         }
     }
-    
+
     excludeGenre = (id) => {
         try{
             this.addGenre(id, CONST_VALUES.GENRE_STATE.EXCLUDE)
@@ -807,7 +803,7 @@ class LobbySettings{
             this.changeGenreState(id, CONST_VALUES.GENRE_STATE.EXCLUDE)
         }
     }
-    
+
     optionalGenre = (id) => {
         try{
             this.addGenre(id, CONST_VALUES.GENRE_STATE.OPTIONAL)
@@ -820,9 +816,7 @@ class LobbySettings{
         if(typeof id !== "string"){
             throw "genre id must be a string"
         }
-        if(!Object.values(CONST_VALUES.GENRE_STATE).includes(state)){
-            throw "Please use the values defined in CONST.GENRE_STATE"
-        }
+        assertInDictionary(state, CONST_VALUES.GENRE_STATE, "CONST_VALUES.GENRE_STATE")
         if(!this.settings.genre.some(entry => entry.id === id)){
             throw "genre not in filter"
         }
@@ -842,14 +836,12 @@ class LobbySettings{
     clearGenres = () => {
         this.settings.genre = []
     }
-    
+
     addTag = (id, state) => { //keeping a list of tags is beyond the scope of the settings
         if(typeof id !== "string"){
             throw "tag id must be a string"
         }
-        if(!Object.values(CONST_VALUES.TAG_STATE).includes(state)){
-            throw "Please use the values defined in CONST.TAG_STATE"
-        }
+        assertInDictionary(state, CONST_VALUES.TAG_STATE, "CONST_VALUES.TAG_STATE")
         if(this.settings.tags.some(entry => entry.id === id)){
             throw "tag already in filter"
         }
@@ -863,7 +855,7 @@ class LobbySettings{
             this.changeTagState(id, CONST_VALUES.TAG_STATE.INCLUDE)
         }
     }
-    
+
     excludeTag = (id) => {
         try{
             this.addTag(id, CONST_VALUES.TAG_STATE.EXCLUDE)
@@ -871,7 +863,7 @@ class LobbySettings{
             this.changeTagState(id, CONST_VALUES.TAG_STATE.EXCLUDE)
         }
     }
-    
+
     optionalTag = (id) => {
         try{
             this.addTag(id, CONST_VALUES.TAG_STATE.OPTIONAL)
@@ -884,9 +876,7 @@ class LobbySettings{
         if(typeof id !== "string"){
             throw "tag id must be a string"
         }
-        if(!Object.values(CONST_VALUES.TAG_STATE).includes(state)){
-            throw "Please use the values defined in CONST.TAG_STATE"
-        }
+        assertInDictionary(state, CONST_VALUES.TAG_STATE, "CONST_VALUES.TAG_STATE")
         if(!this.settings.tags.some(entry => entry.id === id)){
             throw "tag not in filter"
         }
@@ -926,8 +916,8 @@ const assertNotNegative = (obj) => {
 }
 
 const assertIsInterval = (low, lowName, high, highName, minVal, maxVal) => {
-    assertInInterval(low, lowName, minVal, maxVal);
-    assertInInterval(high, highName, minVal, maxVal);
+    assertInInterval(low, lowName, minVal, maxVal)
+    assertInInterval(high, highName, minVal, maxVal)
     if(low > high){
         throw `${lowName} value cannot be higher than ${highName}`
     }
@@ -938,6 +928,12 @@ const assertBooleans = (obj) => {
         if(typeof obj[name] !== "boolean"){
             throw name + " must be a bool"
         }
+    }
+}
+
+const assertInDictionary = (val, dictionary, dictionaryName) => {
+    if(!Object.values(dictionary).includes(val)){
+        throw "Please use the values defined in " + dictionaryName
     }
 }
 
@@ -1085,7 +1081,7 @@ const defaultSettings = {
 
     ],
     gameMode:"Multiplayer"
-};
+}
 
 const CONST_VALUES = {
     ROOM_NAME_MAX_LENGTH:20,
@@ -1101,7 +1097,7 @@ const CONST_VALUES = {
         MIX:2,
         WATCHED:3
     },
-    SONG_SELECTION_STANDARD_RATIOS:{ 
+    SONG_SELECTION_STANDARD_RATIOS:{
         RANDOM: {WATCHED: 0, UNWATCHED: 0, RANDOM: 100},
         MIX: {WATCHED: 80, UNWATCHED: 20, RANDOM: 0},
         WATCHED: {WATCHED: 100, UNWATCHED: 0, RANDOM: 0},
@@ -1167,10 +1163,10 @@ const CONST_VALUES = {
         EXCLUDE:2,
         OPTIONAL:3
     }
-};
+}
 
 
 
 
-LobbySettings.CONST = CONST_VALUES;
+LobbySettings.CONST_VALUES = CONST_VALUES
 module.exports = LobbySettings
