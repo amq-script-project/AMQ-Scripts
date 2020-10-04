@@ -1,16 +1,9 @@
 const Commands = require('./commands');
-const LobbySettings = require('./lobbySettings')
 const EVENTS = require('../events');
 
 class RoomBrowser extends Commands {
-	host(settings, doNotValidate=false) {
-		let command
-		if(doNotValidate){
-			command = "host room"
-		}else{
-			LobbySettings.validate(settings)
-			command = settings.gameMode === "Solo" ? "host solo room" : "host room"
-		}
+	host(settings) {
+		let command = settings.gameMode === "Solo" ? "host solo room" : "host room"
 		return this._sendCommand({type:"roombrowser",command, data: settings}, EVENTS.HOST_GAME)
 	}
 
@@ -28,10 +21,6 @@ class RoomBrowser extends Commands {
 
 	joinRanked() {
 		this._sendCommand({type:"roombrowser",command:"join ranked game"})		
-	}
-
-	getNewLobbySettings(override) {
-		return new LobbySettings(override)
 	}
 }
 
