@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.22
+// @version      1.23
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -19,20 +19,46 @@ if (isNode) {
 	FuzzySet = require('fuzzyset.js')
 }
 
+const cleanString = (str) => {
+	return removeDiacritics(str).replace(/[^\w\s]/gi, ' ').replace(/  +/g, ' ').toLowerCase().trim();
+}
+
+const semiCleanString = (str) => {
+	return removeDiacritics(str).replace(/  +/g, ' ').toLowerCase().trim();
+}
+
+const onlySpecialChars = (str) => {
+	return str.replace(/[\w\s]/gi, '').split('').sort().join('');
+}
+
 var options = {
 	highlight: true, // highlight or not the match
 	sorting : "partial", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is amq default
     sortList: true, // true = consider matching animes by last seen order (after checking startsWith)
 	allowRightLeftArrows: false, // use right and left arrows to move dropdown selected options
-	allowStartsWith: true, // allow startsWith priotization (fastest matching)
-	allowDifferentOrder: true, // allow the words to be on any order (no hero boku will match boku no hero),
 	daysToRemember: 90, // sets amount of days to consider an anime as seen in sorting,
 	fuzzy: {
 		dropdown: true, // whether to show fuzzy matches if no matches found
 		answer: true, // whether to use top fuzzy match on round end as answer if no matches found
 	},
-	addEntries: true // whether to allow oo, ou and uu as ō/ū
+	addEntries: true, // whether to allow oo, ou and uu as ō/ū,
+	entrySets: [
+		{
+			startsWith: false, //change to true if you want more specific results
+			contains: false, //change to true if you want more specific results
+			partial: false, //not recommended to change
+			clean: semiCleanString // does not remove special characters so you can filter with it
+		},
+		{
+			startsWith: true, // allow startsWith priotization (fastest matching)
+			contains: true, // allow to search by contains
+			partial: true, // allow the words to be on any order (no hero boku will match boku no hero),
+			clean: cleanString,
+			special: onlySpecialChars // adds filtering special chars instead of just ignoring
+		},
+	]
 }
+
 
 var debug = false;
 
@@ -46,94 +72,10 @@ if (!isNode && window.localStorage) {
     storedData = JSON.parse(localStorage.getItem("storedData") || "{}");
 }
 
-class FilterManager {
-	constructor (list, limit) {
-		this.list = list.filter(v => v.trim().length).map((v, idx) => ({str: this.cleanString(v), idx: idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: v}));
-		this.limit = limit
-		this.specialChars = {}
-        this.now = new Date(); this.now.setDate(this.now.getDate() - options.daysToRemember);
-
-		this.addEntries();
-		this.list.forEach(v=> v.originalIndex = v.idx);
-
-		if (options.sortList) {
-            this.list = this.sortBySeen(this.list);
-		}
-
-		this.list.forEach((v, idx) => v.idx = idx);
-
-		this.sorted = {
-			list: this.alphabeticalSort(this.list.map(v => ({str: v.str, idx: v.idx})))
-		};
-
-		if (options.fuzzy.dropdown || options.fuzzy.answer) {
-			this.fuzzy = FuzzySet(this.sorted.list.map(v => v.str));
-			this.reverseMapping = {}
-			this.sorted.list.forEach(v => {
-				this.reverseMapping[v.str] = this.reverseMapping[v.str] || []
-				this.reverseMapping[v.str].push(v.idx)
-			});
-		}
-
-		this.superString = this.list.map(v => v.str).join("$$$");
-
-		this.superStringLookup = [{str: 0}];
-
-		for (var i = 0; i < this.list.length; i++) {
-			this.superStringLookup.push({str: this.superStringLookup[i].str + this.list[i].str.length + 3})
-		}
-
-		this.lastQry = "";
-		this.lastSpecialStr = "";
-		this.results = new Set();
-		this.originalIndexResults = new Set();
-
-		this.partialContext = {limit: limit, superString: this.superString, superStringLookup: this.superStringLookup, first: this.first}
-		this.partialContext.addResult = (idx) => {
-			if (this.partialMatches(idx)) this.addResult(idx);
-		}
-
+class SortedList {
+	constructor(list) {
+		this.list = this.alphabeticalSort(list);
 		this.reset();
-	}
-
-	addEntries() {
-		if (!options.addEntries) return;
-
-        this.list.filter(e => e.originalStr.includes('ō') || e.originalStr.includes('ū')).forEach(e => {
-            let additional = [""];
-			for (let i = 0; i < e.originalStr.length; i++) {
-			    if (e.originalStr[i] == 'ō') {
-				   additional = additional.map(s => s + 'oo').concat(additional.map(s => s + 'ou'));
-				} else if (e.originalStr[i] == 'ū') {
-                   additional = additional.map(s => s + 'uu');
-				} else {
-				   additional = additional.map(s => s + e.originalStr[i]);
-				}
-			}
-			this.list = this.list.concat(additional.map((v, idx) => ({str: this.cleanString(v), idx: e.idx, specialStr: this.onlySpecialChars(v), splittedStr: this.cleanString(v).split(" "), originalStr: e.originalStr})));
-		});
-	}
-
-	getLastSeen(anime) {
-		return storedData[anime.toLowerCase()] >= this.now.getTime() ? storedData[anime.toLowerCase()] : 1
-	}
-
-
-	sortBySeen(arr) {
-       return arr.map((v) => ({val : v, d: this.getLastSeen(v.originalStr)})).sort(function(a, b){
-	       if (a.d < b.d) return 1;
-		   if (b.d < a.d) return -1;
-		   if (a.val.idx < b.val.idx) return -1;
-		   return 1;
-	   }).map((v) => v.val);
-	}
-
-	cleanString (str) {
-		return removeDiacritics(str).replace("-", " ").replace(/[^\w\s]/gi, ' ').replace(/  +/g, ' ').toLowerCase().trim();
-	}
-
-	onlySpecialChars(str) {
-	    return str.replace(/[\w\s]/gi, '').split('').sort().join('');
 	}
 
 	alphabeticalSort (list) {
@@ -146,82 +88,61 @@ class FilterManager {
 		});
 	}
 
-	reset () {
-		this.sorted.start = 0,
-		this.sorted.end = this.sorted.list.length;
+	reset() {
+		this.start = 0;
+		this.end = this.list.length;
+	}
+}
 
+class SuperString {
+	constructor(list) {
+		this.str = list.join("$$$");
+
+		this.lookup = [{str: 0}];
+
+		for (var i = 0; i < list.length; i++) {
+			this.lookup.push({str: this.lookup[i].str + list[i].length + 3})
+		}
+
+		this.reset();
+	}
+
+	clone() {
+		let superString = new SuperString([]);
+		Object.assign(superString, this);
+		return superString;
+	}
+
+	reset() {
 		this.lastIndex = 0;
-		this.results.clear()
-		this.originalIndexResults.clear();
-		this.partialContext.lastIndex = 0;
-		this.lastSpecialIndex = 0
+	}
+}
+//, specialStr: onlySpecialChars(v), splittedStr: cleanString(v).split(" ")
+
+class EntrySet {
+	constructor(list, config, manager) {
+		this.list = list;
+		this.manager = manager;
+		this.sorted = new SortedList(config.startsWith ? list : []);
+		this.contains = new SuperString(config.contains || config.partial ? list.map(v => v.str) : []);
+		this.partial = this.contains.clone();
+		this.config = config;
+
+		if (config.partial) this.list.forEach(e => e.splittedStr = e.str.split(' '));
+
+		this.results = new Set();
 	}
 
-	checkOldResults () {
-		var results = new Set()
+	reset() {
+		this.sorted.reset();
+		this.partial.reset();
+		this.contains.reset();
 
-		for (let idx of this.results) {
-			var anime = this.list[idx].str;
-			if (anime.indexOf(this.lastQry) != -1 || (options.allowDifferentOrder && this.partialMatches(idx))) results.add(idx);
-		}
-
-        this.results = new Set();
-        this.originalIndexResults = new Set();
-
-		results.forEach(idx => this.addResult(idx));
-	}
-
-
-
-	processResultsFor(str, fuzzy) {
-		let specialStr = this.onlySpecialChars(str);
-		str = this.cleanString(str);
-
-		if (!str.startsWith(this.lastQry) || !this.specialMatchesStr(this.lastSpecialStr, specialStr)) this.reset();
-
-		this.lastQry = str;
-		this.lastQrySplit = str.split(" ").filter((s) => s.trim());
-		this.lastSpecialStr = specialStr;
-
-		this.checkOldResults();
-
-		if (this.lastQry.length) {
-			if (options.allowStartsWith) {
-				this.addResults(this.range(this.sorted));
-			}
-
-			this.addContainingResults();
-
-			if (options.allowDifferentOrder && this.lastQrySplit.length >= 2) {
-				this.partialContext.lastQry = this.lastQrySplit.sort((a, b) => b.length - a.length)[0];
-				this.partialContext.results = this.results;
-				this.partialContext.originalIndexResults = this.originalIndexResults;
-				this.addContainingResults.call(this.partialContext);
-			}
-		} else if (this.lastSpecialStr.length) {
-			for (; this.lastSpecialIndex < this.list.length && this.originalIndexResults.size < this.limit; this.lastSpecialIndex++) {
-				this.addResult(this.lastSpecialIndex);
-			}
-		}
-
-		this.fuzzySearched = this.results.size == 0 && fuzzy;
-
-		if (this.fuzzySearched) {
-			this.results = new Set((this.fuzzy.get(str) || []).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
-			this.originalIndexResults = new Set(Array.from(this.results).map(idx => this.list[idx].originalIndex));
-		}
-	}
-
-	addContainingResults () {
-		var re = new RegExp(escapeRegExp(this.lastQry), "g")
-		re.lastIndex = this.lastIndex
-		var match;
-
-		while (this.originalIndexResults.size < this.limit && (match = re.exec(this.superString))) {
-   			var idx = this.first(this.superStringLookup, v => v > match.index, 0, this.superStringLookup.length) - 1
-   			this.addResult(idx);
-   			this.lastIndex = re.lastIndex
-		}
+		this.lastQry = "";
+		this.lastSpecialStr = "";
+		this.lastQrySplit = [];
+		this.results.clear();
+		this.lastSpecialIndex = 0;
 	}
 
 	partialMatches (idx) {
@@ -240,29 +161,6 @@ class FilterManager {
 		}
 	}
 
-	specialMatches(idx) {
-		return this.specialMatchesStr(this.lastSpecialStr, this.list[idx].specialStr);
-	}
-
-	specialMatchesStr(qry, strToMatch) {
-	    let curIdx = 0;
-
-		for (let i = 0; strToMatch && i < strToMatch.length && curIdx < qry.length && strToMatch[i] <= qry[curIdx]; i++) {
-		    if (strToMatch[i] == qry[curIdx]) {
-			    curIdx++;
-			}
-		}
-
-		return curIdx == qry.length;
-	}
-
-	addResult(idx) {
-	    if (this.specialMatches(idx)) {
-	    	this.results.add(idx);
-	    	this.originalIndexResults.add(this.list[idx].originalIndex)
-	    }
-	}
-
 	matches (currentIndex, matches, used) {
 		if (currentIndex == matches.length) return true;
 
@@ -275,12 +173,178 @@ class FilterManager {
 		}
 
 		return false;
+	}
 
+	setQuery(str) {
+		let specialStr = this.config.special ? this.config.special(str) : '';
+		str = this.config.clean(str);
+
+		if (!str.startsWith(this.lastQry) || (this.config.special && !specialMatchesStr(this.lastSpecialStr, specialStr))) this.reset();
+
+		this.lastQry = str;
+		this.lastQrySplit = str.split(" ").filter((s) => s.trim());
+		this.lastSpecialStr = specialStr;
+	}
+
+	specialMatches(idx) {
+		return !this.config.special || specialMatchesStr(this.lastSpecialStr, this.list[idx].specialStr);
+	}
+
+	addResult(idx) {
+		if (this.specialMatches(idx) && (!this.config.partial || this.partialMatches(idx))) {
+			this.results.add(idx);
+	    	this.manager.originalIndexResults.add(this.list[idx].originalIndex)
+		}
+	}
+
+	checkOldResults() {
+		let oldResults = Array.from(this.results);
+
+		this.results.clear();
+
+		for (let idx of oldResults) {
+			let anime = this.list[idx].str;
+			if (anime.indexOf(this.lastQry) != -1 || (this.config.partial && this.partialMatches(idx))) this.addResult(idx);
+		}
 	}
 
 	addResults (range) {
-		for (var i = range.first; i <= range.last && this.originalIndexResults.size < this.limit; i++) {
-			this.addResult(range.list[i].idx);
+		for (var i = range.first; i <= range.last && this.manager.originalIndexResults.size < this.manager.limit; i++) {
+			this.addResult(i);
+		}
+	}
+
+	addContainingResults (superString, qry) {
+		let re = new RegExp(escapeRegExp(qry), "g")
+		let match;
+
+		re.lastIndex = superString.lastIndex
+		while (this.manager.originalIndexResults.size < this.manager.limit && (match = re.exec(superString.str))) {
+			let idx = first(superString.lookup, v => v > match.index, 0, superString.lookup.length) - 1
+			this.addResult(idx);
+			superString.lastIndex = re.lastIndex;
+		}
+	}
+}
+
+class FilterManager {
+	constructor (list, limit, opts) {
+		this.list = list.filter(v => v.trim().length).map((v, idx) => ({idx: idx, originalStr: v, originalIndex: idx}));
+		this.limit = limit
+		this.specialChars = {}
+		this.options = Object.assign({}, options, opts || {});
+        this.now = new Date(); this.now.setDate(this.now.getDate() - this.options.daysToRemember);
+
+		this.addEntries();
+
+		if (this.options.sortList) {
+            this.list = this.sortBySeen(this.list);
+		}
+
+		this.list.forEach((v, idx) => v.idx = idx);
+
+		this.addEntrySets();
+
+		if (this.options.fuzzy.dropdown || this.options.fuzzy.answer) {
+			let cleaned = this.list.map(v => cleanString(v.originalStr));
+			this.fuzzy = FuzzySet(cleaned);
+			this.reverseMapping = {}
+			this.list.forEach((v, idx) => {
+				this.reverseMapping[cleaned[idx]] = this.reverseMapping[cleaned[idx]] || []
+				this.reverseMapping[cleaned[idx]].push(v.idx)
+			});
+		}
+
+		this.originalIndexResults = new Set();
+
+		this.reset();
+	}
+
+	addEntries() {
+		if (!this.options.addEntries) return;
+
+        this.list.filter(e => e.originalStr.includes('ō') || e.originalStr.includes('ū')).forEach(e => {
+            let additional = [""];
+			for (let i = 0; i < e.originalStr.length; i++) {
+			    if (e.originalStr[i] == 'ō') {
+				   additional = additional.map(s => s + 'oo').concat(additional.map(s => s + 'ou'));
+				} else if (e.originalStr[i] == 'ū') {
+                   additional = additional.map(s => s + 'uu');
+				} else {
+				   additional = additional.map(s => s + e.originalStr[i]);
+				}
+			}
+			this.list = this.list.concat(additional.map((v, idx) => ({str: v, idx: e.idx, originalStr: e.originalStr, originalIndex: e.originalIndex})));
+		});
+	}
+
+	addEntrySets() {
+		this.entrySets = [];
+
+		let cache = new Set();
+		for (let entrySet of this.options.entrySets) {
+			if (entrySet.startsWith || entrySet.contains || entrySet.partial) {
+				let list = this.list.map((e, idx) => ({str: entrySet.clean(e.str || e.originalStr), specialStr: entrySet.special ? entrySet.special(e.str || e.originalStr) : '', originalIndex: e.originalIndex, listIndex: e.idx})).filter(e => {
+					if (cache.has(e.str + '|||' + e.specialStr)) return false;
+					return cache.add(e.str + '|||' + e.specialStr);
+				});
+				this.entrySets.push(new EntrySet(list, entrySet, this));
+			}
+		}
+	}
+
+
+	getLastSeen(anime) {
+		return storedData[anime.toLowerCase()] >= this.now.getTime() ? storedData[anime.toLowerCase()] : 1
+	}
+
+
+	sortBySeen(arr) {
+       return arr.map((v) => ({val : v, d: this.getLastSeen(v.originalStr)})).sort(function(a, b){
+	       if (a.d < b.d) return 1;
+		   if (b.d < a.d) return -1;
+		   if (a.val.idx < b.val.idx) return -1;
+		   return 1;
+	   }).map((v) => v.val);
+	}
+
+	reset () {
+		this.entrySets.forEach(e => e.reset());
+		this.originalIndexResults.clear();
+	}
+
+	checkOldResults() {
+		this.originalIndexResults.clear();
+		this.entrySets.forEach(e => e.checkOldResults());
+	}
+
+	processResultsFor(str) {
+		this.entrySets.forEach(e => e.setQuery(str));
+		this.lastStr = str;
+		this.checkOldResults();
+
+		for (let entrySet of this.entrySets) {
+			if (entrySet.config.startsWith && entrySet.lastQry.length) {
+				entrySet.addResults(range(entrySet.sorted, entrySet.lastQry));
+			}
+		}
+
+		for (let entrySet of this.entrySets) {
+			if (entrySet.config.contains && entrySet.lastQry.length) {
+				entrySet.addContainingResults(entrySet.contains, entrySet.lastQry);
+			}
+			if (!entrySet.lastQry.length && entrySet.lastSpecialStr.length) {
+				for (; entrySet.lastSpecialIndex < entrySet.list.length && this.originalIndexResults.size < this.limit; entrySet.lastSpecialIndex++) {
+					entrySet.addResult(entrySet.lastSpecialIndex);
+				}
+			}
+		}
+
+		for (let entrySet of this.entrySets) {
+			if (entrySet.config.partial && entrySet.lastQrySplit.length >= 2) {
+				let qry = entrySet.lastQrySplit.filter((s) => s.trim()).sort((a, b) => b.length - a.length)[0];
+				entrySet.addContainingResults(entrySet.partial, qry);
+			}
 		}
 	}
 
@@ -288,52 +352,78 @@ class FilterManager {
 		if(debug) console.time(str + " filter")
 
 		if (str.trim().length == 0) return [];
-		this.processResultsFor(str, fuzzy);
+		this.processResultsFor(str);
 
 		let results = [];
 		let s = new Set();
 
-		for (let idx of this.results) {
-			if (!s.has(this.list[idx].originalIndex)) {
-				results.push(this.list[idx]);
-				s.add(this.list[idx].originalIndex)
+		for (let entrySet of this.entrySets) {
+			for (let idx of entrySet.results) {
+				if (!s.has(entrySet.list[idx].originalIndex)) {
+					results.push({lastQry: entrySet.lastQry, match: entrySet.list[idx], listMatch: this.list[entrySet.list[idx].listIndex]});
+					s.add(entrySet.list[idx].originalIndex);
+				}
 			}
 		}
 
-		return results
+		//add fuzzy results
+		if (this.originalIndexResults.size == 0 && fuzzy) {
+			let fuzzyResults = new Set((this.fuzzy.get(cleanString(str)) || []).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
+			for (let idx of Array.from(fuzzyResults)) {
+				if (!s.has(this.list[idx].originalIndex)) {
+					results.push({match: this.list[idx], listMatch: this.list[idx], entrySet: {lastQry: str}})
+					s.add(this.list[idx].originalIndex);
+				}
+			}
+		}
 
 		if(debug) console.timeEnd(str + " filter")
+
+		return results
+	}
+}
+
+const specialMatchesStr = (qry, strToMatch) => {
+	let curIdx = 0;
+
+	for (let i = 0; strToMatch && i < strToMatch.length && curIdx < qry.length && strToMatch[i] <= qry[curIdx]; i++) {
+		if (strToMatch[i] == qry[curIdx]) {
+			curIdx++;
+		}
 	}
 
-	range (data) {
-		var first = this.first(data.list, f => f >= this.lastQry, data.start, data.end);
+	return curIdx == qry.length;
+}
 
-		if (first < data.end && data.list[first].str.startsWith(this.lastQry)) {
-			return {
-				first: first,
-				last: this.first(data.list, f => !f.startsWith(this.lastQry), first, data.end) - 1,
-				list: data.list
-			}
-		}
 
+const range = (data, lastQry) => {
+	let firstIndex = first(data.list, f => f >= lastQry, data.start, data.end);
+
+	if (firstIndex < data.end && data.list[firstIndex].str.startsWith(lastQry)) {
 		return {
-			first: data.end,
-			last: data.end - 1, // on purpose
+			first: firstIndex,
+			last: first(data.list, f => !f.startsWith(lastQry), firstIndex, data.end) - 1,
 			list: data.list
 		}
 	}
 
-	first(array, pred, lo, hi) {
-	    while (lo != hi) {
-	        const mi = lo + ((hi - lo) >> 1);
-	        if (pred(array[mi].str)) {
-	            hi = mi;
-	        } else {
-	            lo = mi + 1;
-	        }
-	    }
-	    return hi;
+	return {
+		first: data.end,
+		last: data.end - 1, // on purpose
+		list: data.list
 	}
+}
+
+const first = (array, pred, lo, hi) => {
+	while (lo != hi) {
+		const mi = lo + ((hi - lo) >> 1);
+		if (pred(array[mi].str)) {
+			hi = mi;
+		} else {
+			lo = mi + 1;
+		}
+	}
+	return hi;
 }
 
 class HightLightManager {
@@ -361,6 +451,7 @@ if (!isNode) {
 	AmqAwesomeplete.prototype.preprocess = function () {
 		this.filterManager = new FilterManager(this._list.sort(this.sort), this.maxItems);
 		this.highLightManager = new HightLightManager(this);
+
 		if (options.allowRightLeftArrows) {
 			$(this.input).on("keydown", (e) => {
 			    if (e.keyCode == 37) this.previous()
@@ -372,11 +463,11 @@ if (!isNode) {
 	AmqAwesomeplete.prototype.evaluate = function () {
 		if (this.isAnimeAutocomplete == false) return oldEvaluate.call(this);
 
-		this.suggestions = this.filterManager.filterBy(this.input.value, options.fuzzy.dropdown);
+		let suggestions = this.filterManager.filterBy(this.input.value, options.fuzzy.dropdown);
 
-		this.suggestions = this.suggestions.map((v) => ({v: v, d: this.filterManager.getLastSeen(v.originalStr)}));
+		suggestions = suggestions.map((v) => ({v: v, d: this.filterManager.getLastSeen(v.listMatch.originalStr)}));
 
-		if (!this.filterManager.fuzzySearched) this.suggestions = this.suggestions.sort((a, b) => {
+		if (!this.filterManager.fuzzySearched) suggestions = suggestions.sort((a, b) => {
 			if (options.sorting == "partial" || options.sorting == "total") {
 				if (a.d != 1 && b.d == 1) return -1;
 				if (a.d == 1 && b.d != 1) return 1;
@@ -394,7 +485,7 @@ if (!isNode) {
 			return 1;
 		})
 
-		this.suggestions = this.suggestions.map(v => new Suggestion(this.data(v.v.originalStr, this.filterManager.lastQry)));
+		this.suggestions = suggestions.map(v => new Suggestion(this.data(v.v.listMatch.originalStr, v.v.lastQry)));
 
 		log(this.suggestions)
 
@@ -404,7 +495,7 @@ if (!isNode) {
 		var val = options.highlight ? this.filterManager.lastQry : ""
 
 		for (let i = this.suggestions.length - 1; i >= 0; i--) {
-			this.ul.insertBefore(this.item(this.suggestions[i], val, i), this.ul.firstChild);
+			this.ul.insertBefore(this.item(this.suggestions[i], suggestions[i].v.lastQry, i), this.ul.firstChild);
 		}
 
 		if (this.ul.children.length === 0) {
@@ -429,7 +520,7 @@ if (!isNode) {
 	    try{
 			var awesome = this.autoCompleteController.awesomepleteInstance;
 
-			if(awesome && awesome.suggestions && awesome.input.value.trim() && awesome.suggestions.every(s => awesome.filterManager.cleanString(s.value) != awesome.filterManager.cleanString(awesome.input.value)) && (awesome.suggestions.length || (!options.fuzzy.dropdown && options.fuzzy.answer))) {
+			if(awesome && awesome.input.value == awesome.filterManager.lastStr && awesome.suggestions && awesome.input.value.trim() && awesome.suggestions.every(s => cleanString(s.value) != cleanString(awesome.input.value)) && (awesome.suggestions.length || (!options.fuzzy.dropdown && options.fuzzy.answer))) {
 				awesome.input.value = awesome.suggestions.length ? awesome.suggestions[0].value : awesome.filterManager.filterBy(awesome.input.value, true)[0].originalStr;
 			}
 		} catch (ex) {
@@ -575,11 +666,11 @@ if (isNode) {
 
 	let l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro", "ktrōk"], 15);
 
-	escapeRegExp = (v) => v;
+	escapeRegExp = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	search = (str, len, first, fuzzy) => {
 		s = l.filterBy(str, fuzzy);
-		if (s.length != len || first !== s[0].originalStr) {
-			console.log(s, str, len)
+		if (s.length != len || (len > 0 && first !== s[0].listMatch.originalStr)) {
+			throw console.log(s, str, len)
 		}
 		return s
 	}
@@ -599,8 +690,14 @@ if (isNode) {
 	search("ads", 3, "asd", true)
 	search("ktr", 1, "ktrōk")
 
-	l = new FilterManager(["Kiss×sis"], 15)
+	l = new FilterManager(["Kiss×sis", "Chōon Senshi Borgman: Lovers Rain"], 15)
 	search("kissx", 1, "Kiss×sis")
+	search("ooo", 1, "Chōon Senshi Borgman: Lovers Rain")
 
-	module.exports = {FilterManager}
+	l = new FilterManager(["asd!", "asd!!*hi"], 15, {entrySets: [{contains: true, clean: semiCleanString}]});
+	search("!", 2, "asd!")
+	search("!*", 1, "asd!!*hi")
+	search("*!", 0, "")
+
+	module.exports = {FilterManager, options}
 }

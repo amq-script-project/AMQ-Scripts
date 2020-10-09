@@ -158,6 +158,7 @@ AmqAwesomeplete.prototype.evaluate = function () {
 
 			var suggestions = [];
 			let selectedItems = [];
+			let unique = new Set();
 
 			let handlePassedSuggestions = function (me) {
 				if (this.sort !== false) {
@@ -165,7 +166,7 @@ AmqAwesomeplete.prototype.evaluate = function () {
 				}
 				this.currentSubList = selectedItems;
 				this.suggestions = this.suggestions.slice(0, this.maxItems);
-
+				
 				resolve(this.suggestions);
 
 				if (!isNode) {
@@ -199,9 +200,10 @@ AmqAwesomeplete.prototype.evaluate = function () {
 					for (let i = index; i < inputList.length && i < index + 1000; i++) {
 						let item = inputList[i];
 						let suggestion = new Suggestion(me.data(item, value));
-						if (me.filter(suggestion, value)) {
+						if (me.filter(suggestion, value) && !unique.has(suggestion.value)) {
 							selectedItems.push(item);
 							suggestions.push(suggestion);
+							unique.add(suggestion.value);
 						}
 					}
 					setTimeout(function () {
