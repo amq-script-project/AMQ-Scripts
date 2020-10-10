@@ -656,7 +656,7 @@ diacriticsMap["ñ"] = "n";
 
 // "what?" version ... http://jsperf.com/diacritics/12
 function removeDiacritics (str) {
-    return str.replace(/[^\u0000-\u007E]/g, function(a){
+    return str.replace(/[^a-z]/gi, function(a){
        return diacriticsMap[a] || a;
     });
 }
@@ -690,9 +690,10 @@ if (isNode) {
 	search("ads", 3, "asd", true)
 	search("ktr", 1, "ktrōk")
 
-	l = new FilterManager(["Kiss×sis", "Chōon Senshi Borgman: Lovers Rain"], 15)
+	l = new FilterManager(["Kiss×sis", "Chōon Senshi Borgman: Lovers Rain", "idolm@aster"], 15)
 	search("kissx", 1, "Kiss×sis")
 	search("ooo", 1, "Chōon Senshi Borgman: Lovers Rain")
+	search("idolma", 1, "idolm@aster")
 
 	l = new FilterManager(["asd!", "asd!!*hi"], 15, {entrySets: [{contains: true, clean: semiCleanString}]});
 	search("!", 2, "asd!")
