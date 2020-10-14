@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.24
+// @version      1.25
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -371,7 +371,7 @@ class FilterManager {
 			let fuzzyResults = new Set((this.fuzzy.get(cleanString(str)) || []).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
 			for (let idx of Array.from(fuzzyResults)) {
 				if (!s.has(this.list[idx].originalIndex)) {
-					results.push({match: this.list[idx], listMatch: this.list[idx], entrySet: {lastQry: str}})
+					results.push({match: this.list[idx], listMatch: this.list[idx], lastQry: str})
 					s.add(this.list[idx].originalIndex);
 				}
 			}
@@ -492,10 +492,8 @@ if (!isNode) {
 		$("#qpAnswerInputLoadingContainer").removeClass("hide");
 		this.$ul.children('li').remove();
 
-		var val = options.highlight ? this.filterManager.lastQry : ""
-
 		for (let i = this.suggestions.length - 1; i >= 0; i--) {
-			this.ul.insertBefore(this.item(this.suggestions[i], suggestions[i].v.lastQry, i), this.ul.firstChild);
+			this.ul.insertBefore(this.item(this.suggestions[i], options.highlight ? suggestions[i].v.lastQry : "", i), this.ul.firstChild);
 		}
 
 		if (this.ul.children.length === 0) {
