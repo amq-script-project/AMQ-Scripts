@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Background script
 // @namespace    http://tampermonkey.net/
-// @version      3.5
+// @version      3.6
 // @description  Adds multiple custom background to amq or even a video. Tried to include as many selectors as possible, so remove the ones where you prefer to have original background
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
@@ -104,8 +104,9 @@ let options = {
 			description: "unlock/change avatar preview"
 		},
 		{
-		    selector: "#footerMenuBarBackground, #rightMenuBarPartContainer::before",
-			description: "bottom menu"
+		    selector: "#footerMenuBarBackground, #rightMenuBarPartContainer::before, [id='3YearCelebrationContainer'], #xpBarOuter",
+			description: "bottom menu",
+			opacity: 0.3
 		},
 		{
 		    selector: "#mpPlayButton",
@@ -114,6 +115,16 @@ let options = {
 		},
 		{
 		    selector: "#mpExpandButton",
+			description: "expand button main screen",
+			opacity: defaultOpacity
+		},
+		{
+		    selector: "#mpRankedButton",
+			description: "expand button main screen",
+			opacity: defaultOpacity
+		},
+		{
+		    selector: "#mpLeaderboardButton",
 			description: "expand button main screen",
 			opacity: defaultOpacity
 		},
