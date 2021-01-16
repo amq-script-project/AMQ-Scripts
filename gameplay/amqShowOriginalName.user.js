@@ -17,7 +17,21 @@ const nameToOriginalNameMap = {}
 let lastCheck = 0
 const checkTimeOut = 1000
 
+let enableOrignalName = true
 
+let alwaysShowOriginalName = false
+
+const generateNameString = (nickName, originalName, hasNewLine=false) => {
+    //console.log(nickName, originalName)
+    //hasNewLine = false
+    if(!enableOrignalName){
+        return nickName
+    }else if(alwaysShowOriginalName || nickName !== originalName){
+        return nickName + (hasNewLine?"\n":"") + "(" + originalName + ")"
+    }else{
+        return nickName
+    }
+}
 const getOriginalName = async (name) => {
     if(nameToOriginalNameMap[name]){
         return nameToOriginalNameMap[name]
@@ -84,11 +98,7 @@ gameChat._newSpectatorListner = new Listener(
         const that = gameChat
         that.addSpectator(spectator)
         if (that.displayJoinLeaveMessages) {
-            if(spectator.name === spectator.originalName){
-                that.systemMessage(spectator.name + " has started spectating.", "")
-            }else{
-                that.systemMessage(spectator.name + "(" + spectator.originalName + ")" + " has started spectating.", "")
-            }
+            that.systemMessage(generateNameString(spectator.name, spectator.originalName) + " has started spectating.", "")
         }
     }
 )
@@ -101,11 +111,7 @@ gameChat._forceSpectatorListner = new Listener(
         payload.spectatorDescription.originalName = originalName
         that.addSpectator(payload.spectatorDescription, payload.isHost)
         if (that.displayJoinLeaveMessages) {
-            if(playerName === originalName){
-                that.systemMessage(playerName + " changed to spectator", "")
-            }else{
-                that.systemMessage(playerName + "(" + originalName + ")" + " changed to spectator", "")
-            }
+            that.systemMessage(generateNameString(playerName, originalName) + " changed to spectator", "")
         }
         if (selfName === playerName) {
             that.setSpectatorButtonState(false)
@@ -127,7 +133,7 @@ lobby.addPlayer = function(player, teamFullMap){
                 get: function() { return that._name },
                 set: function(newName){
                     that._name = newName;
-                    that.$NAME_CONTAINER.text(newName + "(" + that.originalName + ")")
+                    that.$NAME_CONTAINER.text(generateNameString(newName, that.originalName))
                     if (!that.isSelf) {
                         setTimeout(() => {
                             that.setupAvatarOptions()
@@ -149,11 +155,7 @@ lobby._newPlayerListner = new Listener(
         const newPlayer = that.addPlayer(player)
         newPlayer.originalName = player.originalName
         if (that.displayJoinLeaveMessages) {
-            if(newPlayer.name === newPlayer.originalName){
-                gameChat.systemMessage(newPlayer.name + " joined the room.", "")
-            }else{
-                gameChat.systemMessage(newPlayer.name + "(" + newPlayer.originalName + ")" + " joined the room.", "")
-            }
+            gameChat.systemMessage(generateNameString(newPlayer.name, newPlayer.originalName) + " joined the room.", "")
         }
     }
 );
@@ -166,11 +168,7 @@ lobby._spectatorChangeToPlayer = new Listener(
         const newPlayer = that.addPlayer(player)
         newPlayer.originalName = player.originalName
         if (that.displayJoinLeaveMessages) {
-            if(newPlayer.name === newPlayer.originalName){
-                gameChat.systemMessage(newPlayer.name + " changed to player.", "")
-            }else{
-                gameChat.systemMessage(newPlayer.name + "(" + newPlayer.originalName + ")" + " changed to player.", "")
-            }
+            gameChat.systemMessage(generateNameString(newPlayer.name, newPlayer.originalName) + " changed to player.", "")
         }
         if (player.name === selfName) {
             that.isSpectator = false;
@@ -193,9 +191,9 @@ quiz.setupQuiz = function(players, isSpectator, quizState, settings, isHost, gro
                 Object.defineProperty(that, "name", {
                     get: function() { return that._name },
                     set: function(newName){
-                        that._name = newName;
-                        that.avatarSlot.name = newName + "(" + that.originalName + ")";
-                        that.avatarSlot.updateSize(that.avatarSlot.currentMaxWidth, that.avatarSlot.currentMaxHeight);
+                        that._name = newName
+                        that.avatarSlot.name = generateNameString(newName, that.originalName, true)
+                        that.avatarSlot.updateSize(that.avatarSlot.currentMaxWidth, that.avatarSlot.currentMaxHeight)
                     }
                 })
                 that.name = that.name
@@ -212,7 +210,7 @@ GameChat.prototype.addSpectator = function (spectator, isHost) {
     const item = $("#gcSpectatorItem-" + name)
     const nameField = item.find("h3")
     const adjustName = (originalName) =>{    
-        nameField.find("span").text(name + "(" + originalName + ")")
+        nameField.find("span").text(generateNameString(name, originalName))
 
         //stolen code start
         let nameWidth = nameField.innerWidth();
@@ -239,7 +237,7 @@ GameChat.prototype.addPlayerToQueue = function (name) {
     this.oldAddPlayerToQueue(name) 
     getOriginalName(name).then(
         (originalName) => {
-            this.queueMap[name].find("h3").text(name + "(" + originalName + ")")
+            this.queueMap[name].find("h3").text(generateNameString(name, originalName))
         })
 }
 
