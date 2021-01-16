@@ -185,16 +185,16 @@ quiz.setupQuiz = function(players, isSpectator, quizState, settings, isHost, gro
     const that = quiz
     that.oldSetupQuiz(players, isSpectator, quizState, settings, isHost, groupSlotMap, soloMode, teamAnswers, selfAnswer)
     players.forEach((player) => {
-        const player = this.players[player.gamePlayerId]
-        getOriginalName(player.name).then(
+        const thePlayer = this.players[player.gamePlayerId]
+        getOriginalName(thePlayer.name).then(
             (originalName) => {
-                player.originalName = originalName
-                const that = player
+                thePlayer.originalName = originalName
+                const that = thePlayer
                 Object.defineProperty(that, "name", {
                     get: function() { return that._name },
                     set: function(newName){
-                        that._name = newValue;
-                        that.avatarSlot.name = newValue;
+                        that._name = newName;
+                        that.avatarSlot.name = newName + "(" + that.originalName + ")";
                         that.avatarSlot.updateSize(that.avatarSlot.currentMaxWidth, that.avatarSlot.currentMaxHeight);
                     }
                 })
