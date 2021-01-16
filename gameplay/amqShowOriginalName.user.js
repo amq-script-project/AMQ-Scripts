@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         AMQ Show Original Name
 // @namespace    http://tampermonkey.net/
-// @version      1.0
-// @description  makes you able to see the original names of players
+// @version      1.1
+// @description  Makes you able to see the original names of players
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
 // @grant        none
@@ -14,17 +14,17 @@
 
 const nameToOriginalNameMap = {}
 
-let lastCheck = 0
-const checkTimeOut = 1000
+let profileLock = 0
+const lockoutTime = 1000
 
-let enableOrignalName = true
+let enableOriginalName = true
 
 let alwaysShowOriginalName = false
 
 const generateNameString = (nickName, originalName, hasNewLine=false) => {
     //console.log(nickName, originalName)
     //hasNewLine = false
-    if(!enableOrignalName){
+    if(!enableOriginalName){
         return nickName
     }else if(alwaysShowOriginalName || nickName !== originalName){
         return nickName + (hasNewLine?"\n":"") + "(" + originalName + ")"
@@ -37,8 +37,11 @@ const getOriginalName = async (name) => {
         return nameToOriginalNameMap[name]
     }else{
         const now = new Date().getTime()
-        if(now < lastCheck + checkTimeOut){
-            await wait(lastCheck + checkTimeOut - now)
+        if(now < profileLock){
+            profileLock = Math.max(profileLock + lockoutTime, now + lockoutTime) //adds additional time for next to wait, cumulative but always at least lockoutTime seconds
+            await wait(profileLock - lockoutTime - now)
+        }else{
+            profileLock = now + lockoutTime
         }
         return await new Promise((resolve, reject) => {
             const profileListener = new Listener("player profile", (payload) => {
