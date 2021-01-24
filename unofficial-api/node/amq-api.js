@@ -140,7 +140,7 @@ class SocketWrapper {
 		let index = arr.indexOf(listener);
 		
 		if (index != -1) {
-			 this.listeners[listener.eventName] = arr.splice(index, 1);
+			 this.listeners[listener.eventName].splice(index, 1);
 		}
 
 		this._removeDependencies(listener.eventName);
