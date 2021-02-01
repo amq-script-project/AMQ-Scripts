@@ -1,13 +1,13 @@
 // ==UserScript==
-// @name         AMQ Time Player Answer
+// @name         AMQ Player Answer Time Display
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  Makes you able to see how quickly people answered
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
 // @grant        none
-// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqTimePlayerAnswer.user.js
-// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqTimePlayerAnswer.user.js
+// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqPlayerAnswerTimeDisplay.user.js
+// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqPlayerAnswerTimeDisplay.user.js
 // @require      https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAnswerTimesUtility.user.js
 // @copyright    MIT license
 // ==/UserScript==
