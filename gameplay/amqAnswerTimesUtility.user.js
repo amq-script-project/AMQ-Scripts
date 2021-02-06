@@ -12,6 +12,7 @@
 // ==/UserScript==
 
 const amqAnswerTimesUtility = new function(){
+    "use strict"
     this.songStartTime = 0
     this.playerTimes = []
     if (typeof(Listener) === "undefined") {
