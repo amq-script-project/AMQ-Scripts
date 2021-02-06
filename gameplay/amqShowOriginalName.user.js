@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Show Original Name
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  Makes you able to see the original names of players
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -17,8 +17,7 @@ let enableOriginalName = true
 let alwaysShowOriginalName = false
 
 const generateNameString = (nickName, originalName, hasNewLine=false) => {
-    //console.log(nickName, originalName)
-    //hasNewLine = false
+    //this could be turned into a one-liner, but it would be a very ugly one-liner
     if(!enableOriginalName){
         return nickName
     }else if(alwaysShowOriginalName || nickName !== originalName){
@@ -31,7 +30,12 @@ const generateNameString = (nickName, originalName, hasNewLine=false) => {
 gameChat._newSpectatorListner = new Listener(
     "New Spectator",
     async function (spectator) {
-        spectator.originalName = await getOriginalName(spectator.name)
+        spectator.originalName = spectator.name //fallback
+        try{
+            spectator.originalName = await getOriginalName(spectator.name, 2000)
+        }catch(error){
+            console.error(`unable to resolve new spectator "${spectator.name}" due to error >${error}`)
+        }
         const that = gameChat
         that.addSpectator(spectator)
         if (that.displayJoinLeaveMessages) {
@@ -44,7 +48,12 @@ gameChat._forceSpectatorListner = new Listener(
     async function (payload) {
         const that = gameChat
         const playerName = payload.spectatorDescription.name
-        const originalName = await getOriginalName(payload.spectatorDescription.name)
+        let originalName = playerName
+        try{
+            originalName = await getOriginalName(payload.spectatorDescription.name, 2000)
+        }catch (error){
+            console.error(`unable to resolve player who changed to spectator "${playerName}" due to error >${error}`)
+        }
         payload.spectatorDescription.originalName = originalName
         that.addSpectator(payload.spectatorDescription, payload.isHost)
         if (that.displayJoinLeaveMessages) {
@@ -60,7 +69,7 @@ gameChat._forceSpectatorListner = new Listener(
 lobby.oldAddPlayer = lobby.addPlayer
 lobby.addPlayer = function(player, teamFullMap){
     const newPlayer = this.oldAddPlayer(player, teamFullMap)
-    getOriginalName(newPlayer.name).then(
+    getOriginalName(newPlayer.name, 2000).then(
         (originalName) => {
             newPlayer.lobbySlot.originalName = originalName
             const that = newPlayer.lobbySlot
@@ -78,7 +87,7 @@ lobby.addPlayer = function(player, teamFullMap){
             })
             that.name = that.name
         }
-    )
+    ).catch(e => console.error(`unable to resolve player "${newPlayer.name}" due to error >${e}`))
     return newPlayer
 }
 
@@ -86,7 +95,12 @@ lobby._newPlayerListner = new Listener(
     "New Player",
     async function (player) {
         const that = lobby
-        player.originalName = await getOriginalName(player.name)
+        try {
+            player.originalName = await getOriginalName(player.name, 2000)
+        }catch (error){
+            console.error(`unable to resolve player "${player.name}" due to error >${error}`)
+            player.originalName = player.name
+        }
         const newPlayer = that.addPlayer(player)
         newPlayer.originalName = player.originalName
         if (that.displayJoinLeaveMessages) {
@@ -99,7 +113,12 @@ lobby._spectatorChangeToPlayer = new Listener(
     "Spectator Change To Player",
     async function (player) {
         const that = lobby
-        player.originalName = await getOriginalName(player.name)
+        player.originalName = player.name //fallback
+        try{
+            player.originalName = await getOriginalName(player.name, 2000)
+        }catch(error){
+            console.error(`unable to resolve spectator who changed to player "${player.name}" due to error >${error}`)
+        }
         const newPlayer = that.addPlayer(player)
         newPlayer.originalName = player.originalName
         if (that.displayJoinLeaveMessages) {
@@ -119,7 +138,7 @@ quiz.setupQuiz = function(players, isSpectator, quizState, settings, isHost, gro
     that.oldSetupQuiz(players, isSpectator, quizState, settings, isHost, groupSlotMap, soloMode, teamAnswers, selfAnswer)
     players.forEach((player) => {
         const thePlayer = this.players[player.gamePlayerId]
-        getOriginalName(thePlayer.name).then(
+        getOriginalName(thePlayer.name, 2000).then(
             (originalName) => {
                 thePlayer.originalName = originalName
                 const that = thePlayer
@@ -133,7 +152,7 @@ quiz.setupQuiz = function(players, isSpectator, quizState, settings, isHost, gro
                 })
                 that.name = that.name
             }
-        )
+        ).catch(e => console.error(`unable to resolve player "${thePlayer.name}" due to error >${e}`))
     })
 }
 
@@ -161,7 +180,7 @@ GameChat.prototype.addSpectator = function (spectator, isHost) {
         //stolen code end
     }
     if(!spectator.originalName){
-        spectator.originalName = getOriginalName(name).then(adjustName)
+        spectator.originalName = getOriginalName(name, 2000).then(adjustName).catch(e => console.error(`unable to resolve spectator "${name}" due to error >${e}`))
     }else{
         adjustName(spectator.originalName)
     }
@@ -170,8 +189,10 @@ GameChat.prototype.addSpectator = function (spectator, isHost) {
 GameChat.prototype.oldAddPlayerToQueue = GameChat.prototype.addPlayerToQueue
 GameChat.prototype.addPlayerToQueue = function (name) {
     this.oldAddPlayerToQueue(name) 
-    getOriginalName(name).then(
-        (originalName) => {
-            this.queueMap[name].find("h3").text(generateNameString(name, originalName))
-        })
+    getOriginalName(name, 2000)
+        .then(
+            (originalName) => {
+                this.queueMap[name].find("h3").text(generateNameString(name, originalName))
+            })
+        .catch(e => console.error(`unable to resolve queued player "${name}" due to error >${e}`))
 }
