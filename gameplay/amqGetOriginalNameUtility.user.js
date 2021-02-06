@@ -31,7 +31,7 @@ const amqGetOriginalNameUtility = new function(){
     if(typeof(Listener) === "undefined" || typeof(socket) === "undefined"){
         return
     }
-    this.getOriginalName = async (name) => {
+    this.getOriginalName = async (name, timeout=this._timeout) => {
         if(this._nameToOriginalNameMap[name]){
             return this._nameToOriginalNameMap[name]
         }else{
@@ -43,14 +43,14 @@ const amqGetOriginalNameUtility = new function(){
                 this._profileLock = now + this._lockoutTime
             }
             return await new Promise((resolve, reject) => {
-                let timeout
+                let timeoutError
                 const profileListener = new Listener("player profile", (payload) => {
                     if(payload.name !== name){
                         //in theory this shouldn't happen without incredibly slow internet or another more agressive script
                     }else{
                         this._nameToOriginalNameMap[payload.name] = payload.originalName
                         profileListener.unbindListener()
-                        clearTimeout(timeout)
+                        clearTimeout(timeoutError)
                         resolve(payload.originalName)
                     }
                 })
@@ -62,10 +62,10 @@ const amqGetOriginalNameUtility = new function(){
                         name: name
                     }
                 });
-                timeout = setTimeout(() => {
+                timeoutError = setTimeout(() => {
                     profileListener.unbindListener()
                     reject(`getOriginalName: timeout for "${name}"`)
-                }, this._timeout)
+                }, timeout)
             })
         }
     }
