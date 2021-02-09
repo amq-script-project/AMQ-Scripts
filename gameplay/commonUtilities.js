@@ -1,7 +1,7 @@
 //Listener manipulation
 //NOTE: make sure replacement functions are arrow functions or use .bind(something) if they use the "this" keyword
 
-const listeners = function(){
+const listeners = new function(){
     "use strict"
     this.notInitialized = () => {throw "commonUtilities.listeners was unable to initialize"}
     this.create = this.notInitialized
@@ -57,7 +57,7 @@ const listeners = function(){
     }
 }()
 
-const chat = function(){
+const chat = new function(){
     "use strict"
     this.notInitialized = () => {throw "commonUtilities.chat was unable to initialize"}
     this.sendMessageRaw = this.notInitialized
