@@ -60,8 +60,9 @@ module.exports = {
 	PLAYER_NAME_CHANGE: "player name change",
 	SPECTATOR_NAME_CHANGE: "spectator name change",
 	PLAYER_LEFT: "Player Left",
-	GAME_CHAT_MESSAGE: "Game Chat Message",
-	GAME_CHAT_BUBBLE: "game chat buble", //sic
+	GAME_CHAT_MESSAGE: "Game Chat Message", //legacy, replaced by "game chat update"
+	//GAME_CHAT_BUBBLE: "game chat buble", //sic, legacy, replaced by "game chat update"
+	GAME_CHAT_UPDATE: "game chat update",
 	NEW_SPECTATOR: "New Spectator",
 	SPECTATOR_LEFT: "Spectator Left",
 	SPECTATOR_CHANGED_TO_PLAYER: "Spectator Change To Player",
