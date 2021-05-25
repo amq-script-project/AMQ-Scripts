@@ -128,7 +128,7 @@ class SocketWrapper {
 		return new Promise((resolve, reject) => {
 			this.on(eventName, (data, listener) => {
 				listener.destroy();
-				resolve(data.data);
+				resolve(data);
 			}, value)
 
 			setTimeout(() => reject('timeout'), this.timeout);
@@ -154,7 +154,6 @@ class SocketWrapper {
 
 	_processCommand(data) {
 		if (this.debug) console.log(data);
-
 		(this.listeners[data.command] || []).concat(this.listeners[EVENTS.ALL] || []).forEach(listener => listener.callback(data.data, listener, data));
 		
 	}

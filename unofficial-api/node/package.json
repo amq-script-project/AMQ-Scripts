@@ -1,0 +1,15 @@
+{
+  "name": "amq-api",
+  "version": "1.0.0",
+  "description": "Unofficial node api for animemusicquiz.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amq-script-project/AMQ-Scripts/blob/master/unofficial-api/node"
+  },
+  "author": "juvian",
+  "license": "MIT",
+  "dependencies": {
+    "request-promise": "^4.2.5",
+    "socket.io-client": "2.4.0"
+  }
+}
