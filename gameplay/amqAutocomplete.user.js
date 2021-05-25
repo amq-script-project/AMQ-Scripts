@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.25
+// @version      1.26
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -19,16 +19,50 @@ if (isNode) {
 	FuzzySet = require('fuzzyset.js')
 }
 
-const cleanString = (str) => {
-	return removeDiacritics(str).replace(/[^\w\s]/gi, ' ').replace(/  +/g, ' ').toLowerCase().trim();
+const cleanString = (str, except = []) => {
+	return removeDiacritics(str, except).replace(new RegExp('[^\\w\\s' + except.join('') + ']', "gi"), ' ').replace(/  +/g, ' ').toLowerCase().trim();
 }
 
-const semiCleanString = (str) => {
-	return removeDiacritics(str).replace(/  +/g, ' ').toLowerCase().trim();
+const semiCleanString = (str, except) => {
+	return removeDiacritics(str, except).replace(/  +/g, ' ').toLowerCase().trim();
 }
 
 const onlySpecialChars = (str) => {
 	return str.replace(/[\w\s]/gi, '').split('').sort().join('');
+}
+
+const _solveComplicatedRegex = (idx, str, choices) => {
+	if (idx == str.length) return choices;
+
+	let possible = [];
+
+	if (idx < str.length) {
+		possible = possible.concat(_solveComplicatedRegex(idx + 1, str, choices.map(c => c + '(:?' + str[idx] + '|' + (str[idx] == 'o' ? 'ō' : 'ū') + ')')));
+	}
+
+	if (idx < str.length - 1) {
+		if (str[idx] == 'o') possible = possible.concat(_solveComplicatedRegex(idx + 2, str, choices.map(c => c + 'ō')));
+		if (str[idx] == 'u' && str[idx + 1] == 'u') possible = possible.concat(_solveComplicatedRegex(idx + 2, str, choices.map(c => c + 'ū')));
+	}
+
+	return possible;
+}
+
+const complicatedRegex = (qry) => {
+	const regex =  escapeRegExp(qry).replace(/(o|u)+/, function(match) {
+		const possible = [match[0] + match[1]];
+
+		if (match[0] == 'o') possible.push('ō');
+		if (match[0] == 'u' && match[1] == 'u') possible.push('ū');
+
+		const choices1 = _solveComplicatedRegex(1, match, [match[0]]);
+		const choices2 = _solveComplicatedRegex(2, match, possible);
+
+		return '(' + Array.from(new Set(choices1.concat(choices2))).join("|") + ')';
+		
+	});
+
+	return new RegExp(regex, "g");
 }
 
 var options = {
@@ -41,8 +75,16 @@ var options = {
 		dropdown: true, // whether to show fuzzy matches if no matches found
 		answer: true, // whether to use top fuzzy match on round end as answer if no matches found
 	},
-	addEntries: true, // whether to allow oo, ou and uu as ō/ū,
 	entrySets: [
+		{ // enable this section to allow oo, ou and uu as ō/ū
+			startsWith: false,
+			contains: false, 
+			partial: false,
+			filter: (e) => e.str.match(/ō|ū/),
+			clean: (s) => cleanString(s, ['ō', 'ū']),
+			handles: (qry) => qry.match(/(o|u)+/),
+			getQryRegex: complicatedRegex
+		},
 		{
 			startsWith: false, //change to true if you want more specific results
 			contains: false, //change to true if you want more specific results
@@ -55,7 +97,7 @@ var options = {
 			partial: true, // allow the words to be on any order (no hero boku will match boku no hero),
 			clean: cleanString,
 			special: onlySpecialChars // adds filtering special chars instead of just ignoring
-		},
+		}
 	]
 }
 
@@ -186,6 +228,13 @@ class EntrySet {
 		this.lastSpecialStr = specialStr;
 	}
 
+	handles(str) {
+		if (!this.config.handles || this.config.handles(str)) {
+			this.setQuery(str);
+			return true;
+		}
+	}
+
 	specialMatches(idx) {
 		return !this.config.special || specialMatchesStr(this.lastSpecialStr, this.list[idx].specialStr);
 	}
@@ -199,12 +248,13 @@ class EntrySet {
 
 	checkOldResults() {
 		let oldResults = Array.from(this.results);
+		let re = this.getQryRegex(this.lastQry);
 
 		this.results.clear();
 
 		for (let idx of oldResults) {
 			let anime = this.list[idx].str;
-			if (anime.indexOf(this.lastQry) != -1 || (this.config.partial && this.partialMatches(idx))) this.addResult(idx);
+			if (anime.match(re) || (this.config.partial && this.partialMatches(idx))) this.addResult(idx);
 		}
 	}
 
@@ -214,8 +264,12 @@ class EntrySet {
 		}
 	}
 
+	getQryRegex(qry) {
+		return this.config.getQryRegex ? this.config.getQryRegex(qry) : new RegExp(escapeRegExp(qry), "g")
+	}
+
 	addContainingResults (superString, qry) {
-		let re = new RegExp(escapeRegExp(qry), "g")
+		let re = this.getQryRegex(qry);
 		let match;
 
 		re.lastIndex = superString.lastIndex
@@ -234,8 +288,6 @@ class FilterManager {
 		this.specialChars = {}
 		this.options = Object.assign({}, options, opts || {});
         this.now = new Date(); this.now.setDate(this.now.getDate() - this.options.daysToRemember);
-
-		this.addEntries();
 
 		if (this.options.sortList) {
             this.list = this.sortBySeen(this.list);
@@ -260,34 +312,22 @@ class FilterManager {
 		this.reset();
 	}
 
-	addEntries() {
-		if (!this.options.addEntries) return;
-
-        this.list.filter(e => e.originalStr.includes('ō') || e.originalStr.includes('ū')).forEach(e => {
-            let additional = [""];
-			for (let i = 0; i < e.originalStr.length; i++) {
-			    if (e.originalStr[i] == 'ō') {
-				   additional = additional.map(s => s + 'oo').concat(additional.map(s => s + 'ou'));
-				} else if (e.originalStr[i] == 'ū') {
-                   additional = additional.map(s => s + 'uu');
-				} else {
-				   additional = additional.map(s => s + e.originalStr[i]);
-				}
-			}
-			this.list = this.list.concat(additional.map((v, idx) => ({str: v, idx: e.idx, originalStr: e.originalStr, originalIndex: e.originalIndex})));
-		});
-	}
-
 	addEntrySets() {
 		this.entrySets = [];
 
 		let cache = new Set();
+
+		const defaultFilter = (e) => {
+			if (cache.has(e.str + '|||' + e.specialStr)) return false;
+			return cache.add(e.str + '|||' + e.specialStr);
+		}
+
 		for (let entrySet of this.options.entrySets) {
+
+			const filter = entrySet.filter || defaultFilter;
+
 			if (entrySet.startsWith || entrySet.contains || entrySet.partial) {
-				let list = this.list.map((e, idx) => ({str: entrySet.clean(e.str || e.originalStr), specialStr: entrySet.special ? entrySet.special(e.str || e.originalStr) : '', originalIndex: e.originalIndex, listIndex: e.idx})).filter(e => {
-					if (cache.has(e.str + '|||' + e.specialStr)) return false;
-					return cache.add(e.str + '|||' + e.specialStr);
-				});
+				let list = this.list.map((e, idx) => ({str: entrySet.clean(e.str || e.originalStr), specialStr: entrySet.special ? entrySet.special(e.str || e.originalStr) : '', originalIndex: e.originalIndex, listIndex: e.idx})).filter(filter);
 				this.entrySets.push(new EntrySet(list, entrySet, this));
 			}
 		}
@@ -319,17 +359,18 @@ class FilterManager {
 	}
 
 	processResultsFor(str) {
-		this.entrySets.forEach(e => e.setQuery(str));
+		const entrySets = this.entrySets.filter(e => e.handles(str));
+
 		this.lastStr = str;
 		this.checkOldResults();
 
-		for (let entrySet of this.entrySets) {
+		for (let entrySet of entrySets) {
 			if (entrySet.config.startsWith && entrySet.lastQry.length) {
 				entrySet.addResults(range(entrySet.sorted, entrySet.lastQry));
 			}
 		}
 
-		for (let entrySet of this.entrySets) {
+		for (let entrySet of entrySets) {
 			if (entrySet.config.contains && entrySet.lastQry.length) {
 				entrySet.addContainingResults(entrySet.contains, entrySet.lastQry);
 			}
@@ -340,7 +381,7 @@ class FilterManager {
 			}
 		}
 
-		for (let entrySet of this.entrySets) {
+		for (let entrySet of entrySets) {
 			if (entrySet.config.partial && entrySet.lastQrySplit.length >= 2) {
 				let qry = entrySet.lastQrySplit.filter((s) => s.trim()).sort((a, b) => b.length - a.length)[0];
 				entrySet.addContainingResults(entrySet.partial, qry);
@@ -479,7 +520,7 @@ if (!isNode) {
 			}
 
 		    if (this.sort !== false) {
-			    if (a.v.idx < b.v.idx) return -1;
+			    if (a.v.match.originalIndex < b.v.match.originalIndex) return -1;
 			}
 
 			return 1;
@@ -653,14 +694,16 @@ diacriticsMap["ñ"] = "n";
 
 
 // "what?" version ... http://jsperf.com/diacritics/12
-function removeDiacritics (str) {
+function removeDiacritics (str, except) {
     return str.replace(/[^a-z]/gi, function(a){
-       return diacriticsMap[a] || a;
+       return (except && except.includes(a)) ? a : (diacriticsMap[a] || a);
     });
 }
 
 if (isNode) {
 	storedData["oh my kokoro"] = new Date().getTime()
+
+	Object.assign(options.entrySets[0], {startsWith: false, contains: true, partial: false});
 
 	let l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro", "ktrōk"], 15);
 
@@ -690,7 +733,9 @@ if (isNode) {
 
 	l = new FilterManager(["Kiss×sis", "Chōon Senshi Borgman: Lovers Rain", "idolm@aster"], 15)
 	search("kissx", 1, "Kiss×sis")
+
 	search("ooo", 1, "Chōon Senshi Borgman: Lovers Rain")
+
 	search("idolma", 1, "idolm@aster")
 
 	l = new FilterManager(["asd!", "asd!!*hi"], 15, {entrySets: [{contains: true, clean: semiCleanString}]});
@@ -698,5 +743,11 @@ if (isNode) {
 	search("!*", 1, "asd!!*hi")
 	search("*!", 0, "")
 
-	module.exports = {FilterManager, options}
+	l = new FilterManager(["Hōō no Miko"], 15);
+	search("o", 1, "Hōō no Miko")
+	search("ou", 1, "Hōō no Miko")
+	search("ouo", 1, "Hōō no Miko")
+	search("ouoo", 1, "Hōō no Miko")
+
+	module.exports = {FilterManager, options, storedData}
 }
