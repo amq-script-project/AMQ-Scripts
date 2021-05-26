@@ -1,7 +1,9 @@
-import io.socket.client.IO;
-import io.socket.client.Socket;
+/* import io.socket.client.IO;
+import io.socket.client.Socket; */
 import java.net.URL;
 import java.net.HttpURLConnection;
+import java.io.OutputStream;
+//import java.io.InputStream;
 public class SocketManager{
     public static final String HOST = "animemusicquiz.com";
     public static final String SOCKET_HOST = "https://socket.animemusicquiz.com";
@@ -10,11 +12,12 @@ public class SocketManager{
 
     public SocketManager(String username, String password){
         //get cookie
-        int contentLength = 55555;
+        String content = String.format("{'username':'%s','password':'%s'}", username, password);
+        byte[] contentBytes = content.getBytes("UTF-8");
         HttpURLConnection loginConnection = SIGNIN_URL.openConnection();
         loginConnection.setRequestMethod("POST");
         loginConnection.setRequestProperty("Content-Type", "application/json");
-        loginConnection.setRequestProperty("Content-Length", String.valueOf(contentLength));
+        loginConnection.setRequestProperty("Content-Length", String.valueOf(contentBytes.length));
         loginConnection.setRequestProperty("Accept", "application/json, text/javascript, */*; q=0.01");
         loginConnection.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
         loginConnection.setRequestProperty("Accept-Language", "en-US;q=0.3,en;q=0.1");
@@ -25,6 +28,15 @@ public class SocketManager{
         loginConnection.setRequestProperty("TE", "Trailers");
         loginConnection.setRequestProperty("User-Agent", "Mozilla/5.0");
         loginConnection.setRequestProperty("X-Requested-With", "XMLHttpRequest");
+        loginConnection.setDoInput(true);
+        loginConnection.setDoOutput(true);
+        //InputStream inputStream = loginConnection.getInputStream();
+        OutputStream outputStream = loginConnection.getOutputStream();
+        outputStream.write(contentBytes);
+        String response = loginConnection.getResponseMessage();
+
+        System.out.println(response);
+/* 
         //SIGNIN_URL
         String cookie = "yadda yadda"; 
 
@@ -57,9 +69,12 @@ public class SocketManager{
         // Socket options
         .setAuth(null)
         .build();
-
+ */
         
     }
 
+    public static void main(String[] args){
+        SocketManager a = new SocketManager(args[0], args[1]);
+    }
     
 }
