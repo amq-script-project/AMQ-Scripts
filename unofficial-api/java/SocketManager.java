@@ -18,16 +18,17 @@ public class SocketManager{
     public static final String SOCKET_HOST = "https://socket.animemusicquiz.com";
     public static final URI SIGNIN_URI = URI.create("https://" + HOST + "/signIn");
     public static final URI TOKEN_URI = URI.create("https://" + HOST + "/socketToken");
+    public final String cookie;
     
     public SocketManager(String username, String password) throws Exception{
         //get cookie
         String content = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
-        System.out.println(content);
         HttpClient client = HttpClient.newBuilder()
             .version(Version.HTTP_2)
             .connectTimeout(Duration.ofSeconds(10))
             .build();
-        HttpRequest request = HttpRequest.newBuilder()
+        
+        HttpRequest loginRequest = HttpRequest.newBuilder()
             .uri(SIGNIN_URI)
             .version(Version.HTTP_2)
             .header("Content-Type", "application/json")
@@ -39,20 +40,35 @@ public class SocketManager{
             .header("Origin", "https://" + HOST)
             .header("Referer", "https://" + HOST + "/")
             .header("TE", "Trailers")
-            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0")
+            .header("User-Agent", "Mozilla/5.0 Java")
             .header("X-Requested-With", "XMLHttpRequest")
             .POST(HttpRequest.BodyPublishers.ofString(content))
             .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        // System.out.println(response.body());
-        HttpHeaders responseHeaders = response.headers();
-        System.out.println(responseHeaders.toString());
-        List<String> cookie = responseHeaders.allValues("set-cookie");
+        
+        HttpResponse<String> loginResponse = client.send(loginRequest, HttpResponse.BodyHandlers.ofString());
+        HttpHeaders loginResponseHeaders = loginResponse.headers();
+        cookie = loginResponseHeaders.allValues("set-cookie").get(0);
+        System.out.println(cookie);
 
+        //use cookie to get token and port
+        HttpRequest tokenRequest = HttpRequest.newBuilder()
+            .uri(TOKEN_URI)
+            .version(Version.HTTP_2)
+            .header("Accept", "*/*")
+            .header("Accept-Encoding", "gzip, deflate, br")
+            .header("Accept-Language", "en-US;q=0.3,en;q=0.1")
+            .header("Cache-Control", "max-age=0")
+            .header("Cookie", cookie)
+            .header("Referer", "https://" + HOST + "/")
+            .header("TE", "Trailers")
+            .header("User-Agent", "Mozilla/5.0 Java")
+            .header("X-Requested-With", "XMLHttpRequest")
+            .GET()
+            .build();
+        HttpResponse<String> tokenResponse = client.send(tokenRequest, HttpResponse.BodyHandlers.ofString());
+        String tokenJSON = tokenResponse.body();
+        System.out.println(tokenJSON);
 /* 
-        //SIGNIN_URL
-        String cookie = "yadda yadda"; 
-
         //get token and port
         //TOKEN_URL
         int tokenPort = 4444;
