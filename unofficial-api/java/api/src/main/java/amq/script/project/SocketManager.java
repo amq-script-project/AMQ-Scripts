@@ -1,6 +1,7 @@
 package amq.script.project;
-/* import io.socket.client.IO;
-import io.socket.client.Socket; */
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 // import java.net.URL;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -22,17 +23,18 @@ public class SocketManager{
     public static final String SOCKET_HOST = "https://socket.animemusicquiz.com";
     public static final URI SIGNIN_URI = URI.create("https://" + HOST + "/signIn");
     public static final URI TOKEN_URI = URI.create("https://" + HOST + "/socketToken");
+    public static final HttpClient client = HttpClient.newBuilder()
+        .version(Version.HTTP_2)
+        .connectTimeout(Duration.ofSeconds(10))
+        .build();
     public final String cookie;
     public final String token;
     public final int port;
+    public final Socket socket;
     
     public SocketManager(String username, String password) throws Exception{
         //get cookie
         String content = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
-        HttpClient client = HttpClient.newBuilder()
-            .version(Version.HTTP_2)
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
         
         HttpRequest loginRequest = HttpRequest.newBuilder()
             .uri(SIGNIN_URI)
@@ -77,17 +79,13 @@ public class SocketManager{
         JSONObject tokenContainer = (JSONObject) JSONValue.parse(tokenJSON);
         token = tokenContainer.get("token").toString();
         port = Integer.parseInt(tokenContainer.get("port").toString());
-        // System.out.println(token);
-        // System.out.println(port);
-/* 
-        //get token and port
-        //TOKEN_URL
-        int tokenPort = 4444;
-        int token = "asdf";
+        System.out.println(token);
+        System.out.println(port);
 
 
-
-        URI socketURI = new URI(SOCKET_HOST + ":" + tokenPort);
+        URI socketURI = URI.create(SOCKET_HOST + ":" + port);
+        /* //sadly 1.0.1 (which is required to support socket-io 2) does not support the builder
+        // keeping the code in case AMQ ever upgrades
         IO.Options options = IO.Options.builder()
         .setForceNew(true) //the server uses only one namespace, thus we only need one manager
 
@@ -108,9 +106,90 @@ public class SocketManager{
 
         // Socket options
         .setAuth(null)
-        .build();
- */
-        
+        .build(); */
+
+        IO.Options options = new IO.Options();
+        options.forceNew = true;
+
+        // low-level engine options
+        options.upgrade = true;
+        options.rememberUpgrade = false;
+        options.path = "/socket.io/"; //this is the default
+        options.query = "token=" + token;
+        // options.extraHeaders = null;
+
+        options.reconnection = true;
+        options.reconnectionAttempts = 5;
+        options.reconnectionDelay = 1_000;
+        options.reconnectionDelayMax = 2_000;
+        options.randomizationFactor = 0.5;
+        options.timeout = 20_000;
+
+
+        // options.auth = null;
+
+        socket = IO.socket(socketURI, options); 
+
+        socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args){
+                System.out.println("success");
+                System.out.println(args);
+            }
+        });
+        socket.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
+            @Override
+            public void call(Object... args){
+                System.out.println("failure");
+                System.out.println(args);
+            }
+        });
+        socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args){
+                System.out.println("disconnect");
+                System.out.println(args);
+            }
+        });
+        socket.connect();
+
+        Thread.sleep(4000);
+
+        socket.disconnect();
     }
     
+    public void addListener(String command, Emitter.Listener listener){
+        //adds a listener that triggers every time command is recieved
+        socket.on(command, listener);
+    }
+    public void addOneTimeListener(String command, Emitter.Listener listener){
+        //adds a listener that only triggers once
+        socket.once(command, listener);
+    }
+    public void removeListener(String command, Emitter.Listener listener){
+        //removes the specified listener for command
+        socket.off(command, listener);
+    }
+    public void removeAllListeners(String command){
+        //removes all listeners for command
+        socket.off(command);
+    }
+    public void removeAllListeners(){
+        //removes all listeners
+        socket.off();
+    }
+
+    public Emitter sendCommand(String command, String type, JSONObject data){
+        JSONObject content = new JSONObject();
+        content.put("command", command);
+        content.put("type", type);
+        if(data != null){
+            content.put("data", data);
+        }
+        return socket.emit("command", content.toString()); //every command is sent as a string saying "command" and a JSON that happens to contain an entry named "command"
+    }
+    public Emitter sendCommand(String command, String type){
+        return this.sendCommand(command, type, null);
+    }
 }
+
