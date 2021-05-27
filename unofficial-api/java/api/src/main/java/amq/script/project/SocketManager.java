@@ -12,6 +12,9 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpClient.Version;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.json.simple.JSONValue;
 import org.json.simple.JSONObject;
@@ -33,6 +36,7 @@ public class SocketManager{
     public final int port;
     public final Socket socket;
     public final String username;
+    public final Listener commandListener;
     
     public SocketManager(String username, String password) throws Exception{
         this.username = username; //really no point in saving the password
@@ -156,44 +160,81 @@ public class SocketManager{
                 socket.disconnect();
             }
         });
+        commandListener = new Listener() {
+            @Override
+            public void call(Object... args){
+                //every single command that comes from amq is under the "command" name, and differentiation has to be done here
+                org.json.JSONObject obj = (org.json.JSONObject) args[0];
+                String command = null;
+                org.json.JSONObject data = null;
+                try{
+                    command = obj.getString("command");
+                    data = obj.getJSONObject("data");
 
+                }catch(org.json.JSONException e){
+
+                }
+                List<SocketCommand> list = listeners.get(command);
+                if(list != null){
+                    for(SocketCommand c : list){
+                        c.call(data);
+                    }
+                }
+                List<SocketCommand> onceList = onceListeners.get(command);
+                if(onceList != null){
+                    for(SocketCommand c : onceList){
+                        c.call(data);
+                    }
+                    onceListeners.remove(command);
+                }
+            }
+        };
+        socket.on("command", commandListener);
     }
+
+    protected final Map<String, List<SocketCommand>> listeners = new HashMap<String, List<SocketCommand>>();
+    protected final Map<String, List<SocketCommand>> onceListeners = new HashMap<String, List<SocketCommand>>();
     
-    public Listener addListener(String command, SocketCommand callback){
-
-        //adds a listener that triggers every time command is recieved
-        //every single command that comes from amq is under the "command" name, and differentiation has to be done here
-        Listener listener = new Listener() {
-            @Override
-            public void call(Object... args){
-                callback.call((org.json.JSONObject) args[0]);
-            }
-        };
-        socket.on("command", listener);
-        return listener;
+    public SocketCommand addListener(String command, SocketCommand callback){
+        //adds a listener that triggers every time command is received
+        List<SocketCommand> list = listeners.get(command);
+        if(list == null){
+            list = new ArrayList<SocketCommand>();
+            listeners.put(command, list);
+        }
+        list.add(callback);
+        return callback;
     }
-    public Listener addOneTimeListener(String command, SocketCommand callback){
-        //adds a listener that only triggers once
-        Listener listener = new Listener() {
-            @Override
-            public void call(Object... args){
-                callback.call((org.json.JSONObject) args[0]);
-            }
-        };
-        socket.once(command, listener);
-        return listener;
+    public SocketCommand addOnceListener(String command, SocketCommand callback){
+        //adds a listener entry that only triggers once
+        List<SocketCommand> list = onceListeners.get(command);
+        if(list == null){
+            list = new ArrayList<SocketCommand>();
+            onceListeners.put(command, list);
+        }
+        list.add(callback);
+        return callback;
     }
-    public void removeListener(String command, Listener listener){
+    public void removeListener(String command, SocketCommand callback){
         //removes the specified listener for command
-        socket.off(command, listener);
+        List<SocketCommand> list = listeners.get(command);
+        if(list != null){
+            list.remove(callback);
+        }
+        list = onceListeners.get(command);
+        if(list != null){
+            list.remove(callback);
+        }
     }
     public void removeAllListeners(String command){
         //removes all listeners for command
-        socket.off(command);
+        listeners.remove(command);
+        onceListeners.remove(command);
     }
     public void removeAllListeners(){
         //removes all listeners
-        socket.off();
+        listeners.clear();
+        onceListeners.clear();
     }
 
     public Emitter sendCommand(String command, String type, JSONObject data){
