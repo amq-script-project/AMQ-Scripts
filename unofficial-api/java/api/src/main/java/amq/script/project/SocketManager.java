@@ -1,3 +1,4 @@
+package amq.script.project;
 /* import io.socket.client.IO;
 import io.socket.client.Socket; */
 // import java.net.URL;
@@ -100,10 +101,6 @@ public class SocketManager{
         .build();
  */
         
-    }
-
-    public static void main(String[] args) throws Exception{
-        SocketManager a = new SocketManager(args[0], args[1]);
     }
     
 }
