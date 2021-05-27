@@ -23,6 +23,8 @@ public class SocketManager{
     public static final URI SIGNIN_URI = URI.create("https://" + HOST + "/signIn");
     public static final URI TOKEN_URI = URI.create("https://" + HOST + "/socketToken");
     public final String cookie;
+    public final String token;
+    public final int port;
     
     public SocketManager(String username, String password) throws Exception{
         //get cookie
@@ -52,7 +54,7 @@ public class SocketManager{
         HttpResponse<String> loginResponse = client.send(loginRequest, HttpResponse.BodyHandlers.ofString());
         HttpHeaders loginResponseHeaders = loginResponse.headers();
         cookie = loginResponseHeaders.allValues("set-cookie").get(0);
-        System.out.println(cookie);
+        // System.out.println(cookie);
 
         //use cookie to get token and port
         HttpRequest tokenRequest = HttpRequest.newBuilder()
@@ -71,9 +73,12 @@ public class SocketManager{
             .build();
         HttpResponse<String> tokenResponse = client.send(tokenRequest, HttpResponse.BodyHandlers.ofString());
         String tokenJSON = tokenResponse.body();
-        System.out.println(tokenJSON);
+        // System.out.println(tokenJSON);
         JSONObject tokenContainer = (JSONObject) JSONValue.parse(tokenJSON);
-        
+        token = tokenContainer.get("token").toString();
+        port = Integer.parseInt(tokenContainer.get("port").toString());
+        // System.out.println(token);
+        // System.out.println(port);
 /* 
         //get token and port
         //TOKEN_URL
