@@ -11,6 +11,9 @@ import java.net.http.HttpClient.Version;
 import java.time.Duration;
 import java.util.List;
 
+import org.json.simple.JSONValue;
+import org.json.simple.JSONObject;
+
 // import javax.net.ssl.HttpsURLConnection;
 // import java.io.OutputStream;
 //import java.io.InputStream;
@@ -69,6 +72,8 @@ public class SocketManager{
         HttpResponse<String> tokenResponse = client.send(tokenRequest, HttpResponse.BodyHandlers.ofString());
         String tokenJSON = tokenResponse.body();
         System.out.println(tokenJSON);
+        JSONObject tokenContainer = (JSONObject) JSONValue.parse(tokenJSON);
+        
 /* 
         //get token and port
         //TOKEN_URL
