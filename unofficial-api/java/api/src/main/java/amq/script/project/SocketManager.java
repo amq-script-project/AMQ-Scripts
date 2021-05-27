@@ -1,32 +1,37 @@
 package amq.script.project;
+
+//socket IO related
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import io.socket.emitter.Emitter.Listener;
-// import java.net.URL;
+
+//connection related
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpClient.Version;
 import java.time.Duration;
+
+import org.json.simple.JSONValue;
+import org.json.simple.JSONObject;//these are used for the connection phase, rest of the application uses org.json.JSONObject due to socket.io
+
+
+//Listener storage handler
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.json.simple.JSONValue;
-import org.json.simple.JSONObject;
 
-// import javax.net.ssl.HttpsURLConnection;
-// import java.io.OutputStream;
-//import java.io.InputStream;
 public class SocketManager{
     public static final String HOST = "animemusicquiz.com";
     public static final String SOCKET_HOST = "https://socket.animemusicquiz.com";
     public static final URI SIGNIN_URI = URI.create("https://" + HOST + "/signIn");
     public static final URI TOKEN_URI = URI.create("https://" + HOST + "/socketToken");
+    public static final URI LOGOUT_URI = URI.create("https://" + HOST + "/signout");
     public static final HttpClient client = HttpClient.newBuilder()
         .version(Version.HTTP_2)
         .connectTimeout(Duration.ofSeconds(10))
@@ -37,6 +42,7 @@ public class SocketManager{
     public final Socket socket;
     public final String username;
     public final Listener commandListener;
+    public final boolean debug = true;
     
     public SocketManager(String username, String password) throws Exception{
         this.username = username; //really no point in saving the password
@@ -87,29 +93,6 @@ public class SocketManager{
         token = tokenContainer.get("token").toString();
         port = Integer.parseInt(tokenContainer.get("port").toString());
         URI socketURI = URI.create(SOCKET_HOST + ":" + port);
-        /* //sadly 1.0.1 (which is required to support socket-io 2) does not support the builder
-        // keeping the code in case AMQ ever upgrades
-        IO.Options options = IO.Options.builder()
-        .setForceNew(true) //the server uses only one namespace, thus we only need one manager
-
-        // low-level engine options
-        .setUpgrade(true)
-        .setRememberUpgrade(false)
-        .setPath("/socket.io/") //default value
-        .setQuery("token=" + token)
-        .setExtraHeaders(null)
-
-        // Manager options
-        .setReconnection(true)
-        .setReconnectionAttempts(5)
-        .setReconnectionDelay(1_000)
-        .setReconnectionDelayMax(2_000)
-        .setRandomizationFactor(0.5)
-        .setTimeout(20_000)
-
-        // Socket options
-        .setAuth(null)
-        .build(); */
 
         IO.Options options = new IO.Options();
         options.forceNew = true;
@@ -132,32 +115,28 @@ public class SocketManager{
         socket.on(Socket.EVENT_CONNECT, new Listener() {
             @Override
             public void call(Object... args){
-                System.out.println("success");
-                // System.out.println(args);
+                System.out.println("connected " + username);
             }
         });
         socket.on(Socket.EVENT_CONNECT_ERROR, new Listener() {
             @Override
             public void call(Object... args){
-                System.out.println("failure");
-                // System.out.println(args);
+                System.out.println("connection failed for " + username);
             }
         });
         socket.on(Socket.EVENT_DISCONNECT, new Listener() {
             @Override
             public void call(Object... args){
-                System.out.println("disconnect");
-                // System.out.println(args);
+                System.out.println("disconnected " + username);
             }
         });
-        socket.connect();
         addListener("chat message", new SocketCommand(){
             @Override
             public void call(org.json.JSONObject JSON){
                 System.out.println("chat message start");
                 System.out.println(JSON);
                 System.out.println("chat message end");
-                socket.disconnect();
+                logout();
             }
         });
         commandListener = new Listener() {
@@ -165,6 +144,9 @@ public class SocketManager{
             public void call(Object... args){
                 //every single command that comes from amq is under the "command" name, and differentiation has to be done here
                 org.json.JSONObject obj = (org.json.JSONObject) args[0];
+                if(debug){
+                    System.out.println(obj);
+                }
                 String command = null;
                 org.json.JSONObject data = null;
                 try{
@@ -190,6 +172,46 @@ public class SocketManager{
             }
         };
         socket.on("command", commandListener);
+        connect();
+    }
+
+    public Socket connect(){
+        return socket.connect();
+    }
+
+    public Socket disconnect(){
+        return socket.disconnect();
+    }
+
+    public Socket reconnect(){
+        return disconnect().connect();
+    }
+
+    public void logout(){
+        HttpRequest logoutRequest = HttpRequest.newBuilder()
+            .uri(LOGOUT_URI)
+            .version(Version.HTTP_2)
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+            .header("Accept-Encoding", "gzip, deflate, br")
+            .header("Accept-Language", "en-US;q=0.3,en;q=0.1")
+            .header("Cookie", cookie)
+            .header("Referer", "https://" + HOST + "/")
+            .header("User-Agent", "Mozilla/5.0 Java")
+            .GET()
+            .build();
+        try{
+            HttpResponse<String> logoutResponse = client.send(logoutRequest, HttpResponse.BodyHandlers.ofString());
+            if(debug){
+                System.out.println(logoutResponse.body());
+            }
+        }catch(Exception e){
+            System.out.println("error while logging out");
+            System.err.println(e);
+        }finally{
+            disconnect();
+            socket.off();
+            socket.close();
+        }
     }
 
     protected final Map<String, List<SocketCommand>> listeners = new HashMap<String, List<SocketCommand>>();
