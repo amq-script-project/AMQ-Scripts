@@ -2,6 +2,7 @@ package amq.script.project;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+import io.socket.emitter.Emitter.Listener;
 // import java.net.URL;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -31,8 +32,10 @@ public class SocketManager{
     public final String token;
     public final int port;
     public final Socket socket;
+    public final String username;
     
     public SocketManager(String username, String password) throws Exception{
+        this.username = username; //really no point in saving the password
         //get cookie
         String content = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
         
@@ -79,10 +82,6 @@ public class SocketManager{
         JSONObject tokenContainer = (JSONObject) JSONValue.parse(tokenJSON);
         token = tokenContainer.get("token").toString();
         port = Integer.parseInt(tokenContainer.get("port").toString());
-        System.out.println(token);
-        System.out.println(port);
-
-
         URI socketURI = URI.create(SOCKET_HOST + ":" + port);
         /* //sadly 1.0.1 (which is required to support socket-io 2) does not support the builder
         // keeping the code in case AMQ ever upgrades
@@ -116,7 +115,6 @@ public class SocketManager{
         options.rememberUpgrade = false;
         options.path = "/socket.io/"; //this is the default
         options.query = "token=" + token;
-        // options.extraHeaders = null;
 
         options.reconnection = true;
         options.reconnectionAttempts = 5;
@@ -125,48 +123,67 @@ public class SocketManager{
         options.randomizationFactor = 0.5;
         options.timeout = 20_000;
 
-
-        // options.auth = null;
-
         socket = IO.socket(socketURI, options); 
 
-        socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+        socket.on(Socket.EVENT_CONNECT, new Listener() {
             @Override
             public void call(Object... args){
                 System.out.println("success");
-                System.out.println(args);
+                // System.out.println(args);
             }
         });
-        socket.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
+        socket.on(Socket.EVENT_CONNECT_ERROR, new Listener() {
             @Override
             public void call(Object... args){
                 System.out.println("failure");
-                System.out.println(args);
+                // System.out.println(args);
             }
         });
-        socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+        socket.on(Socket.EVENT_DISCONNECT, new Listener() {
             @Override
             public void call(Object... args){
                 System.out.println("disconnect");
-                System.out.println(args);
+                // System.out.println(args);
             }
         });
         socket.connect();
+        addListener("chat message", new SocketCommand(){
+            @Override
+            public void call(org.json.JSONObject JSON){
+                System.out.println("chat message start");
+                System.out.println(JSON);
+                System.out.println("chat message end");
+                socket.disconnect();
+            }
+        });
 
-        Thread.sleep(4000);
-
-        socket.disconnect();
     }
     
-    public void addListener(String command, Emitter.Listener listener){
+    public Listener addListener(String command, SocketCommand callback){
+
         //adds a listener that triggers every time command is recieved
-        socket.on(command, listener);
+        //every single command that comes from amq is under the "command" name, and differentiation has to be done here
+        Listener listener = new Listener() {
+            @Override
+            public void call(Object... args){
+                callback.call((org.json.JSONObject) args[0]);
+            }
+        };
+        socket.on("command", listener);
+        return listener;
     }
-    public void addOneTimeListener(String command, Emitter.Listener listener){
+    public Listener addOneTimeListener(String command, SocketCommand callback){
         //adds a listener that only triggers once
+        Listener listener = new Listener() {
+            @Override
+            public void call(Object... args){
+                callback.call((org.json.JSONObject) args[0]);
+            }
+        };
         socket.once(command, listener);
+        return listener;
     }
-    public void removeListener(String command, Emitter.Listener listener){
+    public void removeListener(String command, Listener listener){
         //removes the specified listener for command
         socket.off(command, listener);
     }
