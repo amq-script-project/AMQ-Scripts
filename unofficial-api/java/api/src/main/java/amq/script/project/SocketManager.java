@@ -259,14 +259,14 @@ public class SocketManager{
         onceListeners.clear();
     }
 
-    public Emitter sendCommand(String command, String type, JSONObject data){
-        JSONObject content = new JSONObject();
+    public Emitter sendCommand(String command, String type, org.json.JSONObject data){
+        org.json.JSONObject content = new org.json.JSONObject();
         content.put("command", command);
         content.put("type", type);
         if(data != null){
             content.put("data", data);
         }
-        return socket.emit("command", content.toString()); //every command is sent as a string saying "command" and a JSON that happens to contain an entry named "command"
+        return socket.emit("command", content); //every command is sent as a string saying "command" and a JSON that happens to contain an entry named "command"
     }
     public Emitter sendCommand(String command, String type){
         return this.sendCommand(command, type, null);
