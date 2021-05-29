@@ -1,5 +1,6 @@
 package amq.script.project;
 
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -15,6 +16,8 @@ public class SocialManager{
     protected final SocketManager socket;
     protected final Lock dmLock = new ReentrantLock();
     protected final Condition dmSent = dmLock.newCondition();
+    protected final Thread dmThread;
+    protected boolean open = false;
 
     public SocialManager(SocketManager socket){
         this.socket = socket;
@@ -38,7 +41,21 @@ public class SocialManager{
                 dmLock.unlock();
             }
         });
+        dmThread = new Thread(new Worker());
+    }
 
+    public void close(){
+        if(open){
+            dmThread.interrupt();
+            open = false;
+        }
+    }
+
+    public void open(){
+        if(!open){
+            dmThread.start();
+            open = true;
+        }
     }
 
     protected final LinkedBlockingQueue<String[]> dmQueue = new LinkedBlockingQueue<String[]>(10000);
@@ -72,11 +89,32 @@ public class SocialManager{
 
         dmLock.unlock();
     }
+
+    public void purgeDM(String target){
+        //I don't think this will interact poorly with the Worker
+        Queue<String[]> temp = new LinkedList<String[]>();
+        dmQueue.drainTo(temp);
+        for(String[] data : temp){
+            if(! data[1].equals(target)){
+                dmQueue.offer(data);
+            }
+        }
+        
+    }
     
     protected class Worker implements Runnable{
         @Override
         public void run(){
-            
+            while(true){
+                try{
+                    String[] data = dmQueue.poll(4000, TimeUnit.DAYS);
+                    if(data != null){
+                        sendDM(data[0], data[1]);
+                    }
+                }catch (InterruptedException e){
+                    break;
+                }
+            }
         }
     }
 }

@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+//command queueing related
+import java.util.concurrent.LinkedBlockingQueue;
+
 
 public class SocketManager{
     public static final String HOST = "animemusicquiz.com";
@@ -36,13 +39,15 @@ public class SocketManager{
         .version(Version.HTTP_2)
         .connectTimeout(Duration.ofSeconds(10))
         .build();
+    public static final int RATE_LIMIT = 20;
     public final String cookie;
     public final String token;
     public final int port;
-    public final Socket socket;
+    protected final Socket socket;
     public final String username;
     public final Listener commandListener;
     public final boolean debug = true;
+    protected final Thread commandThread = new Thread(new Worker());
     
     public SocketManager(String username, String password) throws Exception{
         this.username = username; //really no point in saving the password
@@ -174,12 +179,14 @@ public class SocketManager{
         socket.on("command", commandListener);
         connect();
     }
-
+    
     public Socket connect(){
+        commandThread.start();
         return socket.connect();
     }
 
     public Socket disconnect(){
+        commandThread.interrupt();
         return socket.disconnect();
     }
 
@@ -259,17 +266,36 @@ public class SocketManager{
         onceListeners.clear();
     }
 
-    public Emitter sendCommand(String command, String type, org.json.JSONObject data){
+    protected final LinkedBlockingQueue<org.json.JSONObject> commandQueue = new LinkedBlockingQueue<org.json.JSONObject>(10000);
+
+    public boolean sendCommand(String command, String type, org.json.JSONObject data){
         org.json.JSONObject content = new org.json.JSONObject();
         content.put("command", command);
         content.put("type", type);
         if(data != null){
             content.put("data", data);
         }
-        return socket.emit("command", content); //every command is sent as a string saying "command" and a JSON that happens to contain an entry named "command"
+        return commandQueue.offer(content);
     }
-    public Emitter sendCommand(String command, String type){
+    public boolean sendCommand(String command, String type){
         return this.sendCommand(command, type, null);
+    }
+
+    
+
+    protected class Worker implements Runnable{
+        @Override
+        public void run(){
+            while(true){
+                try{
+                    org.json.JSONObject content = commandQueue.poll(4000, TimeUnit.DAYS);
+                    socket.emit("command", content); //every command is sent as a string saying "command" and a JSON that happens to contain an entry named "command"
+                    Thread.sleep(1000 / RATE_LIMIT);
+                } catch (InterruptedException e){
+                    break;
+                }
+            }
+        }
     }
 }
 
