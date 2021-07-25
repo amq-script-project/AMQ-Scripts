@@ -67,12 +67,13 @@
 
 	<script>
 		let old = AmqAwesomeplete.prototype.evaluate;
+		let older = oldEvaluate;
 
 		AmqAwesomeplete.prototype.evaluate = async function () {
 			let value = this.input.value;
 
 			let start = new Date().getTime();
-			let answer = await old.apply(this);
+			let answer = this.input == input2 ? (await old.apply(this)) : (await older.apply(this));
 			let end = new Date().getTime();
 
 			let taken = end - start + "ms";

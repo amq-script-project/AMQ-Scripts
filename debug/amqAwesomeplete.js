@@ -5,7 +5,7 @@ if (isNode) Awesomplete = require('Awesomplete')
 'use strict';
 /*exported  AmqAwesomeplete*/
 
-$ = (v) => v
+if (isNode || $ == undefined) $ = (v) => v
 
 function AmqAwesomeplete(input, o, scrollable) {
 	o.filter = (text, input) => {
@@ -275,12 +275,8 @@ const ANIME_REGEX_REPLACE_RULES = [
 		replace: '[oōóòöôøΦ]'
 	},
 	{
-		input: 'uu',
-		replace: '(uu|ū)'
-	},
-	{
 		input: 'u',
-		replace: '[uūûúùüǖ]'
+		replace: '([uūûúùüǖ]|uu)'
 	},
 	{
 		input: 'a',
@@ -292,11 +288,11 @@ const ANIME_REGEX_REPLACE_RULES = [
 	},
 	{
 		input: ' ',
-		replace: '([★☆\\/\\*=\\+·♥∽・〜†×♪→␣:;]* |(☆|★|\\/|\\*|=|\\+|·|♥|∽|・|〜|†|×|♪|→|␣|:|;)+)'
+		replace: '( ?[★☆\\/\\*=\\+·♥∽・〜†×♪→␣:;~\\-?,.!@_]+ ?| )'
 	},
 	{
 		input: 'e',
-		replace: '[eéêëèæ]'
+		replace: '[eéêëèæē]'
 	},
 	{
 		input: '\'',
@@ -325,10 +321,6 @@ const ANIME_REGEX_REPLACE_RULES = [
 	{
 		input: 'b',
 		replace: '[bß]'
-	},
-	{
-		input: '\\\\-',
-		replace: '[\\-–]'
 	}
 ];
 

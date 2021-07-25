@@ -21,7 +21,7 @@ function hrtime(arg) {
 (async function() {
 	let longAnimeList = animes.concat(animes, animes, animes, animes);
 
-	for (let list of [animes, longAnimeList]) {
+	for (let list of [animes]) {
 
 		let t = hrtime()
 		amq = new AmqAwesomeplete({setAttribute: noop, getAttribute: noop, addEventListener: noop, hasAttribute: noop}, {list: list, minChars: 1, maxItems: 25})

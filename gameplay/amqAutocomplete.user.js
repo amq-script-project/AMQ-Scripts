@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.26
+// @version      1.27
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -31,60 +31,14 @@ const onlySpecialChars = (str) => {
 	return str.replace(/[\w\s]/gi, '').split('').sort().join('');
 }
 
-const _solveComplicatedRegex = (idx, str, choices) => {
-	if (idx == str.length) return choices;
-
-	let possible = [];
-
-	if (idx < str.length) {
-		possible = possible.concat(_solveComplicatedRegex(idx + 1, str, choices.map(c => c + '(:?' + str[idx] + '|' + (str[idx] == 'o' ? 'ō' : 'ū') + ')')));
-	}
-
-	if (idx < str.length - 1) {
-		if (str[idx] == 'o') possible = possible.concat(_solveComplicatedRegex(idx + 2, str, choices.map(c => c + 'ō')));
-		if (str[idx] == 'u' && str[idx + 1] == 'u') possible = possible.concat(_solveComplicatedRegex(idx + 2, str, choices.map(c => c + 'ū')));
-	}
-
-	return possible;
-}
-
-const complicatedRegex = (qry) => {
-	const regex =  escapeRegExp(qry).replace(/(o|u)+/, function(match) {
-		const possible = [match[0] + match[1]];
-
-		if (match[0] == 'o') possible.push('ō');
-		if (match[0] == 'u' && match[1] == 'u') possible.push('ū');
-
-		const choices1 = _solveComplicatedRegex(1, match, [match[0]]);
-		const choices2 = _solveComplicatedRegex(2, match, possible);
-
-		return '(' + Array.from(new Set(choices1.concat(choices2))).join("|") + ')';
-		
-	});
-
-	return new RegExp(regex, "g");
-}
-
 var options = {
 	highlight: true, // highlight or not the match
-	sorting : "partial", // Sets the order of the anime in the dropdown. total sorts by last seen date order. Partial puts first the ones seen. Any other thing is amq default
-    sortList: true, // true = consider matching animes by last seen order (after checking startsWith)
 	allowRightLeftArrows: false, // use right and left arrows to move dropdown selected options
-	daysToRemember: 90, // sets amount of days to consider an anime as seen in sorting,
 	fuzzy: {
 		dropdown: true, // whether to show fuzzy matches if no matches found
 		answer: true, // whether to use top fuzzy match on round end as answer if no matches found
 	},
 	entrySets: [
-		{ // enable this section to allow oo, ou and uu as ō/ū
-			startsWith: false,
-			contains: false, 
-			partial: false,
-			filter: (e) => e.str.match(/ō|ū/),
-			clean: (s) => cleanString(s, ['ō', 'ū']),
-			handles: (qry) => qry.match(/(o|u)+/),
-			getQryRegex: complicatedRegex
-		},
 		{
 			startsWith: false, //change to true if you want more specific results
 			contains: false, //change to true if you want more specific results
@@ -108,10 +62,8 @@ function log(msg) {
     if(debug) console.log(msg)
 }
 
-var storedData = {}
-
-if (!isNode && window.localStorage) {
-    storedData = JSON.parse(localStorage.getItem("storedData") || "{}");
+if (!isNode && window.localStorage && window.localStorage.storedData) {
+     window.localStorage.storedData = ''; //clear, not used anymore
 }
 
 class SortedList {
@@ -265,7 +217,7 @@ class EntrySet {
 	}
 
 	getQryRegex(qry) {
-		return this.config.getQryRegex ? this.config.getQryRegex(qry) : new RegExp(escapeRegExp(qry), "g")
+		return new RegExp(escapeRegExp(qry).replaceAll('u', '(u|uu)'), "g")
 	}
 
 	addContainingResults (superString, qry) {
@@ -287,11 +239,6 @@ class FilterManager {
 		this.limit = limit
 		this.specialChars = {}
 		this.options = Object.assign({}, options, opts || {});
-        this.now = new Date(); this.now.setDate(this.now.getDate() - this.options.daysToRemember);
-
-		if (this.options.sortList) {
-            this.list = this.sortBySeen(this.list);
-		}
 
 		this.list.forEach((v, idx) => v.idx = idx);
 
@@ -331,21 +278,6 @@ class FilterManager {
 				this.entrySets.push(new EntrySet(list, entrySet, this));
 			}
 		}
-	}
-
-
-	getLastSeen(anime) {
-		return storedData[anime.toLowerCase()] >= this.now.getTime() ? storedData[anime.toLowerCase()] : 1
-	}
-
-
-	sortBySeen(arr) {
-       return arr.map((v) => ({val : v, d: this.getLastSeen(v.originalStr)})).sort(function(a, b){
-	       if (a.d < b.d) return 1;
-		   if (b.d < a.d) return -1;
-		   if (a.val.idx < b.val.idx) return -1;
-		   return 1;
-	   }).map((v) => v.val);
 	}
 
 	reset () {
@@ -506,27 +438,15 @@ if (!isNode) {
 
 		let suggestions = this.filterManager.filterBy(this.input.value, options.fuzzy.dropdown);
 
-		suggestions = suggestions.map((v) => ({v: v, d: this.filterManager.getLastSeen(v.listMatch.originalStr)}));
-
 		if (!this.filterManager.fuzzySearched) suggestions = suggestions.sort((a, b) => {
-			if (options.sorting == "partial" || options.sorting == "total") {
-				if (a.d != 1 && b.d == 1) return -1;
-				if (a.d == 1 && b.d != 1) return 1;
-			}
-
-			if (options.sorting == "total") {
-				if (a.d < b.d) return 1;
-				if (b.d < a.d) return -1;
-			}
-
 		    if (this.sort !== false) {
-			    if (a.v.match.originalIndex < b.v.match.originalIndex) return -1;
+			    if (a.match.originalIndex < b.match.originalIndex) return -1;
 			}
 
 			return 1;
 		})
 
-		this.suggestions = suggestions.map(v => new Suggestion(this.data(v.v.listMatch.originalStr, v.v.lastQry)));
+		this.suggestions = suggestions.map(v => new Suggestion(this.data(v.listMatch.originalStr, v.lastQry)));
 
 		log(this.suggestions)
 
@@ -534,7 +454,7 @@ if (!isNode) {
 		this.$ul.children('li').remove();
 
 		for (let i = this.suggestions.length - 1; i >= 0; i--) {
-			this.ul.insertBefore(this.item(this.suggestions[i], options.highlight ? suggestions[i].v.lastQry : "", i), this.ul.firstChild);
+			this.ul.insertBefore(this.item(this.suggestions[i], options.highlight ? suggestions[i].lastQry : "", i), this.ul.firstChild);
 		}
 
 		if (this.ul.children.length === 0) {
@@ -567,20 +487,6 @@ if (!isNode) {
 		}
 		oldSendAnwer.apply(this, Array.from(arguments))
 	}
-
-
-	new Listener("answer results", function (result) {
-		for (var lang in result.songInfo.animeNames) {
-		    storedData[result.songInfo.animeNames[lang].toLowerCase()] = new Date().getTime();
-		}
-
-		log(storedData)
-
-	}).bindListener();
-
-	new Listener("quiz end result", function (payload) {
-	    if (localStorage) localStorage.setItem("storedData", JSON.stringify(storedData))
-	}).bindListener();
 }
 
 var defaultDiacriticsRemovalMap = [
@@ -701,11 +607,9 @@ function removeDiacritics (str, except) {
 }
 
 if (isNode) {
-	storedData["oh my kokoro"] = new Date().getTime()
-
 	Object.assign(options.entrySets[0], {startsWith: false, contains: true, partial: false});
 
-	let l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro", "ktrōk"], 15);
+	let l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro", "guura"], 15);
 
 	escapeRegExp = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	search = (str, len, first, fuzzy) => {
@@ -726,15 +630,13 @@ if (isNode) {
 	search("*!", 1, "asd!!*hi")
 	search("!*", 1, "asd!!*hi")
 	search("!asd!*hi", 1, "asd!!*hi")
-	search("ko", 2, "kokoro")
+	search("ko", 2, "oh my kokoro")
 	search("kororo", 2, "kokoro", true)
 	search("ads", 3, "asd", true)
-	search("ktr", 1, "ktrōk")
+	search("gura", 1, "guura")
 
-	l = new FilterManager(["Kiss×sis", "Chōon Senshi Borgman: Lovers Rain", "idolm@aster"], 15)
+	l = new FilterManager(["Kiss×sis", "idolm@aster"], 15)
 	search("kissx", 1, "Kiss×sis")
-
-	search("ooo", 1, "Chōon Senshi Borgman: Lovers Rain")
 
 	search("idolma", 1, "idolm@aster")
 
@@ -743,11 +645,5 @@ if (isNode) {
 	search("!*", 1, "asd!!*hi")
 	search("*!", 0, "")
 
-	l = new FilterManager(["Hōō no Miko"], 15);
-	search("o", 1, "Hōō no Miko")
-	search("ou", 1, "Hōō no Miko")
-	search("ouo", 1, "Hōō no Miko")
-	search("ouoo", 1, "Hōō no Miko")
-
-	module.exports = {FilterManager, options, storedData}
+	module.exports = {FilterManager, options}
 }
