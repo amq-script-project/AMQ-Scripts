@@ -1,15 +1,16 @@
 <html>
 	
-
-	<script src="https://animemusicquiz.com/scripts/shared/libraries/jquery-3.1.1.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js" integrity="sha256-SlQm4BY+NO+dw+xdxdzlOd/s7U7aYtPj+KJ1+zRYcXk=" crossorigin="anonymous"></script>
-	<script src = "amqAwesomeplete.js"></script>
-	<script src = "animes.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/fuzzyset.js/0.0.8/fuzzyset.min.js"></script>
-	<script src = "../gameplay/amqAutocomplete.user.js"></script>
-	
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" integrity="sha256-dOShescFo9s9hVGH7lA2HL6Tdq/GUO77T9/cihQMc/E=" crossorigin="anonymous" />
-
+	<head>
+		<meta charset="UTF-8">
+		<script src="https://animemusicquiz.com/scripts/shared/libraries/jquery-3.1.1.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js" integrity="sha256-SlQm4BY+NO+dw+xdxdzlOd/s7U7aYtPj+KJ1+zRYcXk=" crossorigin="anonymous"></script>
+		<script src = "amqAwesomeplete.js"></script>
+		<script src = "animes.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/fuzzyset.js/0.0.8/fuzzyset.min.js"></script>
+		<script src = "../gameplay/amqAutocomplete.user.js"></script>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" integrity="sha256-dOShescFo9s9hVGH7lA2HL6Tdq/GUO77T9/cihQMc/E=" crossorigin="anonymous" />
+	</head>
 
 	<div class="awesomplete"><input type="text" class="flatTextInput" id="qpAnswerInput" placeholder="Default input" maxlength="255" autocomplete="off" aria-autocomplete="list"><ul hidden="" class="ps ps--theme_default ps--active-y" data-ps-id="35803bbe-e3f0-74d8-e02e-20a03f427ee6"><div class="ps__scrollbar-x-rail" style="left: 0px; bottom: 0px;"><div class="ps__scrollbar-x" tabindex="0" style="left: 0px; width: 0px;"></div></div><div class="ps__scrollbar-y-rail" style="top: 0px; height: 0px; right: 0px;"><div class="ps__scrollbar-y" tabindex="0" style="top: 0px; height: 0px;"></div></div></ul><span class="visually-hidden" role="status" aria-live="assertive" aria-relevant="additions"></span>	
 	</div>
@@ -69,6 +70,14 @@
 		let old = AmqAwesomeplete.prototype.evaluate;
 		let older = oldEvaluate;
 
+		options.entrySets = [
+			{
+				contains: true,
+				clean: (s) => s.toLowerCase(),
+				getQryRegex: (qry) => new RegExp(createAnimeSearchRegexQuery(qry), "g")
+			}
+		]
+
 		AmqAwesomeplete.prototype.evaluate = async function () {
 			let value = this.input.value;
 
@@ -93,7 +102,9 @@
 		new AmqAwesomeplete(input, {list: copy, minChars: 1, maxItems: 25})
 		
 		let input2 = document.querySelector('#qpAnswerInput2');
-		new AmqAwesomeplete(input2, {list: animes, minChars: 1, maxItems: 25})
+		let amq2 = new AmqAwesomeplete(input2, {list: animes, minChars: 1, maxItems: 25})
+
+
 
 
 	</script>

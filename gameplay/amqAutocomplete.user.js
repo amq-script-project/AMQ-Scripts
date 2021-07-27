@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.27
+// @version      1.28
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -55,6 +55,16 @@ var options = {
 	]
 }
 
+if (false) { //change to true to have same filters and order as amq
+	options.entrySets = [
+		{
+			contains: true,
+			clean: (s) => s.toLowerCase(),
+			getQryRegex: (qry) => new RegExp(createAnimeSearchRegexQuery(qry), "g")
+		}
+	]
+	options.fuzzy = {dropdown: false, answer: false}
+}
 
 var debug = false;
 
@@ -68,7 +78,7 @@ if (!isNode && window.localStorage && window.localStorage.storedData) {
 
 class SortedList {
 	constructor(list) {
-		this.list = this.alphabeticalSort(list);
+		this.list = this.alphabeticalSort(list.slice(0));
 		this.reset();
 	}
 
@@ -217,7 +227,7 @@ class EntrySet {
 	}
 
 	getQryRegex(qry) {
-		return new RegExp(escapeRegExp(qry).replaceAll('u', '(u|uu)'), "g")
+		return this.config.getQryRegex ? this.config.getQryRegex(qry) : new RegExp(escapeRegExp(qry).replaceAll('u', '(u|uu)'), "g");
 	}
 
 	addContainingResults (superString, qry) {
@@ -295,6 +305,7 @@ class FilterManager {
 
 		this.lastStr = str;
 		this.checkOldResults();
+
 
 		for (let entrySet of entrySets) {
 			if (entrySet.config.startsWith && entrySet.lastQry.length) {
