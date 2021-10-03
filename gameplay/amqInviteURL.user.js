@@ -67,7 +67,6 @@ const checkInvite = async () => {
 class RoomBrowserSurrogate{
     constructor(){
         this.activeRooms = []
-        this.element = document.createElement("div")
         new Listener("New Rooms", (rooms) => {
             rooms.forEach(room => {
                 this.activeRooms[room.id] = room
@@ -154,9 +153,18 @@ const wait = (timeMs) => {
         setTimeout(() => { resolve() }, timeMs)
     })
 }
-setTimeout(() => {
-    setInterval(() => {
-        console.log("yo")
-        checkInvite()
-    }, 3000);
-}, 10000);
+
+let blocked = false
+
+setInterval(async () => {
+    if(!setupDocumentDone){
+        return
+    }
+    if(blocked){
+        return
+    }
+    blocked = true
+    console.log("yo")
+    await checkInvite()
+    blocked = false
+}, 1000);
