@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Invite URL
 // @namespace    http://tampermonkey.net/
-// @version      0.9
+// @version      0.9.1
 // @description  Let's you send a link to your friends to join a room if they also have this script
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -55,12 +55,9 @@ if (typeof(Listener) === "undefined") {
 
 const checkInvite = async () => {
     const inviteType = await GM.getValue(saveSpaceKey, 0)
-    console.log(inviteType)
     if(inviteType){
         const roomID = await GM.getValue(roomIDKey)
         const roomPassword = await GM.getValue(roomPasswordKey)
-        console.log(roomID)
-        console.log(roomPassword)
         clear()
         spawnInviteModal(roomID, roomPassword, inviteType)
     }
@@ -100,11 +97,18 @@ const spawnInviteModal = async (roomID, roomPassword, inviteType) => {
     let room = rbSurrogate.activeRooms[roomID]
 
     if(!room){
-        socket.sendCommand({
-            type: "roombrowser",
-            command: "get rooms"
+        await new Promise((resolve, reject) => {
+            
+            const a = new Listener("New Rooms", (rooms) => {
+                a.unbindListener()
+                resolve()
+            })
+            a.bindListener()
+            socket.sendCommand({
+                type: "roombrowser",
+                command: "get rooms"
+            })
         })
-        await wait(8000)
         room = rbSurrogate.activeRooms[roomID]
         if(!room){
             console.error(`roomID ${roomID} does not correspond to an existing room`)
@@ -220,7 +224,6 @@ setInterval(async () => {
         return
     }
     blocked = true
-    console.log("yo")
     await checkInvite()
     blocked = false
 }, 1000);
