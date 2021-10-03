@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Invite URL
 // @namespace    http://tampermonkey.net/
-// @version      0.9.1
+// @version      1.0
 // @description  Let's you send a link to your friends to join a room if they also have this script
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -195,12 +195,12 @@ const clear = () => {
         .forEach(e => {GM.deleteValue(e)})
 }
 
-const createInviteURL = (roomID, password=null) => {
+const createInviteURL = (roomID, password=null, inviteType=1) => {
     if(!Number.isInteger(roomID)){
         return ""
     }
     const baseURL = "https://animemusicquiz.com/?"
-    let searchParams = `${saveSpaceKey}=1&${roomIDKey}=${roomID}`
+    let searchParams = `${saveSpaceKey}=${inviteType}&${roomIDKey}=${roomID}`
     if(password){
         password = encodeURIComponent(password)
         searchParams += `&${roomPasswordKey}=${password}`
@@ -227,3 +227,59 @@ setInterval(async () => {
     await checkInvite()
     blocked = false
 }, 1000);
+
+const style = document.createElement("style")
+document.head.append(style)
+const styleSheet = style.sheet
+
+styleSheet.insertRule(`
+    #swal2-content > #amqInviteTile {
+        color: #d9d9d9;
+    }
+`)
+
+//add button to invite spectators while in game
+function addButtons() { //stolen from https://github.com/YokipiPublic/AMQ/blob/master/FTFRemoteUpdate.user.js
+    const shareButton = $(`<div id="shareButtonIngame" class="clickAble qpOption"><i aria-hidden="true" class="fa fa-share-square-o qpMenuItem"></i></div>`)
+        .click(function () {
+            swal({
+                title: "Invite URL",
+                html : `<a>${createInviteURL(lobby.gameId, lobby.settings.password, inviteTypeEnum.ROOM_INVITE_SPECTATOR_ONLY)}</a>`,
+            })
+        })
+        .popover({
+            placement: "bottom",
+            content: "Get invite link",
+            trigger: "hover"
+        });
+  
+    let oldWidth = $("#qpOptionContainer").width();
+    $("#qpOptionContainer").width(oldWidth + 35);
+    $("#qpOptionContainer > div").append(shareButton);
+
+    const lobbyButton = $(`
+        <div id="shareButtonLobby" class="clickAble topMenuButton topMenuMediumButton" onclick="">
+            <h3 id="shareButtonLobbyInner" class="clickAble qpOption"><i aria-hidden="true" class="fa fa-share-square-o qpMenuItem"></i></h3>
+        </div>
+    `)
+        .click(function () {
+            swal({
+                title: "Invite URL",
+                html : `<a>${createInviteURL(lobby.gameId, lobby.settings.password, inviteTypeEnum.ROOM_INVITE)}</a>`,
+            })
+        })
+        .popover({
+            placement: "bottom",
+            content: "Get invite link",
+            trigger: "hover"
+        });
+    $("#lobbyPage > .topMenuBar").append(lobbyButton)
+    styleSheet.insertRule(`
+        #shareButtonLobby{
+            right: calc(89% - 150px);
+            padding-left: 0.2%;
+            width: 3.2%;
+        }
+    `)
+}
+addButtons()
