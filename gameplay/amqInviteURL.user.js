@@ -17,6 +17,15 @@ const roomIDKey = "roomID"
 const roomPasswordKey = "roomPassword"
 const tileID = "amqInviteTile"
 
+const PASSWORD_MAX_LENGTH = 50
+
+const inviteTypeEnum = {
+    ROOM_INVITE: 1,
+    ROOM_INVITE_SPECTATOR_ONLY: 2,
+    ROOM_INVITE_PLAYER_ONLY: 3,
+    ROOM_SHOWCASE: 4
+}
+
 
 const getInvite = () => {
     const temp = document.URL.split("?")
@@ -25,14 +34,12 @@ const getInvite = () => {
     }
     const searchQuery = "?" + temp[1]
     const params = new URLSearchParams(searchQuery)
-    console.log(params)
-    console.log(params.has(saveSpaceKey))
-    console.log(params.get(roomPasswordKey))
-    console.log(params.get(roomIDKey))
     if(params.has(saveSpaceKey)){
+        const inviteType = Number.parseInt(params.get(saveSpaceKey))
         const roomPassword = params.get(roomPasswordKey)
+                ?.substring(0,PASSWORD_MAX_LENGTH) //prevents injection of excessive amounts of data
         const roomID = Number.parseInt(params.get(roomIDKey))
-        GM.setValue(saveSpaceKey, true)
+        GM.setValue(saveSpaceKey, inviteType)
         GM.setValue(roomIDKey, roomID)
         if(roomPassword){
             GM.setValue(roomPasswordKey, roomPassword)
@@ -47,16 +54,15 @@ if (typeof(Listener) === "undefined") {
 }
 
 const checkInvite = async () => {
-    const exists = await GM.getValue(saveSpaceKey, false)
-    console.log(exists)
-    if(exists){
-        console.log("yo it exists bro")
+    const inviteType = await GM.getValue(saveSpaceKey, 0)
+    console.log(inviteType)
+    if(inviteType){
         const roomID = await GM.getValue(roomIDKey)
         const roomPassword = await GM.getValue(roomPasswordKey)
         console.log(roomID)
         console.log(roomPassword)
         clear()
-        spawnInviteModal(roomID, roomPassword)
+        spawnInviteModal(roomID, roomPassword, inviteType)
     }
 }
 
@@ -88,7 +94,7 @@ class RoomBrowserSurrogate{
 
 const rbSurrogate = new RoomBrowserSurrogate()
 
-const spawnInviteModal = async (roomID, roomPassword) => {
+const spawnInviteModal = async (roomID, roomPassword, inviteType) => {
     const ROOM_TILE_TEMPLATE = document.getElementById("rbRoomTileTemplate").innerHTML
 
     let room = rbSurrogate.activeRooms[roomID]
@@ -105,26 +111,76 @@ const spawnInviteModal = async (roomID, roomPassword) => {
             return
         }
     }
+    const spectateOnly = (result) => {
+        if(result.dismiss){}
+        else{
+            roomBrowser.fireSpectateGame(roomID, roomPassword)
+        }
+    }
+
+    const joinOnly = (result) => {
+        if(result.dismiss){}
+        else{
+            roomBrowser.fireJoinLobby(roomID, roomPassword)
+        }
+    }
+
+    const showCase = (result) => {
+
+    }
+
+    const joinOrSpectate = (result) => {
+        if(result.dismiss === "close"){}
+        else if (result.dismiss === "cancel") {
+            roomBrowser.fireSpectateGame(roomID, roomPassword)
+        }else{
+            roomBrowser.fireJoinLobby(roomID, roomPassword)
+        }
+    }
+
+    let thenFunction = (result) => {}
+
+    const swalObject = {
+        title: "Received invite ",
+        html : `<div id="${tileID}"></div>`,
+        showCancelButton: true,
+        showCloseButton: true,
+    }
+
+    switch(inviteType){
+        case inviteTypeEnum.ROOM_INVITE:
+            thenFunction = joinOrSpectate
+            swalObject.title += "to join"
+            swalObject.confirmButtonText = "Join"
+            swalObject.cancelButtonText = "Spectate"
+            break
+        case inviteTypeEnum.ROOM_INVITE_SPECTATOR_ONLY:
+            thenFunction = spectateOnly
+            swalObject.title += "to spectate"
+            swalObject.confirmButtonText = "Spectate"
+            swalObject.cancelButtonText = "Cancel"
+            break
+        case inviteTypeEnum.ROOM_INVITE_PLAYER_ONLY:
+            thenFunction = joinOnly
+            swalObject.title += "to play"
+            swalObject.confirmButtonText = "Join"
+            swalObject.cancelButtonText = "Cancel"
+            break
+        case inviteTypeEnum.ROOM_SHOWCASE:
+            thenFunction = showCase
+            swalObject.title = "Room showcase"
+            swalObject.showCancelButton = false
+            swalObject.confirmButtonText = "Close"
+            break
+        default:
+            swalObject.title = "INVALID INVITE TYPE"
+    }
     
 
-    swal({
-		title: "Received invite",
-		html : `<div id="${tileID}"></div>`,		
-        showCancelButton: true,
-		showCloseButton: true,
-		confirmButtonText: "Join",
-		cancelButtonText: "Spectate"
-	}).then(
-		(result) => {
-            if(result.dismiss === "close"){}
-			else if (result.dismiss === "cancel") {
-				roomBrowser.fireSpectateGame(roomID, roomPassword)
-			}else{
-                roomBrowser.fireJoinLobby(roomID, roomPassword)
-            }
-		},
-		() => {} //catch any rejection
-	);
+    swal(swalObject).then(
+        thenFunction,
+        () => {} //catch any rejection
+    );
 
     new RoomTile(room.settings, room.host, room.hostAvatar, room.id, room.numberOfPlayers, room.numberOfSpectators, room.players, room.inLobby, rbSurrogate, room.songLeft, false, $("#rbRoomHider"))
     document.getElementById(tileID).getElementsByClassName("hidden")[0].classList.remove("hidden")
