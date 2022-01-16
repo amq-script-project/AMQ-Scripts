@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Replay
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Lets you record game events and then replay them
 // @author       Juvian
 // @match        https://animemusicquiz.com/
@@ -18,6 +18,8 @@ Usage
 5) recorder.stop(); localStorage.recording = recorder.export();
 6) emulate a stored game from main screen
 7) run if (window.emulator === undefined) emulator = new ServerEmulator(); emulator.start(JSON.parse(localStorage.recording));
+
+To only replay songs which you failed, replace 7) with: if (window.emulator === undefined) emulator = new ServerEmulator(); emulator.start(new GameParser(JSON.parse(localStorage.recording)).onlyFailedSongs());
 */
 
 //dont store these in replay
@@ -106,11 +108,8 @@ class ServerEmulator {
 		} else if (command == "Join Game") {
 			roomBrowser.joinLobby(data, false);
 		} else if (command == "quiz next video info") { // need to replace song url to real one because amq one will stop working after a while
-			for (let i = this.current; i < this.messages.length; i++) {
-				if (this.messages[i].command == "answer results") {
-					data.videoInfo.videoMap = this.messages[i].data.songInfo.urlMap;
-				}
-			}
+			const song = this.parser.songs.find(s => s.info.data == data);
+			if (song) data.videoInfo.videoMap = song.result.data.songInfo.urlMap;
 		}
 
 		this.fire(command, data);
@@ -123,6 +122,7 @@ class ServerEmulator {
 		this.messages = messages;
 		this.running = true;
 		this.current = 0;
+		this.parser = new GameParser(messages);
 		this.replayMessage();
 	}
 
@@ -171,5 +171,82 @@ class ServerEmulator {
 	}
 }
 
+class GameParser {
+    constructor(messages) {
+	    this.messages = messages;
+		this.parse();
+	}
+
+	parse() {
+		this.players = {};
+		this.songs = [];
+
+		let currentSong;
+
+		for (const message of this.messages) {
+			const idx = message.command == 'quiz next video info' ? (currentSong == null ? 0 : currentSong + 1) : currentSong;
+
+			if (message.command == 'quiz end result') {
+				break;
+			} else if (message.command == 'Game Starting') {
+			    this.gameStart = message.data;
+				for (const player of message.data.players) {
+				    this.players[player.name] = player;
+				}
+			} else if (message.command == 'quiz next video info') {
+			    this.songs[idx] = {info: message};
+			} else if (message.command == 'quiz ready') {
+			    this.numberOfSongs = message.data.numberOfSongs;
+			} else if (message.command == 'play next song') {
+				currentSong = message.data.songNumber - 1;
+			    this.songs[currentSong].play = message;
+			} else if (message.command == 'answer results') {
+				this.songs[currentSong].result = message;
+			}
+
+			if (idx == null) continue;
+
+			this.songs[idx].messages = this.songs[idx].messages || [];
+			this.songs[idx].messages.push(message);
+		}
+	}
+
+	onlyFailedSongs(playerName) {
+	    playerName = playerName || selfName;
+
+		const failedSongs = this.songs.filter(s => s.result.data.players.some(p => p.gamePlayerId == this.players[playerName].gamePlayerId && !p.correct));
+
+		return this.filterBySongs(failedSongs);
+	}
+
+	filterBySongs(songs) {
+	    const messages = [];
+		const references = this.songReferences(songs);
+		const allReferences = this.songReferences(this.songs);
+
+		for (const message of this.messages) {
+		    if (allReferences.has(message) && !references.has(message)) {
+			    message.time = messages[messages.length - 1].time + 1;
+			}
+			messages.push(message);
+		}
+
+		return messages;
+	}
+
+
+	songReferences(songs) {
+	    const references = new Set();
+
+		for (const song of songs) {
+		    for (const message of song.messages) references.add(message);
+		}
+
+		return references;
+	}
+}
+
+
 window.ReplayStorage = ReplayStorage;
 window.ServerEmulator = ServerEmulator;
+window.GameParser = GameParser;
