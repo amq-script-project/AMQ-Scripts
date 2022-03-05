@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         AMQ Level Guard
-// @version      1.0.0
+// @version      1.0.1
 // @description  Introduces ability to limit level of players
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -67,8 +67,8 @@ function setup() {
     }).bindListener()
 
     new Listener("New Spectator", ({name}) => {
-        if(!lobby.isHost || isHost || !isOn()){
-            return //ignore when not host, when self or when disabled
+        if(!lobby.isHost || !isOn()){
+            return //ignore when not host or when disabled
         }
         judgeSpectator(name)
     }).bindListener()
@@ -170,7 +170,7 @@ const activate = () => {
 
 const judgeSpectator = (playerName) => {
     if(!instaKick || playerName === selfName){
-        return // do not react to spectators unless they can be kicked
+        return // do not react to spectators unless they can be kicked, ignore self for practical reasons
     }
     const profileListener = new Listener("player profile", ({name, level}) => {
         if(playerName === name){
