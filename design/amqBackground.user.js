@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Background script
 // @namespace    http://tampermonkey.net/
-// @version      3.7
+// @version      3.8
 // @description  Adds multiple custom background to amq or even a video. Tried to include as many selectors as possible, so remove the ones where you prefer to have original background
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
@@ -364,6 +364,7 @@ ${transparents.map(obj => `
     width: 100%;
     height: 100%;
     object-fit: cover;
+    position: absolute;
 }
 
 #mainContainer > *, #awMainView, #storeWindow, #startPage, #loadingScreen {
