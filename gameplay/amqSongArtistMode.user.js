@@ -15,27 +15,45 @@ class SongArtistMode {
     #signature = 'sa-'
     #artistHeader = 'a'
     #songHeader = 's'
+    #revealHeader = 'r'
+    #hashHeader = 'h'
+    #playerHashesArtist = new Map()
+    #playerHashesSong = new Map()
+    #playerHashesArtistLocked = new Map()
+    #playerHashesSongLocked = new Map()
     #playerAnswersArtist = new Map()
     #playerAnswersSong = new Map()
     #playerArtistScore = new Map()
     #playerSongScore = new Map()
+    #currentSong = ""
+    #currentArtist = ""
     constructor() {
         if(window.socket === undefined){
             return
         }
         new window.Listener("game chat update", ({messages}) => this.#handleMessages(messages)).bindListener()
-        new window.Listener("answer results", ({songInfo}) => this.#answerReveal(songInfo)).bindListener()
+        new window.Listener("answer results", ({songInfo}) => this.#answerResults(songInfo)).bindListener()
+        new window.Listener("player answers", this.#lockAnswers).bindListener()
+        new window.Listener("player answers", this.#answerReveal).bindListener()
         new window.Listener("quiz ready", this.#reset).bindListener()
         new window.Listener("Game Starting", this.#reset).bindListener()
         new window.Listener("Join Game", this.#reset).bindListener()
+        new window.Listener("play next song", this.#reset).bindListener()
         //new Listener("play next song", this.#clearAnswerFields)
     }
 
     #reset = () => {
-        this.#playerAnswersArtist.clear()
-        this.#playerAnswersSong.clear()
+        this.#playerHashesArtist.clear()
+        this.#playerHashesSong.clear()
+        this.#playerHashesArtistLocked.clear()
+        this.#playerHashesSongLocked.clear()
         this.#playerArtistScore.clear()
         this.#playerSongScore.clear()
+        this.#playerAnswersArtist.clear()
+        this.#playerAnswersSong.clear()
+
+        this.#currentSong = ""
+        this.#currentArtist = ""
 
         this.#setupAnswerArea()
     }
@@ -95,14 +113,50 @@ class SongArtistMode {
      * @param {string} messageObject.message
      */
     #updatePlayer = ({message, sender}) => {
-        const content = message.substring(1)
-        switch(message.charAt(0)){
-            case this.#artistHeader:
-                this.#playerAnswersArtist.set(sender, content)
+        const content = message.substring(2)
+        switch(message.substring(0,2)){
+            case this.#hashHeader + this.#artistHeader:
+                this.#playerHashesArtist.set(sender, content)
                 break
-            case this.#songHeader:
-                this.#playerAnswersSong.set(sender, content)
+            case this.#hashHeader + this.#songHeader:
+                this.#playerHashesSong.set(sender, content)
                 break
+            case this.#revealHeader + this.#artistHeader:
+                this.#handleRevealArtist(sender, content)
+                break
+            case this.#revealHeader + this.#songHeader:
+                this.#handleRevealSong(sender, content)
+                break
+        }
+    }
+
+    /**
+     * @param {string} sender
+     * @param {string} content
+     */
+    #handleRevealArtist = (sender, content) => {
+        this.#handleReveal(sender, content, this.#playerHashesArtistLocked, this.#playerAnswersArtist)
+    }
+
+    /**
+     * @param {string} sender
+     * @param {string} content
+     */
+    #handleRevealSong = (sender, content) => {
+        this.#handleReveal(sender, content, this.#playerHashesSongLocked, this.#playerAnswersSong)
+    }
+
+    /**
+     * @param {string} sender
+     * @param {string} content
+     * @param {Map<String, String>} lockedHashesMap
+     * @param {Map<String, String>} answerMap
+     */
+    #handleReveal = (sender, content, lockedHashesMap, answerMap) => {
+        const hash = lockedHashesMap.get(sender)
+        if(this.#isCorrect(content, sender, hash)){
+            answerMap.set(sender, content)
+            console.log(sender, "did indeed send the answer", content)
         }
     }
 
@@ -111,18 +165,18 @@ class SongArtistMode {
      * @param {string} songInfo.artist
      * @param {string} songInfo.songName
      */
-    #answerReveal = ({artist, songName}) => {
-        this.#answerRevealHelper(artist, this.#playerAnswersArtist, this.#playerArtistScore)
-        this.#answerRevealHelper(songName, this.#playerAnswersSong, this.#playerSongScore)
+    #answerResults = ({artist, songName}) => {
+        this.#answerResultsHelper(artist, this.#playerHashesArtistLocked, this.#playerArtistScore)
+        this.#answerResultsHelper(songName, this.#playerHashesSongLocked, this.#playerSongScore)
     }
 
     /**
      * @param {String} value
-     * @param {Map<String, String>} answerMap
+     * @param {Map<String, String>} hashesMap
      * @param {Map<String, String>} scoreMap
      */
-    #answerRevealHelper = (value, answerMap, scoreMap) => {
-        answerMap.forEach((sender, answer) => {
+    #answerResultsHelper = (value, hashesMap, scoreMap) => {
+        hashesMap.forEach((sender, answer) => {
                 if(this.#isCorrect(value, sender, answer)){
                     const previousScore = scoreMap.get(sender) ?? 0
                     scoreMap.set(sender, previousScore + 1)
@@ -144,11 +198,13 @@ class SongArtistMode {
     }
 
     submitArtist = (artist) => {
-        this.#submit(this.#artistHeader, artist)
+        this.#submit(this.#hashHeader + this.#artistHeader, artist)
+        this.#currentArtist = artist
     }
 
     submitSong = (song) => {
-        this.#submit(this.#songHeader, song)
+        this.#submit(this.#hashHeader + this.#songHeader, song)
+        this.#currentSong = song
     }
 
     /**
@@ -205,6 +261,27 @@ class SongArtistMode {
             hash |= 0 // Convert to 32bit integer
         }
         return Math.abs(hash)
+    }
+
+    #lockAnswers = () => {
+        this.#playerHashesArtistLocked = new Map(this.#playerHashesArtist)
+        this.#playerHashesSongLocked = new Map(this.#playerHashesSong)
+    }
+
+    #answerReveal = () => {
+        const template = (header, value) => `${this.#answerRevealHeader(header)}${value}`
+        if(this.#currentArtist !== ""){
+            const msg = template(this.#artistHeader, this.#currentArtist)
+            this.#sendMessage(msg)
+        }
+        if(this.#currentSong !== ""){
+            const msg = template(this.#songHeader, this.#currentSong)
+            this.#sendMessage(msg)
+        }
+    }
+
+    #answerRevealHeader = (header) => {
+        return `${this.#signature}${this.#revealHeader}${header}`
     }
 
     /**
