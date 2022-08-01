@@ -27,6 +27,9 @@ class SongArtistMode {
     #playerSongScore = new Map()
     #currentSong = ""
     #currentArtist = ""
+
+    #songField
+    #artistField
     constructor() {
         if(window.socket === undefined){
             return
@@ -56,6 +59,10 @@ class SongArtistMode {
         this.#currentArtist = ""
 
         this.#setupAnswerArea()
+        this.#artistField.disabled = false
+        this.#songField.disabled = false
+        this.#artistField.value = ""
+        this.#songField.value = ""
     }
 
     #setupAnswerArea = () => {
@@ -69,17 +76,38 @@ class SongArtistMode {
         const artistContainer = document.createElement("div")
         artistContainer.id = "artist"
         const artistInput = answerInput.cloneNode(true)
+        const artistAnswerField = artistInput.childNodes[3]
+        artistAnswerField.placeholder = "Artist"
+        artistInput.removeChild(artistInput.childNodes[1])//remove skip button
         artistContainer.appendChild(artistInput)
         container.appendChild(artistContainer)
 
         const songContainer = document.createElement("div")
         songContainer.id = "song"
         const songInput = answerInput.cloneNode(true)
+        const songAnswerField = songInput.childNodes[3]
+        songAnswerField.placeholder = "Song Title"
+        songInput.removeChild(songInput.childNodes[1])//remove skip button
         songContainer.appendChild(songInput)
         container.appendChild(songContainer)
 
         const parent = document.getElementById("qpAnimeCenterContainer")
         parent.appendChild(container)
+
+        this.#artistField = artistAnswerField
+        this.#songField = songAnswerField
+
+        this.#artistField.addEventListener("keydown", (event) => {
+            if(event.key === "Enter"){
+                this.#submitArtist(this.#artistField.value)
+            }
+        })
+
+        this.#songField.addEventListener("keydown", (event) => {
+            if(event.key === "Enter"){
+                this.#submitSong(this.#songField.value)
+            }
+        })
     }
 
 
@@ -197,12 +225,14 @@ class SongArtistMode {
         return hash === this.#hash(value, sender, timestamp)
     }
 
-    submitArtist = (artist) => {
+    #submitArtist = (artist) => {
+        artist = artist.trim()
         this.#submit(this.#hashHeader + this.#artistHeader, artist)
         this.#currentArtist = artist
     }
 
-    submitSong = (song) => {
+    #submitSong = (song) => {
+        song = song.trim()
         this.#submit(this.#hashHeader + this.#songHeader, song)
         this.#currentSong = song
     }
@@ -270,6 +300,10 @@ class SongArtistMode {
     #lockAnswers = () => {
         this.#playerHashesArtistLocked = new Map(this.#playerHashesArtist)
         this.#playerHashesSongLocked = new Map(this.#playerHashesSong)
+        this.#artistField.disabled = true
+        this.#songField.disabled = true
+        this.#artistField.value = this.#currentArtist
+        this.#songField.value = this.#currentSong
     }
 
     #answerReveal = () => {
