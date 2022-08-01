@@ -254,6 +254,10 @@ class SongArtistMode {
      * @see https://stackoverflow.com/questions/6122571/simple-non-secure-hash-function-for-javascript
      */
     #hashCode = (str) => {
+        const spice = "alphanumeric"
+        //during testing, I found the last letter to heavily impact the first byte pair of the hash
+        //the spice should shift that away
+        str += spice
         let hash = 0
         for (let i = 0; i < str.length; i++) {
             let chr = str.charCodeAt(i)
