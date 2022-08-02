@@ -16,6 +16,7 @@ class SongArtistMode {
     #artistHeader = 'a'
     #songHeader = 's'
     #revealHeader = 'r'
+    #teamHeader = 't'
     #hashHeader = 'h'
     #playerHashesArtist = new Map()
     #playerHashesSong = new Map()
@@ -35,6 +36,8 @@ class SongArtistMode {
             return
         }
         new window.Listener("game chat update", ({messages}) => this.#handleMessages(messages)).bindListener()
+        new window.Listener("Game Chat Message", (message) => this.#handleMessages([message])).bindListener()
+        //team messages are sent instantly and alone instead of grouped up
         new window.Listener("answer results", ({songInfo}) => this.#answerResults(songInfo)).bindListener()
         new window.Listener("player answers", this.#lockAnswers).bindListener()
         new window.Listener("player answers", this.#answerReveal).bindListener()
@@ -110,8 +113,6 @@ class SongArtistMode {
         })
     }
 
-
-
     /**
      * @param {[{sender: string, message: string}]} messages
      */
@@ -155,6 +156,12 @@ class SongArtistMode {
             case this.#revealHeader + this.#songHeader:
                 this.#handleRevealSong(sender, content)
                 break
+            case this.#teamHeader + this.#artistHeader:
+                this.#handleTeamRevealArtist(sender, content)
+                break
+            case this.#teamHeader + this.#songHeader:
+                this.#handleTeamRevealSong(sender, content)
+                break
         }
     }
 
@@ -172,6 +179,22 @@ class SongArtistMode {
      */
     #handleRevealSong = (sender, content) => {
         this.#handleReveal(sender, content, this.#playerHashesSongLocked, this.#playerAnswersSong)
+    }
+
+    /**
+     * @param {string} sender
+     * @param {string} content
+     */
+    #handleTeamRevealArtist = (sender, content) => {
+        this.#handleReveal(sender, content, this.#playerHashesArtist, this.#playerAnswersArtist)
+    }
+
+    /**
+     * @param {string} sender
+     * @param {string} content
+     */
+    #handleTeamRevealSong = (sender, content) => {
+        this.#handleReveal(sender, content, this.#playerHashesSong, this.#playerAnswersSong)
     }
 
     /**
@@ -227,14 +250,34 @@ class SongArtistMode {
 
     #submitArtist = (artist) => {
         artist = artist.trim()
-        this.#submit(this.#hashHeader + this.#artistHeader, artist)
+        this.#submit(this.#hashHeader + this.#artistHeader, artist).then(() => {
+            this.#teamSubmit(this.#teamHeader + this.#artistHeader, artist)
+        })
         this.#currentArtist = artist
     }
 
     #submitSong = (song) => {
         song = song.trim()
-        this.#submit(this.#hashHeader + this.#songHeader, song)
+        this.#submit(this.#hashHeader + this.#songHeader, song).then(() => {
+            this.#teamSubmit(this.#teamHeader + this.#songHeader, song)
+        })
+
         this.#currentSong = song
+    }
+
+    #teamSubmit = (header, value) => {
+        if(window.quiz.teamMode){
+            let teamMessage = false
+            for(let index in window.quiz.players){
+                //for some dumb reason players is an object
+                const player = window.quiz.players[index]
+                if(player.teamNumber !== 1){
+                    teamMessage = true
+                    break
+                }
+            }
+            this.#sendMessage(this.#signature + header + value, teamMessage)
+        }
     }
 
     /**
@@ -245,7 +288,7 @@ class SongArtistMode {
         const timestamp = Date.now().toString(16).toUpperCase()
         const hash = this.#hash(value, window.selfName, timestamp)
         const message = this.#signature + header + hash + timestamp
-        this.#sendMessage(message)
+        return this.#sendMessage(message)
     }
 
     /**
@@ -325,8 +368,30 @@ class SongArtistMode {
     /**
      * @param {String} msg
      * @param {boolean} teamMessage
+     * @return {Promise<boolean>} true on success, false on timeout
      */
     #sendMessage = (msg, teamMessage= false) => {
+        const promise = new Promise((resolve, _) => {
+            if(teamMessage){
+                const listener = new window.Listener("Game Chat Message", ({message, sender}) => {
+                    if(sender === window.selfName && message === msg){
+                        resolve(true)
+                        listener.unbindListener()
+                    }
+                })
+                listener.bindListener()
+            }else{
+                const listener = new window.Listener("game chat update", ({messages}) => {
+                    const found = messages.some(({sender, message}) => sender === window.selfName && message === msg)
+                    if(found){
+                        resolve(true)
+                        listener.unbindListener()
+                    }
+                })
+                listener.bindListener()
+            }
+            setTimeout(() => {resolve(false)}, 2000)
+        })
         window.socket.sendCommand({
             type: "lobby",
             command: "game chat message",
@@ -335,6 +400,7 @@ class SongArtistMode {
                 teamMessage,
             }
         })
+        return promise
     }
 }
 
