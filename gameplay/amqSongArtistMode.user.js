@@ -26,6 +26,7 @@ class SongArtistMode {
     #playerAnswersSong = new Map()
     #playerArtistScore = new Map()
     #playerSongScore = new Map()
+    #playerContainers = new Map()
     #currentSong = ""
     #currentArtist = ""
 
@@ -39,13 +40,97 @@ class SongArtistMode {
         new window.Listener("Game Chat Message", (message) => this.#handleMessages([message])).bindListener()
         //team messages are sent instantly and alone instead of grouped up
         new window.Listener("answer results", ({songInfo}) => this.#answerResults(songInfo)).bindListener()
-        new window.Listener("player answers", this.#lockAnswers).bindListener()
         new window.Listener("player answers", this.#answerReveal).bindListener()
         new window.Listener("quiz ready", this.#reset).bindListener()
         new window.Listener("Game Starting", this.#reset).bindListener()
         new window.Listener("Join Game", this.#reset).bindListener()
         new window.Listener("play next song", this.#reset).bindListener()
         //new Listener("play next song", this.#clearAnswerFields)
+        new window.Listener("Game Starting", this.#setupPlayers).bindListener()
+    }
+
+    /**
+     * @param {Object} object
+     * @param {[{gamePlayerId: number, name: string}]} object.players
+     */
+    #setupPlayers = async ({players}) => {
+        while(window.quiz.players === undefined || window.quiz.players === null){
+            await this.#wait(250)//wait for quiz.players to finish setup
+        }
+        this.#playerContainers.clear()
+        players
+            .forEach(({gamePlayerId, name}) => {
+                this.#playerContainers.set(
+                    name,
+                    window.quiz.players[gamePlayerId].avatarSlot
+                )
+            })
+        this.#playerContainers.forEach((avatarSlot) => {
+            const animeAnswerContainer = avatarSlot.$answerContainer
+
+            const artistAnswerElement = animeAnswerContainer[0].cloneNode(true)
+            artistAnswerElement.style="top:20px"
+            avatarSlot.$innerContainer[0].appendChild(artistAnswerElement)
+            avatarSlot.$artistAnswerContainer = $(artistAnswerElement)
+            avatarSlot.$artistAnswerContainerText = avatarSlot.$artistAnswerContainer.find(".qpAvatarAnswerText")
+
+
+
+            const songAnswerElement = animeAnswerContainer[0].cloneNode(true)
+            songAnswerElement.style="top:60px"
+            avatarSlot.$innerContainer[0].appendChild(songAnswerElement)
+
+            avatarSlot.$songAnswerContainer = $(songAnswerElement)
+            avatarSlot.$songAnswerContainerText = avatarSlot.$songAnswerContainer.find(".qpAvatarAnswerText")
+        })
+    }
+
+    #showArtist = (playerName, artist, correct) => {
+        const avatarSlot = this.#playerContainers.get(playerName)
+        if(avatarSlot === undefined){
+            return
+        }
+        this.#showAnswer(playerName,
+                         artist,
+                         correct,
+                         avatarSlot.$artistAnswerContainer,
+                         avatarSlot.$artistAnswerContainerText)
+    }
+
+    #showSong = (playerName, song, correct) => {
+        const avatarSlot = this.#playerContainers.get(playerName)
+        if(avatarSlot === undefined){
+            return
+        }
+        this.#showAnswer(playerName,
+            song,
+            correct,
+            avatarSlot.$songAnswerContainer,
+            avatarSlot.$songAnswerContainerText)
+    }
+
+    #showAnswer(playerName, value, correct, $container, $text){
+        if(value === undefined || value === ""){
+            $container[0].classList.add("hide")
+        }else{
+            $container[0].classList.remove("hide")
+        }
+        $text.text(value)
+        if(correct !== undefined){
+            const classList = $text[0].classList
+            if(correct){
+                classList.add("rightAnswer")
+            }else{
+                classList.add("wrongAnswer")
+            }
+        }
+        window.fitTextToContainer($text, $container, 23, 9)
+    }
+
+    #wait = (time) => {
+        return new Promise((resolve, _) => {
+            setTimeout(resolve, time)
+        })
     }
 
     #reset = () => {
@@ -66,6 +151,15 @@ class SongArtistMode {
         this.#songField.disabled = false
         this.#artistField.value = ""
         this.#songField.value = ""
+
+        this.#playerContainers?.forEach((avatarSlot) => {
+            avatarSlot.$artistAnswerContainer[0].classList.add("hide")
+            avatarSlot.$artistAnswerContainerText.text("")
+            avatarSlot.$artistAnswerContainerText[0].classList.remove("wrongAnswer", "rightAnswer")
+            avatarSlot.$songAnswerContainer[0].classList.add("hide")
+            avatarSlot.$songAnswerContainerText.text("")
+            avatarSlot.$songAnswerContainerText[0].classList.remove("wrongAnswer", "rightAnswer")
+        })
     }
 
     #setupAnswerArea = () => {
@@ -81,6 +175,7 @@ class SongArtistMode {
         const artistInput = answerInput.cloneNode(true)
         const artistAnswerField = artistInput.childNodes[3]
         artistAnswerField.placeholder = "Artist"
+        artistAnswerField.maxLength = "" + 150 - this.#signature.length - 2
         artistInput.removeChild(artistInput.childNodes[1])//remove skip button
         artistContainer.appendChild(artistInput)
         container.appendChild(artistContainer)
@@ -90,6 +185,7 @@ class SongArtistMode {
         const songInput = answerInput.cloneNode(true)
         const songAnswerField = songInput.childNodes[3]
         songAnswerField.placeholder = "Song Title"
+        songAnswerField.maxLength = "" + 150 - this.#signature.length - 2
         songInput.removeChild(songInput.childNodes[1])//remove skip button
         songContainer.appendChild(songInput)
         container.appendChild(songContainer)
@@ -168,17 +264,21 @@ class SongArtistMode {
     /**
      * @param {string} sender
      * @param {string} content
+     * @param {boolean | undefined} correct
      */
-    #handleRevealArtist = (sender, content) => {
+    #handleRevealArtist = (sender, content, correct) => {
         this.#handleReveal(sender, content, this.#playerHashesArtistLocked, this.#playerAnswersArtist)
+        this.#showArtist(sender, this.#playerAnswersArtist.get(sender), correct)
     }
 
     /**
      * @param {string} sender
      * @param {string} content
+     * @param {boolean | undefined} correct
      */
-    #handleRevealSong = (sender, content) => {
+    #handleRevealSong = (sender, content, correct) => {
         this.#handleReveal(sender, content, this.#playerHashesSongLocked, this.#playerAnswersSong)
+        this.#showSong(sender, this.#playerAnswersSong.get(sender), correct)
     }
 
     /**
@@ -187,6 +287,7 @@ class SongArtistMode {
      */
     #handleTeamRevealArtist = (sender, content) => {
         this.#handleReveal(sender, content, this.#playerHashesArtist, this.#playerAnswersArtist)
+        this.#showArtist(sender, this.#playerAnswersArtist.get(sender))
     }
 
     /**
@@ -195,16 +296,17 @@ class SongArtistMode {
      */
     #handleTeamRevealSong = (sender, content) => {
         this.#handleReveal(sender, content, this.#playerHashesSong, this.#playerAnswersSong)
+        this.#showSong(sender, this.#playerAnswersSong.get(sender))
     }
 
     /**
      * @param {string} sender
      * @param {string} content
-     * @param {Map<String, String>} lockedHashesMap
+     * @param {Map<String, String>} hashMap
      * @param {Map<String, String>} answerMap
      */
-    #handleReveal = (sender, content, lockedHashesMap, answerMap) => {
-        const hash = lockedHashesMap.get(sender)
+    #handleReveal = (sender, content, hashMap, answerMap) => {
+        const hash = hashMap.get(sender) ?? ""
         if(this.#isCorrect(content, sender, hash)){
             answerMap.set(sender, content)
             console.log(sender, "did indeed send the answer", content)
@@ -217,20 +319,35 @@ class SongArtistMode {
      * @param {string} songInfo.songName
      */
     #answerResults = ({artist, songName}) => {
-        this.#answerResultsHelper(artist, this.#playerHashesArtistLocked, this.#playerArtistScore)
-        this.#answerResultsHelper(songName, this.#playerHashesSongLocked, this.#playerSongScore)
+        this.#answerResultsHelper(artist,
+            this.#playerHashesArtistLocked,
+            this.#playerArtistScore,
+            this.#playerAnswersArtist,
+            this.#handleRevealArtist)
+        this.#answerResultsHelper(songName,
+            this.#playerHashesSongLocked,
+            this.#playerSongScore,
+            this.#playerAnswersSong,
+            this.#handleRevealSong)
     }
 
     /**
      * @param {String} value
      * @param {Map<String, String>} hashesMap
      * @param {Map<String, String>} scoreMap
+     * @param {Map<String, String>} answerMap
+     * @param {Function<string, string, undefined|boolean>} revealFunction
      */
-    #answerResultsHelper = (value, hashesMap, scoreMap) => {
-        hashesMap.forEach((sender, answer) => {
+    #answerResultsHelper = (value, hashesMap, scoreMap, answerMap, revealFunction) => {
+        hashesMap.forEach((answer, sender) => {
                 if(this.#isCorrect(value, sender, answer)){
                     const previousScore = scoreMap.get(sender) ?? 0
                     scoreMap.set(sender, previousScore + 1)
+                    const displayAnswer = answerMap.get(sender) ?? value
+                    revealFunction(sender, displayAnswer, true)
+                }else{
+                    const displayAnswer = answerMap.get(sender) ?? "WRONG"
+                    revealFunction(sender, displayAnswer, false)
                 }
             }
         )
@@ -331,6 +448,7 @@ class SongArtistMode {
         //during testing, I found the last letter to heavily impact the first byte pair of the hash
         //the spice should shift that away
         str += spice
+        str = str.toLowerCase()
         let hash = 0
         for (let i = 0; i < str.length; i++) {
             let chr = str.charCodeAt(i)
@@ -350,6 +468,7 @@ class SongArtistMode {
     }
 
     #answerReveal = () => {
+        this.#lockAnswers()
         const template = (header, value) => `${this.#answerRevealHeader(header)}${value}`
         if(this.#currentArtist !== ""){
             const msg = template(this.#artistHeader, this.#currentArtist)
