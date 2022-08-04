@@ -47,6 +47,18 @@ class SongArtistMode {
         new window.Listener("play next song", this.#reset).bindListener()
         //new Listener("play next song", this.#clearAnswerFields)
         new window.Listener("Game Starting", this.#setupPlayers).bindListener()
+
+        const oldChatUpdate = window.gameChat._chatUpdateListener
+        window.gameChat._chatUpdateListener = new window.Listener("game chat update", (payload) =>{
+            payload.messages = payload.messages.filter(({message}) => !message.startsWith(this.#signature))
+            oldChatUpdate.callback.apply(window.gameChat, [payload])
+        })
+        const oldGameChatMessage = window.gameChat._newMessageListner
+        window.gameChat._newMessageListner = new window.Listener("Game Chat Message", (payload) => {
+            if(!payload.message.startsWith(this.#signature)){
+                oldGameChatMessage.callback.apply(window.gameChat, [payload])
+            }
+        })
     }
 
     /**
