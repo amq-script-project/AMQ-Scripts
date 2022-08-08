@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Song Artist Mode
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.2
 // @description  Makes you able to play song/artist with other people who have this script installed
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -29,6 +29,8 @@ class SongArtistMode {
     #playerContainers = new Map()
     #currentSong = ""
     #currentArtist = ""
+    #debug = false
+    #logLevel = 5
 
     #songField
     #artistField
@@ -40,6 +42,7 @@ class SongArtistMode {
         new window.Listener("Game Chat Message", (message) => this.#handleMessages([message])).bindListener()
         //team messages are sent instantly and alone instead of grouped up
         new window.Listener("answer results", ({songInfo}) => this.#answerResults(songInfo)).bindListener()
+        new window.Listener("guess phase over", this.#autoSubmit).bindListener()
         new window.Listener("player answers", this.#answerReveal).bindListener()
         new window.Listener("quiz ready", this.#reset).bindListener()
         new window.Listener("Game Starting", this.#reset).bindListener()
@@ -50,15 +53,103 @@ class SongArtistMode {
 
         const oldChatUpdate = window.gameChat._chatUpdateListener
         window.gameChat._chatUpdateListener = new window.Listener("game chat update", (payload) =>{
-            payload.messages = payload.messages.filter(({message}) => !message.startsWith(this.#signature))
+            if(!this.#debug){
+                payload.messages = payload.messages.filter(({message}) => !message.startsWith(this.#signature))
+            }
             oldChatUpdate.callback.apply(window.gameChat, [payload])
         })
         const oldGameChatMessage = window.gameChat._newMessageListner
         window.gameChat._newMessageListner = new window.Listener("Game Chat Message", (payload) => {
-            if(!payload.message.startsWith(this.#signature)){
+            if(this.#debug || !payload.message.startsWith(this.#signature)){
                 oldGameChatMessage.callback.apply(window.gameChat, [payload])
             }
         })
+    }
+
+    /**
+     * @param {boolean|undefined} toggle
+     * @return {boolean} current value of debug
+     */
+    debug = (toggle= undefined) => {
+        if(typeof toggle !== "boolean"){
+            return this.#debug
+        }else{
+            return this.#debug = toggle
+        }
+    }
+
+    /**
+     * @param {number|undefined} logLevel
+     * @return {number} current value of logLevel
+     */
+    logLevel = (logLevel= undefined) => {
+        if(typeof logLevel !== "number"){
+            return this.#logLevel
+        }else{
+            return this.#logLevel = logLevel
+        }
+    }
+
+    /**
+     * @param {number} logLevel
+     * @return {boolean} should log
+     */
+    #shouldLog = (logLevel) => {
+        return this.#debug || this.#logLevel <= logLevel
+    }
+
+    /**
+     * @param {string} title
+     * @param {string} message
+     */
+    #logError = (title, message = "") => {
+        if(this.#shouldLog(6)){
+            this.#log(title, message, "debugError", "darkred", "red")
+            console.error("Song Artist Mode", title, message)
+        }
+    }
+
+    /**
+     * @param {string} title
+     * @param {string} message
+     */
+    #logInfo = (title, message= "") => {
+        if(this.#shouldLog(4)){
+            this.#log(title, message, "debugInfo", "lawngreen", "lightgreen")
+            console.info("Song Artist Mode", title, message)
+        }
+    }
+
+    #log = (title, message, className, titleColour, messageColour) => {
+        title = this.#escapeMessage(title)
+        message = this.#escapeMessage(message)
+        const titleFormatted = `<strong class="${className}" style="color:${titleColour}">${title}</strong>`
+        let messageFormatted
+        if(message === ""){
+            messageFormatted = ""
+        }else{
+            messageFormatted = `<em class="${className}" style="color:${messageColour}">${message}</em>`
+        }
+        this.#printToChat(titleFormatted, messageFormatted)
+    }
+
+    /**
+     * @param {string} message
+     * @returns {string} the escaped message
+     */
+    #escapeMessage = (message) => {
+        return message
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+    }
+
+    /**
+     * @param {string} title
+     * @param {string} message
+     */
+    #printToChat = (title, message) => {
+        window.gameChat.systemMessage(title, message)
     }
 
     /**
@@ -94,6 +185,16 @@ class SongArtistMode {
             avatarSlot.$artistAnswerContainer = $(artistAnswerElement)
             avatarSlot.$artistAnswerContainerText = avatarSlot.$artistAnswerContainer.find(".qpAvatarAnswerText")
         })
+    }
+
+    #autoSubmit = () => {
+        this.#logInfo("autoSubmit triggered")
+        if(this.#songField.value !== "" && this.#songField === ""){
+            this.#submitSong(this.#songField.value)
+        }
+        if(this.#artistField.value !== "" && this.#currentArtist === ""){
+            this.#submitArtist(this.#artistField.value)
+        }
     }
 
     #showSong = (playerName, song, correct) => {
@@ -321,7 +422,9 @@ class SongArtistMode {
         const hash = hashMap.get(sender) ?? ""
         if(this.#isCorrect(content, sender, hash)){
             answerMap.set(sender, content)
-            console.log(sender, "did indeed send the answer", content)
+            this.#logInfo("reveal handling", `${sender} did send the answer ${content}`)
+        }else{
+            this.#logError("Mismatch between hash and answer", `${sender} : ${content}`)
         }
     }
 
@@ -382,7 +485,7 @@ class SongArtistMode {
         this.#submit(this.#hashHeader + this.#songHeader, song).then(() => {
             this.#teamSubmit(this.#teamHeader + this.#songHeader, song)
         })
-
+        this.#logInfo("Submitted song", song)
         this.#currentSong = song
     }
 
@@ -391,6 +494,7 @@ class SongArtistMode {
         this.#submit(this.#hashHeader + this.#artistHeader, artist).then(() => {
             this.#teamSubmit(this.#teamHeader + this.#artistHeader, artist)
         })
+        this.#logInfo("Submitted artist", artist)
         this.#currentArtist = artist
     }
 
@@ -503,25 +607,33 @@ class SongArtistMode {
      */
     #sendMessage = (msg, teamMessage= false) => {
         const promise = new Promise((resolve, _) => {
+            let timeout
+            let listener
             if(teamMessage){
-                const listener = new window.Listener("Game Chat Message", ({message, sender}) => {
+                listener = new window.Listener("Game Chat Message", ({message, sender}) => {
                     if(sender === window.selfName && message === msg){
                         resolve(true)
                         listener.unbindListener()
+                        clearTimeout(timeout)
                     }
                 })
                 listener.bindListener()
             }else{
-                const listener = new window.Listener("game chat update", ({messages}) => {
+                listener = new window.Listener("game chat update", ({messages}) => {
                     const found = messages.some(({sender, message}) => sender === window.selfName && message === msg)
                     if(found){
                         resolve(true)
                         listener.unbindListener()
+                        clearTimeout(timeout)
                     }
                 })
                 listener.bindListener()
             }
-            setTimeout(() => {resolve(false)}, 2000)
+            timeout = setTimeout(() => {
+                resolve(false)
+                listener.unbindListener()
+                this.#logError("Message not sent (timeout)", msg)
+            }, 2000)
         })
         window.socket.sendCommand({
             type: "lobby",
@@ -531,6 +643,7 @@ class SongArtistMode {
                 teamMessage,
             }
         })
+        this.#logInfo("Sent Message", msg)
         return promise
     }
 }
