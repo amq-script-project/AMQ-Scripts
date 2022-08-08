@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Song Artist Mode
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Makes you able to play song/artist with other people who have this script installed
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -13,19 +13,19 @@
 
 class SongArtistMode {
     #signature = 'sa-'
-    #artistHeader = 'a'
     #songHeader = 's'
+    #artistHeader = 'a'
     #revealHeader = 'r'
     #teamHeader = 't'
     #hashHeader = 'h'
-    #playerHashesArtist = new Map()
     #playerHashesSong = new Map()
-    #playerHashesArtistLocked = new Map()
+    #playerHashesArtist = new Map()
     #playerHashesSongLocked = new Map()
-    #playerAnswersArtist = new Map()
+    #playerHashesArtistLocked = new Map()
     #playerAnswersSong = new Map()
-    #playerArtistScore = new Map()
+    #playerAnswersArtist = new Map()
     #playerSongScore = new Map()
+    #playerArtistScore = new Map()
     #playerContainers = new Map()
     #currentSong = ""
     #currentArtist = ""
@@ -80,33 +80,20 @@ class SongArtistMode {
         this.#playerContainers.forEach((avatarSlot) => {
             const animeAnswerContainer = avatarSlot.$answerContainer
 
-            const artistAnswerElement = animeAnswerContainer[0].cloneNode(true)
-            artistAnswerElement.style="top:20px"
-            avatarSlot.$innerContainer[0].appendChild(artistAnswerElement)
-            avatarSlot.$artistAnswerContainer = $(artistAnswerElement)
-            avatarSlot.$artistAnswerContainerText = avatarSlot.$artistAnswerContainer.find(".qpAvatarAnswerText")
-
-
-
             const songAnswerElement = animeAnswerContainer[0].cloneNode(true)
-            songAnswerElement.style="top:60px"
+            songAnswerElement.style="top:20px"
             avatarSlot.$innerContainer[0].appendChild(songAnswerElement)
 
             avatarSlot.$songAnswerContainer = $(songAnswerElement)
             avatarSlot.$songAnswerContainerText = avatarSlot.$songAnswerContainer.find(".qpAvatarAnswerText")
-        })
-    }
 
-    #showArtist = (playerName, artist, correct) => {
-        const avatarSlot = this.#playerContainers.get(playerName)
-        if(avatarSlot === undefined){
-            return
-        }
-        this.#showAnswer(playerName,
-                         artist,
-                         correct,
-                         avatarSlot.$artistAnswerContainer,
-                         avatarSlot.$artistAnswerContainerText)
+
+            const artistAnswerElement = animeAnswerContainer[0].cloneNode(true)
+            artistAnswerElement.style="top:60px"
+            avatarSlot.$innerContainer[0].appendChild(artistAnswerElement)
+            avatarSlot.$artistAnswerContainer = $(artistAnswerElement)
+            avatarSlot.$artistAnswerContainerText = avatarSlot.$artistAnswerContainer.find(".qpAvatarAnswerText")
+        })
     }
 
     #showSong = (playerName, song, correct) => {
@@ -119,6 +106,18 @@ class SongArtistMode {
             correct,
             avatarSlot.$songAnswerContainer,
             avatarSlot.$songAnswerContainerText)
+    }
+
+    #showArtist = (playerName, artist, correct) => {
+        const avatarSlot = this.#playerContainers.get(playerName)
+        if(avatarSlot === undefined){
+            return
+        }
+        this.#showAnswer(playerName,
+                         artist,
+                         correct,
+                         avatarSlot.$artistAnswerContainer,
+                         avatarSlot.$artistAnswerContainerText)
     }
 
     #showAnswer(playerName, value, correct, $container, $text){
@@ -146,51 +145,41 @@ class SongArtistMode {
     }
 
     #reset = () => {
-        this.#playerHashesArtist.clear()
         this.#playerHashesSong.clear()
-        this.#playerHashesArtistLocked.clear()
+        this.#playerHashesArtist.clear()
         this.#playerHashesSongLocked.clear()
-        this.#playerArtistScore.clear()
+        this.#playerHashesArtistLocked.clear()
         this.#playerSongScore.clear()
-        this.#playerAnswersArtist.clear()
+        this.#playerArtistScore.clear()
         this.#playerAnswersSong.clear()
+        this.#playerAnswersArtist.clear()
 
         this.#currentSong = ""
         this.#currentArtist = ""
 
         this.#setupAnswerArea()
-        this.#artistField.disabled = false
         this.#songField.disabled = false
-        this.#artistField.value = ""
+        this.#artistField.disabled = false
         this.#songField.value = ""
+        this.#artistField.value = ""
 
         this.#playerContainers?.forEach((avatarSlot) => {
-            avatarSlot.$artistAnswerContainer[0].classList.add("hide")
-            avatarSlot.$artistAnswerContainerText.text("")
-            avatarSlot.$artistAnswerContainerText[0].classList.remove("wrongAnswer", "rightAnswer")
             avatarSlot.$songAnswerContainer[0].classList.add("hide")
             avatarSlot.$songAnswerContainerText.text("")
             avatarSlot.$songAnswerContainerText[0].classList.remove("wrongAnswer", "rightAnswer")
+            avatarSlot.$artistAnswerContainer[0].classList.add("hide")
+            avatarSlot.$artistAnswerContainerText.text("")
+            avatarSlot.$artistAnswerContainerText[0].classList.remove("wrongAnswer", "rightAnswer")
         })
     }
 
     #setupAnswerArea = () => {
-        if(document.getElementById("artistsong")){
+        if(document.getElementById("songartist")){
             return
         }
         const answerInput = document.getElementById("qpAnswerInputContainer")
         const container = document.createElement("div")
-        container.id = "artistsong"
-
-        const artistContainer = document.createElement("div")
-        artistContainer.id = "artist"
-        const artistInput = answerInput.cloneNode(true)
-        const artistAnswerField = artistInput.childNodes[3]
-        artistAnswerField.placeholder = "Artist"
-        artistAnswerField.maxLength = "" + 150 - this.#signature.length - 2
-        artistInput.removeChild(artistInput.childNodes[1])//remove skip button
-        artistContainer.appendChild(artistInput)
-        container.appendChild(artistContainer)
+        container.id = "songartist"
 
         const songContainer = document.createElement("div")
         songContainer.id = "song"
@@ -202,21 +191,32 @@ class SongArtistMode {
         songContainer.appendChild(songInput)
         container.appendChild(songContainer)
 
+        const artistContainer = document.createElement("div")
+        artistContainer.id = "artist"
+        const artistInput = answerInput.cloneNode(true)
+        const artistAnswerField = artistInput.childNodes[3]
+        artistAnswerField.placeholder = "Artist"
+        artistAnswerField.maxLength = "" + 150 - this.#signature.length - 2
+        artistInput.removeChild(artistInput.childNodes[1])//remove skip button
+        artistContainer.appendChild(artistInput)
+        container.appendChild(artistContainer)
+
+
         const parent = document.getElementById("qpAnimeCenterContainer")
         parent.appendChild(container)
 
-        this.#artistField = artistAnswerField
         this.#songField = songAnswerField
-
-        this.#artistField.addEventListener("keydown", (event) => {
-            if(event.key === "Enter"){
-                this.#submitArtist(this.#artistField.value)
-            }
-        })
+        this.#artistField = artistAnswerField
 
         this.#songField.addEventListener("keydown", (event) => {
             if(event.key === "Enter"){
                 this.#submitSong(this.#songField.value)
+            }
+        })
+
+        this.#artistField.addEventListener("keydown", (event) => {
+            if(event.key === "Enter"){
+                this.#submitArtist(this.#artistField.value)
             }
         })
     }
@@ -252,35 +252,25 @@ class SongArtistMode {
     #updatePlayer = ({message, sender}) => {
         const content = message.substring(2)
         switch(message.substring(0,2)){
-            case this.#hashHeader + this.#artistHeader:
-                this.#playerHashesArtist.set(sender, content)
-                break
             case this.#hashHeader + this.#songHeader:
                 this.#playerHashesSong.set(sender, content)
                 break
-            case this.#revealHeader + this.#artistHeader:
-                this.#handleRevealArtist(sender, content)
+            case this.#hashHeader + this.#artistHeader:
+                this.#playerHashesArtist.set(sender, content)
                 break
             case this.#revealHeader + this.#songHeader:
                 this.#handleRevealSong(sender, content)
                 break
-            case this.#teamHeader + this.#artistHeader:
-                this.#handleTeamRevealArtist(sender, content)
+            case this.#revealHeader + this.#artistHeader:
+                this.#handleRevealArtist(sender, content)
                 break
             case this.#teamHeader + this.#songHeader:
                 this.#handleTeamRevealSong(sender, content)
                 break
+            case this.#teamHeader + this.#artistHeader:
+                this.#handleTeamRevealArtist(sender, content)
+                break
         }
-    }
-
-    /**
-     * @param {string} sender
-     * @param {string} content
-     * @param {boolean | undefined} correct
-     */
-    #handleRevealArtist = (sender, content, correct) => {
-        this.#handleReveal(sender, content, this.#playerHashesArtistLocked, this.#playerAnswersArtist)
-        this.#showArtist(sender, this.#playerAnswersArtist.get(sender), correct)
     }
 
     /**
@@ -296,10 +286,11 @@ class SongArtistMode {
     /**
      * @param {string} sender
      * @param {string} content
+     * @param {boolean | undefined} correct
      */
-    #handleTeamRevealArtist = (sender, content) => {
-        this.#handleReveal(sender, content, this.#playerHashesArtist, this.#playerAnswersArtist)
-        this.#showArtist(sender, this.#playerAnswersArtist.get(sender))
+    #handleRevealArtist = (sender, content, correct) => {
+        this.#handleReveal(sender, content, this.#playerHashesArtistLocked, this.#playerAnswersArtist)
+        this.#showArtist(sender, this.#playerAnswersArtist.get(sender), correct)
     }
 
     /**
@@ -309,6 +300,15 @@ class SongArtistMode {
     #handleTeamRevealSong = (sender, content) => {
         this.#handleReveal(sender, content, this.#playerHashesSong, this.#playerAnswersSong)
         this.#showSong(sender, this.#playerAnswersSong.get(sender))
+    }
+
+    /**
+     * @param {string} sender
+     * @param {string} content
+     */
+    #handleTeamRevealArtist = (sender, content) => {
+        this.#handleReveal(sender, content, this.#playerHashesArtist, this.#playerAnswersArtist)
+        this.#showArtist(sender, this.#playerAnswersArtist.get(sender))
     }
 
     /**
@@ -331,16 +331,16 @@ class SongArtistMode {
      * @param {string} songInfo.songName
      */
     #answerResults = ({artist, songName}) => {
-        this.#answerResultsHelper(artist,
-            this.#playerHashesArtistLocked,
-            this.#playerArtistScore,
-            this.#playerAnswersArtist,
-            this.#handleRevealArtist)
         this.#answerResultsHelper(songName,
             this.#playerHashesSongLocked,
             this.#playerSongScore,
             this.#playerAnswersSong,
             this.#handleRevealSong)
+        this.#answerResultsHelper(artist,
+            this.#playerHashesArtistLocked,
+            this.#playerArtistScore,
+            this.#playerAnswersArtist,
+            this.#handleRevealArtist)
     }
 
     /**
@@ -377,14 +377,6 @@ class SongArtistMode {
         return hash === this.#hash(value, sender, timestamp)
     }
 
-    #submitArtist = (artist) => {
-        artist = artist.trim()
-        this.#submit(this.#hashHeader + this.#artistHeader, artist).then(() => {
-            this.#teamSubmit(this.#teamHeader + this.#artistHeader, artist)
-        })
-        this.#currentArtist = artist
-    }
-
     #submitSong = (song) => {
         song = song.trim()
         this.#submit(this.#hashHeader + this.#songHeader, song).then(() => {
@@ -392,6 +384,14 @@ class SongArtistMode {
         })
 
         this.#currentSong = song
+    }
+
+    #submitArtist = (artist) => {
+        artist = artist.trim()
+        this.#submit(this.#hashHeader + this.#artistHeader, artist).then(() => {
+            this.#teamSubmit(this.#teamHeader + this.#artistHeader, artist)
+        })
+        this.#currentArtist = artist
     }
 
     #teamSubmit = (header, value) => {
@@ -471,23 +471,23 @@ class SongArtistMode {
     }
 
     #lockAnswers = () => {
-        this.#playerHashesArtistLocked = new Map(this.#playerHashesArtist)
         this.#playerHashesSongLocked = new Map(this.#playerHashesSong)
-        this.#artistField.disabled = true
+        this.#playerHashesArtistLocked = new Map(this.#playerHashesArtist)
         this.#songField.disabled = true
-        this.#artistField.value = this.#currentArtist
+        this.#artistField.disabled = true
         this.#songField.value = this.#currentSong
+        this.#artistField.value = this.#currentArtist
     }
 
     #answerReveal = () => {
         this.#lockAnswers()
         const template = (header, value) => `${this.#answerRevealHeader(header)}${value}`
-        if(this.#currentArtist !== ""){
-            const msg = template(this.#artistHeader, this.#currentArtist)
-            this.#sendMessage(msg)
-        }
         if(this.#currentSong !== ""){
             const msg = template(this.#songHeader, this.#currentSong)
+            this.#sendMessage(msg)
+        }
+        if(this.#currentArtist !== ""){
+            const msg = template(this.#artistHeader, this.#currentArtist)
             this.#sendMessage(msg)
         }
     }
