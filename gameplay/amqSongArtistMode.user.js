@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Song Artist Mode
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  Makes you able to play song/artist with other people who have this script installed
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -189,7 +189,7 @@ class SongArtistMode {
 
     #autoSubmit = () => {
         this.#logInfo("autoSubmit triggered")
-        if(this.#songField.value !== "" && this.#songField === ""){
+        if(this.#songField.value !== "" && this.#currentSong === ""){
             this.#submitSong(this.#songField.value)
         }
         if(this.#artistField.value !== "" && this.#currentArtist === ""){
