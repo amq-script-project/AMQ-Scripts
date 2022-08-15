@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         AMQ Song Artist Mode
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Makes you able to play song/artist with other people who have this script installed
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
 // @grant        none
 // @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqSongArtistMode.user.js
 // @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqSongArtistMode.user.js
+// @require      https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/simpleLogger.js
 // @copyright    MIT license
 // ==/UserScript==
 
@@ -29,8 +30,9 @@ class SongArtistMode {
     #playerContainers = new Map()
     #currentSong = ""
     #currentArtist = ""
-    #debug = false
-    #logLevel = 5
+    debug = false
+
+    #logger = new SimpleLogger("Song-Artist Mode")
 
     #songField
     #artistField
@@ -50,106 +52,29 @@ class SongArtistMode {
         new window.Listener("play next song", this.#reset).bindListener()
         //new Listener("play next song", this.#clearAnswerFields)
         new window.Listener("Game Starting", this.#setupPlayers).bindListener()
+        new window.Listener("Join Game", ({quizState}) => this.#setupPlayers(quizState)).bindListener()
 
         const oldChatUpdate = window.gameChat._chatUpdateListener
         window.gameChat._chatUpdateListener = new window.Listener("game chat update", (payload) =>{
-            if(!this.#debug){
+            if(!this.debug){
                 payload.messages = payload.messages.filter(({message}) => !message.startsWith(this.#signature))
             }
             oldChatUpdate.callback.apply(window.gameChat, [payload])
         })
         const oldGameChatMessage = window.gameChat._newMessageListner
         window.gameChat._newMessageListner = new window.Listener("Game Chat Message", (payload) => {
-            if(this.#debug || !payload.message.startsWith(this.#signature)){
+            if(this.debug || !payload.message.startsWith(this.#signature)){
                 oldGameChatMessage.callback.apply(window.gameChat, [payload])
             }
         })
     }
 
     /**
-     * @param {boolean|undefined} toggle
-     * @return {boolean} current value of debug
-     */
-    debug = (toggle= undefined) => {
-        if(typeof toggle !== "boolean"){
-            return this.#debug
-        }else{
-            return this.#debug = toggle
-        }
-    }
-
-    /**
-     * @param {number|undefined} logLevel
+     * @param {number} value
      * @return {number} current value of logLevel
      */
-    logLevel = (logLevel= undefined) => {
-        if(typeof logLevel !== "number"){
-            return this.#logLevel
-        }else{
-            return this.#logLevel = logLevel
-        }
-    }
-
-    /**
-     * @param {number} logLevel
-     * @return {boolean} should log
-     */
-    #shouldLog = (logLevel) => {
-        return this.#debug || this.#logLevel <= logLevel
-    }
-
-    /**
-     * @param {string} title
-     * @param {string} message
-     */
-    #logError = (title, message = "") => {
-        if(this.#shouldLog(6)){
-            this.#log(title, message, "debugError", "darkred", "red")
-            console.error("Song Artist Mode", title, message)
-        }
-    }
-
-    /**
-     * @param {string} title
-     * @param {string} message
-     */
-    #logInfo = (title, message= "") => {
-        if(this.#shouldLog(4)){
-            this.#log(title, message, "debugInfo", "lawngreen", "lightgreen")
-            console.info("Song Artist Mode", title, message)
-        }
-    }
-
-    #log = (title, message, className, titleColour, messageColour) => {
-        title = this.#escapeMessage(title)
-        message = this.#escapeMessage(message)
-        const titleFormatted = `<strong class="${className}" style="color:${titleColour}">${title}</strong>`
-        let messageFormatted
-        if(message === ""){
-            messageFormatted = ""
-        }else{
-            messageFormatted = `<em class="${className}" style="color:${messageColour}">${message}</em>`
-        }
-        this.#printToChat(titleFormatted, messageFormatted)
-    }
-
-    /**
-     * @param {string} message
-     * @returns {string} the escaped message
-     */
-    #escapeMessage = (message) => {
-        return message
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-    }
-
-    /**
-     * @param {string} title
-     * @param {string} message
-     */
-    #printToChat = (title, message) => {
-        window.gameChat.systemMessage(title, message)
+    logLevel = (value) => {
+        return this.#logger.logLevel = value
     }
 
     /**
@@ -188,7 +113,7 @@ class SongArtistMode {
     }
 
     #autoSubmit = () => {
-        this.#logInfo("autoSubmit triggered")
+        this.#logger.debug("autoSubmit triggered")
         if(this.#songField.value !== "" && this.#currentSong === ""){
             this.#submitSong(this.#songField.value)
         }
@@ -422,9 +347,9 @@ class SongArtistMode {
         const hash = hashMap.get(sender) ?? ""
         if(this.#isCorrect(content, sender, hash)){
             answerMap.set(sender, content)
-            this.#logInfo("reveal handling", `${sender} did send the answer ${content}`)
+            this.#logger.info("reveal handling", `${sender} did send the answer ${content}`)
         }else{
-            this.#logError("Mismatch between hash and answer", `${sender} : ${content}`)
+            this.#logger.error("Mismatch between hash and answer", `${sender} : ${content}`)
         }
     }
 
@@ -485,7 +410,7 @@ class SongArtistMode {
         this.#submit(this.#hashHeader + this.#songHeader, song).then(() => {
             this.#teamSubmit(this.#teamHeader + this.#songHeader, song)
         })
-        this.#logInfo("Submitted song", song)
+        this.#logger.debug("Submitted song", song)
         this.#currentSong = song
     }
 
@@ -494,7 +419,7 @@ class SongArtistMode {
         this.#submit(this.#hashHeader + this.#artistHeader, artist).then(() => {
             this.#teamSubmit(this.#teamHeader + this.#artistHeader, artist)
         })
-        this.#logInfo("Submitted artist", artist)
+        this.#logger.debug("Submitted artist", artist)
         this.#currentArtist = artist
     }
 
@@ -632,7 +557,7 @@ class SongArtistMode {
             timeout = setTimeout(() => {
                 resolve(false)
                 listener.unbindListener()
-                this.#logError("Message not sent (timeout)", msg)
+                this.#logger.warn("Message not sent (timeout)", msg)
             }, 2000)
         })
         window.socket.sendCommand({
@@ -643,7 +568,7 @@ class SongArtistMode {
                 teamMessage,
             }
         })
-        this.#logInfo("Sent Message", msg)
+        this.#logger.info("Sent Message", msg)
         return promise
     }
 }
