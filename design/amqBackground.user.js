@@ -36,7 +36,7 @@ let options = {
 	],
 	imageChangePolicy: onManualChange("b"), //options: timer(3) = every 3 seconds, onMusicChange() or onManualChange("n") = when pressing ctrl + your key,
 	video: {
-		url: "https://desktophut-com.cdn.vidyome.com/videos/12-2018/kStWC5u7eyifonqthwFl.mp4", //other good ones: "https://desktophut-com.cdn.vidyome.com/videos/04-2019/mySuBqs1CcijooCKJsOq.mp4", "https://www.desktophut.com/wp-content/uploads/2021/12/Anime-Ganyu-Girl-And-Rainy-Night-4K-Live-Wallpaper.mp4"
+		url: "https://i.pximg.net/img-master/img/2022/09/17/23/15/10/101250893_p0_master1200.jpg", //other good ones: "https://desktophut-com.cdn.vidyome.com/videos/04-2019/mySuBqs1CcijooCKJsOq.mp4", "https://www.desktophut.com/wp-content/uploads/2021/12/Anime-Ganyu-Girl-And-Rainy-Night-4K-Live-Wallpaper.mp4"
 		enabled: true, // no images with this
 		filter: "none" // could be blur(3px) or "none" to deactivate
 	},
