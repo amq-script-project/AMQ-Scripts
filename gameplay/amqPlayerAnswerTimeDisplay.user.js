@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Player Answer Time Display
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Makes you able to see how quickly people answered
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -14,7 +14,7 @@
 
 let ignoredPlayerIds = []
 
-const ignorePlayers = (players) => {
+const ignorePlayersRegular = (players) => {
     ignoredPlayerIds = []
     const self = players.find(player => player.name === selfName)
     if(self){
@@ -28,8 +28,13 @@ const ignorePlayers = (players) => {
     }
 }
 
-new Listener("Game Starting", ({players}) => ignorePlayers(players)).bindListener()
-new Listener("nexus enemy encounter", ({players}) => ignorePlayers(players)).bindListener()
+const ignorePlayersNexus = () => {
+    ignoredPlayerIds = [1,2,3,4,5,6,7,8]
+}
+
+new Listener("Game Starting", ({players}) => ignorePlayersRegular(players)).bindListener()
+new Listener("nexus enemy encounter", () => ignorePlayersNexus()).bindListener()
+new Listener("nexus map rejoin", () => ignorePlayersNexus()).bindListener()
 
 new Listener("player answered", (data) => {
     data.filter(gamePlayerId => !ignoredPlayerIds.includes(gamePlayerId)).forEach(gamePlayerId => {
