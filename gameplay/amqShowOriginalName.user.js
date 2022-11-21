@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Show Original Name
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Makes you able to see the original names of players
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -133,9 +133,9 @@ lobby._spectatorChangeToPlayer = new Listener(
 )
 
 quiz.oldSetupQuiz = quiz.setupQuiz
-quiz.setupQuiz = function(players, isSpectator, quizState, settings, isHost, groupSlotMap, soloMode, teamAnswers, selfAnswer){
+quiz.setupQuiz = function(players, isSpectator, quizState, settings, isHost, groupSlotMap, soloMode, teamAnswers, selfAnswer,champGame, enemies, avatarAssets){
     const that = quiz
-    that.oldSetupQuiz(players, isSpectator, quizState, settings, isHost, groupSlotMap, soloMode, teamAnswers, selfAnswer)
+    that.oldSetupQuiz(players, isSpectator, quizState, settings, isHost, groupSlotMap, soloMode, teamAnswers, selfAnswer,champGame, enemies, avatarAssets)
     players.forEach((player) => {
         const thePlayer = this.players[player.gamePlayerId]
         getOriginalName(thePlayer.name, 2000).then(
