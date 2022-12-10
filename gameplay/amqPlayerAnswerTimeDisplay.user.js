@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Player Answer Time Display
 // @namespace    http://tampermonkey.net/
-// @version      1.4
+// @version      1.5
 // @description  Makes you able to see how quickly people answered
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -33,6 +33,7 @@ const ignorePlayersNexus = () => {
 }
 
 new Listener("Game Starting", ({players}) => ignorePlayersRegular(players)).bindListener()
+new Listener("Join Game", (data) => ignorePlayersRegular(data.quizState.players)).bindListener()
 new Listener("nexus enemy encounter", () => ignorePlayersNexus()).bindListener()
 new Listener("nexus map rejoin", () => ignorePlayersNexus()).bindListener()
 
