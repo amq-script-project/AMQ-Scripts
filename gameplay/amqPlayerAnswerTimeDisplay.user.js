@@ -41,6 +41,10 @@ new Listener("Join Game", (data) => {
     }
 }).bindListener()
 
+new Listener("Spectate Game", (data) => {
+    ignoredPlayerIds = []
+}).bindListener()
+
 new Listener("nexus enemy encounter", () => {
     ignorePlayersNexus()
 }).bindListener()
