@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.31
+// @version      1.32
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -32,6 +32,8 @@ const onlySpecialChars = (str) => {
 }
 
 var options = {
+	enabled: true,
+	enabledToggle: 'E', // ctrl + E
 	highlight: true, // highlight or not the match
 	allowRightLeftArrows: false, // use right and left arrows to move dropdown selected options
 	allowTab: false,
@@ -66,6 +68,16 @@ if (false) { //change to true to have same filters and order as amq
 	]
 	options.fuzzy = {dropdown: false, answer: false}
 }
+
+let onManualChange = (key) => {
+    document.addEventListener ("keydown", function (zEvent) {
+		if (zEvent.ctrlKey && zEvent.key.toLowerCase() === key.toLowerCase()) {
+			options.enabled = !options.enabled;
+			zEvent.preventDefault();
+		}
+	});
+}
+onManualChange(options.enabledToggle);
 
 var debug = false;
 
@@ -432,7 +444,6 @@ if (!isNode) {
 
 	AmqAwesomeplete.prototype = oldProto;
 
-
 	AmqAwesomeplete.prototype.preprocess = function () {
 		this.filterManager = new FilterManager(this._list.sort(this.sort), this.maxItems);
 		this.highLightManager = new HightLightManager(this);
@@ -492,7 +503,7 @@ if (!isNode) {
 	    try{
 			var awesome = this.autoCompleteController.awesomepleteInstance;
 
-			if(awesome && awesome.input.value == awesome.filterManager.lastStr && awesome.suggestions && awesome.input.value.trim() && awesome.suggestions.slice(1).every(s => cleanString(s.value) != cleanString(awesome.input.value)) && (awesome.suggestions.length || (!options.fuzzy.dropdown && options.fuzzy.answer))) {
+			if(options.enabled && awesome && awesome.input.value == awesome.filterManager.lastStr && awesome.suggestions && awesome.input.value.trim() && awesome.suggestions.slice(1).every(s => cleanString(s.value) != cleanString(awesome.input.value)) && (awesome.suggestions.length || (!options.fuzzy.dropdown && options.fuzzy.answer))) {
 				awesome.input.value = awesome.suggestions.length ? awesome.suggestions[0].value : awesome.filterManager.filterBy(awesome.input.value, true)[0].originalStr;
 			}
 		} catch (ex) {
