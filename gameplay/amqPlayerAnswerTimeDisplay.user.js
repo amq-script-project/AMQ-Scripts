@@ -55,11 +55,11 @@ new Listener("nexus map rejoin", () => {
 
 new Listener("player answered", (data) => {
     data.filter(id => !ignoredPlayerIds.includes(id)).forEach(id => {
-        let player = quiz.players[id] //prevent errors from hidden players
-        if (player) {
+        let player = quiz.players[id]
+        if (player) { //prevent errors from hidden players
             player.answer = amqAnswerTimesUtility.playerTimes[id] + "ms"
         }
-    });
+    })
 }).bindListener()
 
 quiz._playerAnswerListner = new Listener("player answers", (data) => {

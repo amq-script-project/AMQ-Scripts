@@ -31,14 +31,14 @@ const amqAnswerTimesUtility = new function(){
     }).bindListener()
     
     new Listener("Join Game", (data) => {
-        const quizState = data.quizState;
+        const quizState = data.quizState
         if (quizState) {
             this.songStartTime = Date.now() - quizState.songTimer * 1000
         }
     }).bindListener()
 
     new Listener("Spectate Game", (data) => {
-        const quizState = data.quizState;
+        const quizState = data.quizState
         if (quizState) {
             this.songStartTime = Date.now() - quizState.songTimer * 1000
         }
