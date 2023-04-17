@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Player Answer Times Utility
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  Stores time spent answering per player
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -31,8 +31,15 @@ const amqAnswerTimesUtility = new function(){
     }).bindListener()
     
     new Listener("Join Game", (data) => {
-        const quizState = data.quizState;
-        if(quizState){
+        const quizState = data.quizState
+        if (quizState) {
+            this.songStartTime = Date.now() - quizState.songTimer * 1000
+        }
+    }).bindListener()
+
+    new Listener("Spectate Game", (data) => {
+        const quizState = data.quizState
+        if (quizState) {
             this.songStartTime = Date.now() - quizState.songTimer * 1000
         }
     }).bindListener()
