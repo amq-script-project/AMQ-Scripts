@@ -134,7 +134,7 @@ function setup() {
         }
     }).bindListener();
     new Listener("Game Chat Message", (payload) => {
-        checkChatMention(message);
+        checkChatMention(payload);
     }).bindListener();
     new Listener("game chat update", (payload) => {
         payload.messages.forEach((message) => checkChatMention(message));
