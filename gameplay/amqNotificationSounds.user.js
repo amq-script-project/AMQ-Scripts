@@ -173,7 +173,7 @@ function setup() {
     $("body").click(() => {document.title = "AMQ"}).keypress(() => {document.title = "AMQ"});
     $("#nsVolumeText").text(`Volume: ${volume}%`);
     $("#nsVolumeSlider").val(volume).on("change", function() {
-        volume = $(this).val();
+        volume = parseInt($(this).val());
         $("#nsVolumeText").text(`Volume: ${volume}%`);
         saveSettings();
     });
