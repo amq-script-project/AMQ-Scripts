@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Player Answer Time Display
 // @namespace    http://tampermonkey.net/
-// @version      1.7
+// @version      1.8
 // @description  Makes you able to see how quickly people answered
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -12,7 +12,7 @@
 // @copyright    MIT license
 // ==/UserScript==
 
-if (document.getElementById("startPage")) return
+if (document.getElementById("loginPage")) return
 
 let ignoredPlayerIds = []
 
