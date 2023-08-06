@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Notification Sounds
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.1
 // @description  Adds notification sounds
 // @author       ensorcell, nyamu, Zolhungaj, kempanator
 // @match        https://animemusicquiz.com/*
@@ -19,9 +19,9 @@ Settings are located in: bottom right gear icon > settings > audio
 */
 
 "use strict";
-if (document.querySelector("#startPage")) return;
+if (document.querySelector("#loginPage")) return;
 let loadInterval = setInterval(() => {
-    if (document.querySelector("#loadingScreen").classList.contains("hidden")) {
+    if ($("#loadingScreen").hasClass("hidden")) {
         setup();
         clearInterval(loadInterval);
     }
