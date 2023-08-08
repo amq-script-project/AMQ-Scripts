@@ -29,7 +29,7 @@ let loadInterval = setInterval(() => {
 
 let saveData = JSON.parse(localStorage.getItem("notificationSounds")) ?? {};
 let volume = saveData.volume ?? 50;
-let soundOnlyWhenFocussed = saveData.soundOnlyWhenFocussed ?? false;
+let soundOnlyWhenFocused = saveData.soundOnlyWhenFocused ?? false;
 let playDMSound = saveData.playDMSound ?? true;
 let playGameInviteSound = saveData.playGameInviteSound ?? true;
 let playFriendRequestSound = saveData.playFriendRequestSound ?? true;
@@ -51,7 +51,7 @@ $("#settingsAudioContainer").append(`
             </div>
             <div style="text-align: center; padding-bottom: 15px;">
                 <input type="checkbox" id="nsSoundModeCheckbox">
-                <span>Only when focussed</span>
+                <span>Only when focused</span>
             </div>
             <div style="text-align: center">
                 <button id="nsButtonAllOn" class="btn btn-default" style="padding: 2px 6px">All On</button>
@@ -180,9 +180,9 @@ function setup() {
         $("#nsVolumeText").text(`Volume: ${volume}%`);
         saveSettings();
     });
-    $("#nsSoundModeCheckbox").prop("checked", soundOnlyWhenFocussed).click(function() {
-        soundOnlyWhenFocussed = !soundOnlyWhenFocussed;
-        $(this).prop("checked", soundOnlyWhenFocussed);
+    $("#nsSoundModeCheckbox").prop("checked", soundOnlyWhenFocused).click(function() {
+        soundOnlyWhenFocused = !soundOnlyWhenFocused;
+        $(this).prop("checked", soundOnlyWhenFocused);
         saveSettings();
     });
     $("#nsButtonAllOn").click(() => {
@@ -299,7 +299,7 @@ function setup() {
 
 // play a sound
 function playSound(audio) {
-    if (!soundOnlyWhenFocussed || document.hasFocus()) {
+    if (!soundOnlyWhenFocused || document.hasFocus()) {
         audio.volume = volume / 100;
         audio.play();
     }
@@ -332,7 +332,7 @@ function setAllSounds(value) {
 function saveSettings() {
     localStorage.setItem("notificationSounds", JSON.stringify({
         volume: volume,
-        soundOnlyWhenFocussed: soundOnlyWhenFocussed,
+        soundOnlyWhenFocused: soundOnlyWhenFocused,
         playDMSound: playDMSound,
         playGameInviteSound: playGameInviteSound,
         playFriendRequestSound: playFriendRequestSound,
