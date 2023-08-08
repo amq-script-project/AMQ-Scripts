@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Notification Sounds
 // @namespace    http://tampermonkey.net/
-// @version      2.1
+// @version      2.2
 // @description  Adds notification sounds
 // @author       ensorcell, nyamu, Zolhungaj, kempanator
 // @match        https://animemusicquiz.com/*
@@ -29,6 +29,7 @@ let loadInterval = setInterval(() => {
 
 let saveData = JSON.parse(localStorage.getItem("notificationSounds")) ?? {};
 let volume = saveData.volume ?? 50;
+let soundOnlyWhenFocussed = saveData.soundOnlyWhenFocussed ?? false;
 let playDMSound = saveData.playDMSound ?? true;
 let playGameInviteSound = saveData.playGameInviteSound ?? true;
 let playFriendRequestSound = saveData.playFriendRequestSound ?? true;
@@ -41,18 +42,20 @@ let playLobbyVoteSound = saveData.playLobbyVoteSound ?? true;
 let playRankedCountdownSound = saveData.playRankedCountdownSound ?? true;
 
 $("#settingsAudioContainer").append(`
-    <div id="nsSettings" class="row" style="margin-top: 20px">
+    <div id="nsSettings" class="row" style="margin-top: 5px">
+        <h3 style="text-align: center">Notification Sounds</h3>
         <div class="col-xs-4">
-            <div style="text-align: center; padding-bottom: 10px;">
-                <label style="margin-top: 0">Notification Sounds</label>
-            </div>
             <div id="nsSliderContainer">
                 <input type="range" min="0" max="100" id="nsVolumeSlider">
                 <p id="nsVolumeText"></p>
             </div>
+            <div style="text-align: center; padding-bottom: 15px;">
+                <input type="checkbox" id="nsSoundModeCheckbox">
+                <span>Only when focussed</span>
+            </div>
             <div style="text-align: center">
-                <button id="nsButtonAllOn" style="color: black">All On</button>
-                <button id="nsButtonAllOff" style="color: black">All Off</button>
+                <button id="nsButtonAllOn" class="btn btn-default" style="padding: 2px 6px">All On</button>
+                <button id="nsButtonAllOff" class="btn btn-default" style="padding: 2px 6px">All Off</button>
             </div>
         </div>
         <div class="col-xs-4 nsToggleSoundsContainer">
@@ -177,6 +180,11 @@ function setup() {
         $("#nsVolumeText").text(`Volume: ${volume}%`);
         saveSettings();
     });
+    $("#nsSoundModeCheckbox").prop("checked", soundOnlyWhenFocussed).click(function() {
+        soundOnlyWhenFocussed = !soundOnlyWhenFocussed;
+        $(this).prop("checked", soundOnlyWhenFocussed);
+        saveSettings();
+    });
     $("#nsButtonAllOn").click(() => {
         setAllSounds(true);
         $(".nsToggleSoundsContainer input[type='checkbox']").prop("checked", true);
@@ -291,8 +299,10 @@ function setup() {
 
 // play a sound
 function playSound(audio) {
-    audio.volume = volume / 100;
-    audio.play();
+    if (!soundOnlyWhenFocussed || document.hasFocus()) {
+        audio.volume = volume / 100;
+        audio.play();
+    }
 }
 
 // play a sound when your name is mentioned in chat (@name)
@@ -322,6 +332,7 @@ function setAllSounds(value) {
 function saveSettings() {
     localStorage.setItem("notificationSounds", JSON.stringify({
         volume: volume,
+        soundOnlyWhenFocussed: soundOnlyWhenFocussed,
         playDMSound: playDMSound,
         playGameInviteSound: playGameInviteSound,
         playFriendRequestSound: playFriendRequestSound,
@@ -343,7 +354,6 @@ function applyStyles() {
     style.id = "notificationSoundsStyle";
     style.appendChild(document.createTextNode(`
         #nsSliderContainer {
-            height: 50px;
             margin: auto;
         }
         #nsVolumeSlider {
