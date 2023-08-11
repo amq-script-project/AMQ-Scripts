@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         AMQ Level Guard
-// @version      1.0.1
+// @version      1.0.2
 // @description  Introduces ability to limit level of players
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -11,7 +11,7 @@
 // ==/UserScript==
 
 // don't load on login page
-if (document.getElementById("startPage")) return;
+if (document.getElementById("loginPage")) return;
 
 // Wait until the LOADING... screen is hidden and load script
 let loadInterval = setInterval(() => {
