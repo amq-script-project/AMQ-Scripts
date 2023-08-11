@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         AMQ Show Ping-Pong
-// @version      1.0.0
+// @version      1.0.1
 // @description  Shows ping together with online player count
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -10,7 +10,7 @@
 // ==/UserScript==
 
 // don't load on login page
-if (document.getElementById("startPage")) return;
+if (document.getElementById("loginPage")) return;
 
 // Wait until the LOADING... screen is hidden and load script
 let loadInterval = setInterval(() => {
