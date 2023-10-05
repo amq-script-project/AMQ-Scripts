@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.33
+// @version      1.34
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -452,7 +452,10 @@ if (!isNode) {
 			$(this.input).on("keydown", (e) => {
 			    if (e.keyCode == 37 && options.allowRightLeftArrows) this.previous()
 				else if (e.keyCode == 39 && options.allowRightLeftArrows) this.next();
-				else if (e.keyCode == 9 && options.allowTab) this.next();
+				else if (e.keyCode == 9 && options.allowTab) {
+					e.preventDefault();
+					this.next();
+				}
 			})
 		}
 	}
