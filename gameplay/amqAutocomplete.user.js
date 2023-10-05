@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.34
+// @version      1.35
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -37,6 +37,7 @@ var options = {
 	highlight: true, // highlight or not the match
 	allowRightLeftArrows: false, // use right and left arrows to move dropdown selected options
 	allowTab: false,
+	submitOnSelect: false,
 	fuzzy: {
 		dropdown: true, // whether to show fuzzy matches if no matches found
 		answer: true, // whether to use top fuzzy match on round end as answer if no matches found
@@ -447,6 +448,12 @@ if (!isNode) {
 	AmqAwesomeplete.prototype.preprocess = function () {
 		this.filterManager = new FilterManager(this._list.sort(this.sort), this.maxItems);
 		this.highLightManager = new HightLightManager(this);
+
+		if (options.submitOnSelect) {
+			$(this.input).on("awesomplete-selectcomplete", (e) => {
+				quiz.answerInput.typingInput.submitAnswer();
+			});
+		}
 
 		if (options.allowRightLeftArrows || options.allowTab) {
 			$(this.input).on("keydown", (e) => {
