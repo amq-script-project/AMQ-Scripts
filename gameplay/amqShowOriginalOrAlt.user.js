@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Show Alt or Original Name
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  Makes you able to see the original name (or alt name) of a player, incompatible with Original Name
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -134,13 +134,13 @@ lobby._newPlayerListner = new Listener(
     "New Player",
     async function (player) {
         const that = lobby
+        const newPlayer = that.addPlayer(player)
         try {
             player.originalName = await getOriginalNameOrAlt(player.name, 2000)
         }catch (error){
             console.error(`unable to resolve player "${player.name}" due to error >${error}`)
             player.originalName = player.name
         }
-        const newPlayer = that.addPlayer(player)
         newPlayer.originalName = player.originalName
         if (that.displayJoinLeaveMessages) {
             gameChat.systemMessage(generateNameString(newPlayer.name, newPlayer.originalName) + " joined the room.", "")
@@ -153,12 +153,12 @@ lobby._spectatorChangeToPlayer = new Listener(
     async function (player) {
         const that = lobby
         player.originalName = player.name //fallback
+        const newPlayer = that.addPlayer(player)
         try{
             player.originalName = await getOriginalNameOrAlt(player.name, 2000)
         }catch(error){
             console.error(`unable to resolve spectator who changed to player "${player.name}" due to error >${error}`)
         }
-        const newPlayer = that.addPlayer(player)
         newPlayer.originalName = player.originalName
         if (that.displayJoinLeaveMessages) {
             gameChat.systemMessage(generateNameString(newPlayer.name, newPlayer.originalName) + " changed to player.", "")
