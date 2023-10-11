@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Background script
 // @namespace    http://tampermonkey.net/
-// @version      3.8
+// @version      3.9
 // @description  Adds multiple custom background to amq or even a video. Tried to include as many selectors as possible, so remove the ones where you prefer to have original background
 // @author       Juvian
 // @match        https://animemusicquiz.com/*
@@ -37,7 +37,7 @@ let options = {
 	imageChangePolicy: onManualChange("b"), //options: timer(3) = every 3 seconds, onMusicChange() or onManualChange("n") = when pressing ctrl + your key,
 	video: {
 		url: "https://desktophut-com.cdn.vidyome.com/videos/12-2018/kStWC5u7eyifonqthwFl.mp4", //other good ones: "https://desktophut-com.cdn.vidyome.com/videos/04-2019/mySuBqs1CcijooCKJsOq.mp4", "https://www.desktophut.com/wp-content/uploads/2021/12/Anime-Ganyu-Girl-And-Rainy-Night-4K-Live-Wallpaper.mp4"
-		enabled: true, // no images with this
+		enabled: false, // no images with this
 		filter: "none" // could be blur(3px) or "none" to deactivate
 	},
     transparent: [
@@ -259,7 +259,7 @@ if (loggedIn) {//we are logged in
 	});
 
 	extend(VideoOverlay, "show", function () {
-		this.$hider.siblings().css("visibility", "hidden");
+		this.$hider.siblings().not('#qpVideoMainTextOverlay').css("visibility", "hidden");
 	});
 
 	extend(VideoOverlay, "hide", function () {
