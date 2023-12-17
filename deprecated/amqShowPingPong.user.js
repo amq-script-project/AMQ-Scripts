@@ -9,14 +9,12 @@
 // @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqShowPingPong.user.js
 // ==/UserScript==
 
-// don't load on login page
-if (document.getElementById("loginPage")) return;
-
 // Wait until the LOADING... screen is hidden and load script
+if (typeof Listener === "undefined") return;
 let loadInterval = setInterval(() => {
-    if (document.getElementById("loadingScreen").classList.contains("hidden")) {
-        setup();
+    if ($("#loadingScreen").hasClass("hidden")) {
         clearInterval(loadInterval);
+        setup();
     }
 }, 500);
 
