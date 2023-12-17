@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Avatar Count
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Shows your avatar count in the avatar screen
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -11,6 +11,8 @@
 // @copyright    MIT license
 // ==/UserScript==
 
+if (typeof Listener === "undefined") return;
+const version = "1.1";
 
 const injectNumbers = () => {
     const total = storeWindow.topBar.characters.reduce((acc, val) => acc + val.avatars.reduce((acc, val) => acc + val.colors.length, 0), 0)
@@ -33,3 +35,10 @@ storeWindow.toggle = function(){
     }
 }
 
+AMQ_addScriptData({
+    name: "AMQ Avatar Count",
+    author: "Zolhungaj",
+    version: version,
+    link: "https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAvatarCount.user.js",
+    description: `<p>Shows your avatar count in the avatar screen</p>`
+})

@@ -1,18 +1,22 @@
 // ==UserScript==
 // @name         AMQ Show Alt or Original Name
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Makes you able to see the original name (or alt name) of a player, incompatible with Original Name
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
 // @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqShowOriginalOrAlt.user.js
 // @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqShowOriginalOrAlt.user.js
 // @require      https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqGetOriginalNameUtility.user.js
+// @require      https://github.com/joske2865/AMQ-Scripts/raw/master/common/amqScriptInfo.js
 // @copyright    MIT license
 // @connect      api.zolhungaj.tech
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
+if (typeof Listener === "undefined") return;
+
+const version = "1.4"
 const username = ""
 const password = ""
 const isAdmin = false
@@ -120,8 +124,8 @@ lobby.addPlayer = function(player, teamFullMap){
                     if (!that.isSelf) {
                         setTimeout(() => {
                             that.setupAvatarOptions()
-			            }, 1)
-		            }
+                        }, 1)
+                    }
                 }
             })
             that.name = that.name
@@ -235,3 +239,13 @@ GameChat.prototype.addPlayerToQueue = function (name) {
             })
         .catch(e => console.error(`unable to resolve queued player "${name}" due to error >${e}`))
 }
+
+AMQ_addScriptData({
+    name: "Show Alt or Original Name",
+    author: "Zolhungaj",
+    version: version,
+    link: "https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqShowOriginalOrAlt.user.js",
+    description: `
+        <p>Makes you able to see the original name (or alt name) of a player, incompatible with Original Name</p>
+    `
+})
