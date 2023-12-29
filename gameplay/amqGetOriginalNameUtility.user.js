@@ -1,17 +1,8 @@
-// ==UserScript==
-// @name         AMQ Get Original Name Utility
-// @namespace    http://tampermonkey.net/
-// @version      1.1
-// @description  Provides functions for getting the original name of players
-// @author       Zolhungaj
-// @match        https://animemusicquiz.com/*
-// @grant        none
-// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqGetOriginalNameUtility.user.js
-// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqGetOriginalNameUtility.user.js
-// @copyright    MIT license
-// ==/UserScript==
+// AMQ Get Original Name Utility
+// version 1.2
+// this script is fetched automatically, do not attempt to add it to tampermonkey
 
-const amqGetOriginalNameUtility = new function(){
+const amqGetOriginalNameUtility = new function() {
     "use strict"
     this._nameToOriginalNameMap = {}
     this._profileLock = 0

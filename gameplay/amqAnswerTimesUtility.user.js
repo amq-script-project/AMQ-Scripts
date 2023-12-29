@@ -1,17 +1,8 @@
-// ==UserScript==
-// @name         AMQ Player Answer Times Utility
-// @namespace    http://tampermonkey.net/
-// @version      1.3
-// @description  Stores time spent answering per player
-// @author       Zolhungaj
-// @match        https://animemusicquiz.com/*
-// @grant        none
-// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAnswerTimesUtility.user.js
-// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAnswerTimesUtility.user.js
-// @copyright    MIT license
-// ==/UserScript==
+// AMQ Player Answer Times Utility
+// version 1.4
+// this script is fetched automatically, do not attempt to add it to tampermonkey
 
-const amqAnswerTimesUtility = new function(){
+const amqAnswerTimesUtility = new function() {
     "use strict"
     this.songStartTime = 0
     this.playerTimes = []

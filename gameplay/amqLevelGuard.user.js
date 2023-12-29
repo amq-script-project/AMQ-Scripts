@@ -1,48 +1,45 @@
 // ==UserScript==
 // @name         AMQ Level Guard
-// @version      1.0.2
+// @version      1.1
 // @description  Introduces ability to limit level of players
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
 // @grant        none
-// @require      https://raw.githubusercontent.com/TheJoseph98/AMQ-Scripts/master/common/amqScriptInfo.js
-// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/levelGuard.user.js
-// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/levelGuard.user.js
+// @require      https://github.com/joske2865/AMQ-Scripts/raw/master/common/amqScriptInfo.js
+// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqLevelGuard.user.js
+// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqLevelGuard.user.js
 // ==/UserScript==
 
-// don't load on login page
-if (document.getElementById("loginPage")) return;
-
 // Wait until the LOADING... screen is hidden and load script
+if (typeof Listener === "undefined") return;
 let loadInterval = setInterval(() => {
-    if (document.getElementById("loadingScreen").classList.contains("hidden")) {
-        setup();
+    if ($("#loadingScreen").hasClass("hidden")) {
         clearInterval(loadInterval);
+        setup();
     }
 }, 500);
 
+const version = "1.1"
 let maxLevel = -1 // -1: disabled, 0: kick everyone who aren't guest, 1+: kick everyone above that level
 let minLevel = 0 // 0: disabled, 1: kick guests, 2+: kick everyone below that level
 let instaKick = false // false: move offending players to spectator, true: kick offending players AND spectators
 const guestRegex = /^Guest-\d{5}$/
 const userScriptName = "LevelGuard"
-
 const grudges = {}
 const grudgeLimit = 3
-
 const command = "/levelguard"
 
 function setup() {
 
-    new Listener("Host Game", () =>{
+    new Listener("Host Game", () => {
         reset()
     }).bindListener()
 
-    new Listener("Spectate Game", () =>{
+    new Listener("Spectate Game", () => {
         reset()
     }).bindListener()
 
-    new Listener("Join Game", () =>{
+    new Listener("Join Game", () => {
         reset()
     }).bindListener()
 
@@ -74,8 +71,10 @@ function setup() {
     }).bindListener()
 
     AMQ_addScriptData({
-        name: userScriptName,
+        name: "Level Guard",
         author: "Zolhungaj",
+        version: version,
+        link: "https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqLevelGuard.user.js",
         description: `
             <p>Adds level discrimination to AMQ, a feature to limit highest and lowest level, plus limit game to only guests or only registered players</p>
             <p>Usage:"/levelguard a b c" a and b are required, c is optional</p>
@@ -83,7 +82,7 @@ function setup() {
             <p>b is the highest allowed level, 0 to ban everything but guests, -1 to disable</p>
             <p>c is the instakick toggle, set to 1 to instantly kick offending players and spectators. 0(default) to only move player to spectator</p>
         `
-    });
+    })
 }
 
 const reset = () => {
@@ -245,9 +244,3 @@ function isAllowedLevel(level, username) {
     }
     return true
 }
-
-
-
-
-
-
