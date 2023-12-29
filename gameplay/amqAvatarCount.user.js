@@ -8,6 +8,7 @@
 // @grant        none
 // @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAvatarCount.user.js
 // @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAvatarCount.user.js
+// @require      https://github.com/joske2865/AMQ-Scripts/raw/master/common/amqScriptInfo.js
 // @copyright    MIT license
 // ==/UserScript==
 
