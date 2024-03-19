@@ -281,8 +281,8 @@ class LobbySettings{
         assertInDictionary(standardValue, CONST_VALUES.SONG_SELECTION, "CONST_VALUES.SONG_SELECTION")
         const ratio = CONST_VALUES.SONG_SELECTION_STANDARD_RATIOS
         const ratios = [ratio.RANDOM, ratio.MIX, ratio.WATCHED][standardValue-1]
-        console.log(ratio, standardValue, ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.songCount)
-        this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.songCount)
+        console.log(ratio, standardValue, ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.numberOfSongs)
+        this._calculateSongDistribution(ratios.WATCHED, ratios.UNWATCHED, ratios.RANDOM, this.settings.numberOfSongs)
     }
 
     setSongSelectionWatched = () => {
@@ -297,15 +297,15 @@ class LobbySettings{
         this.setShowSelection(CONST_VALUES.SONG_SELECTION.RANDOM)
     }
 
-    _calculateSongDistribution = (watchedRatio, unwatchedRatio, randomRatio, songCount) => {
+    _calculateSongDistribution = (watchedRatio, unwatchedRatio, randomRatio, numberOfSongs) => {
         const ratioQuantifier = watchedRatio + unwatchedRatio + randomRatio
-        let watched = Math.floor(songCount * watchedRatio / ratioQuantifier)
-        let unwatched = Math.floor(songCount * unwatchedRatio / ratioQuantifier)
-        let random = Math.floor(songCount * randomRatio / ratioQuantifier)
-        while(watched + unwatched + random < songCount){
-            const watchedRatioDiff = watched / songCount - watchedRatio / ratioQuantifier
-            const unwatchedRatioDiff = unwatched / songCount - unwatchedRatio / ratioQuantifier
-            const randomRatioDiff = random / songCount - randomRatio / ratioQuantifier
+        let watched = Math.floor(numberOfSongs * watchedRatio / ratioQuantifier)
+        let unwatched = Math.floor(numberOfSongs * unwatchedRatio / ratioQuantifier)
+        let random = Math.floor(numberOfSongs * randomRatio / ratioQuantifier)
+        while(watched + unwatched + random < numberOfSongs){
+            const watchedRatioDiff = watched / numberOfSongs - watchedRatio / ratioQuantifier
+            const unwatchedRatioDiff = unwatched / numberOfSongs - unwatchedRatio / ratioQuantifier
+            const randomRatioDiff = random / numberOfSongs - randomRatio / ratioQuantifier
             const biggestDiff = Math.min(watchedRatioDiff, unwatchedRatioDiff, randomRatioDiff)
             if(watchedRatioDiff === biggestDiff){
                 watched++
@@ -315,7 +315,7 @@ class LobbySettings{
                 random++
             }
         }
-        //console.log(songCount, randomRatio, ratioQuantifier)
+        //console.log(numberOfSongs, randomRatio, ratioQuantifier)
         //console.trace()
         this.settings.songSelection.advancedValue.watched = watched
         this.settings.songSelection.advancedValue.unwatched = unwatched
@@ -334,7 +334,7 @@ class LobbySettings{
         if(watched + unwatched + random === 0){
             throw "sum of selection must be larger than 0"
         }
-        this._calculateSongDistribution(watched, unwatched, random, this.settings.songCount)
+        this._calculateSongDistribution(watched, unwatched, random, this.settings.numberOfSongs)
     }
 
     enableSongTypes = (openings=this.settings.songType.standardValue.openings, endings=this.settings.songType.standardValue.endings, inserts=this.settings.songType.standardValue.inserts) => {
@@ -350,7 +350,7 @@ class LobbySettings{
         const advancedEndings = endings?this.settings.songType.advancedValue.endings:0
         const advancedInserts = inserts?this.settings.songType.advancedValue.inserts:0
         const advancedRandom = this.settings.songType.advancedValue.random
-        this._calculateSongTypeDistribution(advancedOpenings, advancedEndings, advancedInserts, advancedRandom, this.settings.songCount)
+        this._calculateSongTypeDistribution(advancedOpenings, advancedEndings, advancedInserts, advancedRandom, this.settings.numberOfSongs)
     }
 
     enableOpenings = (openingsOn) => {
@@ -365,17 +365,17 @@ class LobbySettings{
         this.setTypes(undefined, undefined, insertsOn)
     }
 
-    _calculateSongTypeDistribution = (openingsRatio, endingsRatio, insertsRatio, randomRatio, songCount) => {
+    _calculateSongTypeDistribution = (openingsRatio, endingsRatio, insertsRatio, randomRatio, numberOfSongs) => {
         const ratioQuantifier = openingsRatio + endingsRatio + insertsRatio + randomRatio
-        let openings = Math.floor(songCount * openingsRatio / ratioQuantifier)
-        let endings = Math.floor(songCount * endingsRatio / ratioQuantifier)
-        let inserts = Math.floor(songCount * insertsRatio / ratioQuantifier)
-        let random = Math.floor(songCount * randomRatio / ratioQuantifier)
-        while(openings + endings + inserts + random < songCount){
-            const openingsRatioDiff = openings / songCount - openingsRatio / ratioQuantifier
-            const endingsRatioDiff = endings / songCount - endingsRatio / ratioQuantifier
-            const insertsRatioDiff = inserts / songCount - insertsRatio / ratioQuantifier
-            const randomRatioDiff = random / songCount - randomRatio / ratioQuantifier
+        let openings = Math.floor(numberOfSongs * openingsRatio / ratioQuantifier)
+        let endings = Math.floor(numberOfSongs * endingsRatio / ratioQuantifier)
+        let inserts = Math.floor(numberOfSongs * insertsRatio / ratioQuantifier)
+        let random = Math.floor(numberOfSongs * randomRatio / ratioQuantifier)
+        while(openings + endings + inserts + random < numberOfSongs){
+            const openingsRatioDiff = openings / numberOfSongs - openingsRatio / ratioQuantifier
+            const endingsRatioDiff = endings / numberOfSongs - endingsRatio / ratioQuantifier
+            const insertsRatioDiff = inserts / numberOfSongs - insertsRatio / ratioQuantifier
+            const randomRatioDiff = random / numberOfSongs - randomRatio / ratioQuantifier
             const biggestDiff = Math.min(openingsRatioDiff, endingsRatioDiff, insertsRatioDiff, randomRatioDiff)
             if(openingsRatioDiff === biggestDiff){
                 openings++
@@ -403,7 +403,7 @@ class LobbySettings{
         this.settings.songType.standardValue.endings = Boolean(endings)
         this.settings.songType.standardValue.inserts = Boolean(inserts)
 
-        this._calculateSongTypeDistribution(openings, endings, inserts, random, this.settings.songCount)
+        this._calculateSongTypeDistribution(openings, endings, inserts, random, this.settings.numberOfSongs)
     }
 
     setGuessTime = (standardValue) => {
