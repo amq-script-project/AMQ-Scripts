@@ -25,6 +25,9 @@ class LobbySettings{
         dummy.enableDuplicates(settings.modifiers.duplicates)
         dummy.enableQueueing(settings.modifiers.queueing)
         dummy.enableLootDropping(settings.modifiers.lootDropping)
+        dummy.enableRebroadcastSongs(settings.modifiers.rebroadcastSongs)
+        dummy.enableDubSongs(settings.modifiers.dubSongs)
+        dummy.enableFullSongRange(settings.modifiers.fullSongRange)
         { //songSelection
             const sss = settings.songSelection.standardValue
             const ssa = settings.songSelection.advancedValue
@@ -71,11 +74,27 @@ class LobbySettings{
                 throw "inserts can not be undefined"
             }
         }
+        { //openingCategories
+            const oc = settings.openingCategories
+            dummy.enableOpeningCategories(oc.instrumental, oc.chanting, oc.character, oc.standard)
+        }
+        { //endingCategories
+            const oc = settings.endingCategories
+            dummy.enableEndingCategories(oc.instrumental, oc.chanting, oc.character, oc.standard)
+        }
+        { //InsertCategories
+            const oc = settings.insertCategories
+            dummy.enableInsertCategories(oc.instrumental, oc.chanting, oc.character, oc.standard)
+        }
         const invalidList = ["a","a","a","a","a","a","a","a","a","a","a","a"] //this is a list to reveal too short lists
         dummy.setGuessTime(settings.guessTime.standardValue)
         dummy.setGuessTimeAdvanced(...settings.guessTime.randomValue, ...invalidList)
         dummy.enableRandomGuessTime(settings.guessTime.randomOn)
+        dummy.setExtraGuessTime(settings.extraGuessTime.standardValue)
+        dummy.setExtraGuessTimeAdvanced(...settings.extraGuessTime.randomValue, ...invalidList)
+        dummy.enableRandomExtraGuessTime(settings.extraGuessTime.randomOn)
         dummy.setScoreType(settings.scoreType)
+        dummy.setAnsweringMode(settings.answeringMode)
         dummy.setShowSelection(settings.showSelection)
         dummy.setInventorySize(settings.inventorySize.standardValue)
         dummy.setInventorySizeAdvanced(...settings.inventorySize.randomValue, ...invalidList)
@@ -84,6 +103,9 @@ class LobbySettings{
         dummy.setLootingTimeAdvanced(...settings.lootingTime.randomValue, ...invalidList)
         dummy.enableRandomLootingTime(settings.lootingTime.randomOn)
         dummy.setLives(settings.lives)
+        dummy.setBossLives(settings.bossLives)
+        dummy.setBossPowerUps(settings.bossPowerUps)
+        dummy.setBossMaxSongs(settings.bossMaxSongs)
         dummy.setSamplePoint(settings.samplePoint.standardValue)
         dummy.setSamplePointAdvanced(...settings.samplePoint.randomValue, ...invalidList)
         dummy.enableRandomSamplePoint(settings.samplePoint.randomOn)
@@ -277,6 +299,24 @@ class LobbySettings{
         this.settings.modifiers.lootDropping = lootDroppingOn
     }
 
+    enableRebroadcastSongs = (rebroadcastSongsOn) => {
+        assertBooleans({rebroadcastSongsOn})
+
+        this.settings.modifiers.rebroadcastSongs = rebroadcastSongsOn
+    }
+
+    enableDubSongs = (dubSongsOn) => {
+        assertBooleans({dubSongsOn})
+
+        this.settings.modifiers.dubSongs = dubSongsOn
+    }
+
+    enableFullSongRange = (fullSongRangeOn) => {
+        assertBooleans({fullSongRangeOn})
+
+        this.settings.modifiers.fullSongRange = fullSongRangeOn
+    }
+
     setSongSelection = (standardValue) => {
         assertInDictionary(standardValue, CONST_VALUES.SONG_SELECTION, "CONST_VALUES.SONG_SELECTION")
         const ratio = CONST_VALUES.SONG_SELECTION_STANDARD_RATIOS
@@ -353,6 +393,24 @@ class LobbySettings{
         this._calculateSongTypeDistribution(advancedOpenings, advancedEndings, advancedInserts, advancedRandom, this.settings.numberOfSongs)
     }
 
+    enableCategories = (categories, instrumental=categories.instrumental, chanting=categories.chanting, character=categories.character, standard=categories.standard) => {
+        assertBooleans({instrumental, chanting, character, standard})
+
+        if(!(instrumental || chanting || character || standard)){
+            throw "At least one category needs to be enabled"
+        }
+        categories.instrumental = instrumental
+        categories.chanting = chanting
+        categories.character = character
+        categories.standard = standard
+    }
+
+    enableOpeningCategories = (instrumental, chanting, character, standard) => this.enableCategories(this.settings.openingCategories, instrumental, chanting, character, standard)
+
+    enableEndingCategories = (instrumental, chanting, character, standard) => this.enableCategories(this.settings.endingCategories, instrumental, chanting, character, standard)
+
+    enableInsertCategories = (instrumental, chanting, character, standard) => this.enableCategories(this.settings.insertCategories, instrumental, chanting, character, standard)
+
     enableOpenings = (openingsOn) => {
         this.setTypes(openingsOn)
     }
@@ -424,6 +482,24 @@ class LobbySettings{
         this.settings.guessTime.randomOn = randomOn
     }
 
+    setExtraGuessTime = (standardValue) => {
+        assertInInterval(standardValue, "Extra guess time", CONST_VALUES.EXTRA_GUESS_TIME_MIN, CONST_VALUES.EXTRA_GUESS_TIME_MAX)
+        this.settings.extraGuessTime.randomOn = false
+        this.settings.extraGuessTime.standardValue = standardValue
+    }
+
+    setExtraGuessTimeAdvanced = (low, high) => {
+        assertIsInterval(low, "Extra guess time low", high, "Extra guess time high", CONST_VALUES.EXTRA_GUESS_TIME_MIN, CONST_VALUES.EXTRA_GUESS_TIME_MAX)
+        this.settings.extraGuessTime.randomOn = true
+        this.settings.extraGuessTime.randomValue = [low, high]
+    }
+
+    enableRandomExtraGuessTime = (randomOn) => {
+        assertBooleans({"extraGuessTime.randomOn": randomOn})
+
+        this.settings.extraGuessTime.randomOn = randomOn
+    }
+
     setScoreType = (scoreType) => {
         assertInDictionary(scoreType, CONST_VALUES.SCORING, "CONST_VALUES.SCORING")
         this.settings.scoreType = scoreType
@@ -439,6 +515,27 @@ class LobbySettings{
 
     setScoreTypeLives = () => {
         this.setScoreType(CONST_VALUES.SCORING.LIVES)
+    }
+
+    setScoreTypeBoss = () => {
+        this.setScoreType(CONST_VALUES.SCORING.BOSS)
+    }
+
+    setAnsweringMode = (answeringMode) => {
+        assertInDictionary(answeringMode, CONST_VALUES.ANSWERING, "CONST_VALUES.ANSWERING")
+        this.settings.answeringMode = answeringMode
+    }
+
+    setAnsweringModeTyping = () => {
+        this.setAnsweringMode(CONST_VALUES.ANSWERING.TYPING)
+    }
+
+    setAnsweringModeMix = () => {
+        this.setAnsweringMode(CONST_VALUES.ANSWERING.MIX)
+    }
+
+    setAnsweringModeMultipleChoice = () => {
+        this.setAnsweringMode(CONST_VALUES.ANSWERING.MULTIPLE_CHOICE)
     }
 
     setShowSelection = (showSelection) => {
@@ -472,6 +569,10 @@ class LobbySettings{
             case CONST_VALUES.GAME_MODE.BATTLE_ROYALE:
                 this.setShowSelectionLooting()
                 this.setScoreTypeLives()
+                break
+            case CONST_VALUES.GAME_MODE.BOSS_FIGHT:
+                this.setShowSelectionAuto()
+                this.setScoreTypeBoss()
                 break
             default:
                 throw "Error in setGameMode, value " + gameMode + " not implemented"
@@ -537,6 +638,21 @@ class LobbySettings{
     setLives = (count) => {
         assertInInterval(count, "Lives count", CONST_VALUES.LIVES_MIN, CONST_VALUES.LIVES_MAX)
         this.settings.lives = count
+    }
+
+    setBossLives = (count) => {
+        assertInInterval(count, "Boss lives count", CONST_VALUES.BOSS_LIVES_MIN, CONST_VALUES.BOSS_LIVES_MAX)
+        this.settings.bossLives = count
+    }
+
+    setBossPowerUps = (count) => {
+        assertInInterval(count, "Boss power ups count", CONST_VALUES.BOSS_POWER_UPS_MIN, CONST_VALUES.BOSS_POWER_UPS_MAX)
+        this.settings.bossPowerUps = count
+    }
+
+    setBossMaxSongs = (count) => {
+        assertInInterval(count, "Boss max song count", CONST_VALUES.BOSS_MAX_SONGS_MIN, CONST_VALUES.BOSS_MAX_SONGS_MAX)
+        this.settings.bossMaxSongs = count
     }
 
     setSamplePoint = (position) => {
@@ -955,7 +1071,10 @@ const defaultSettings = {
         skipReplay:true,
         duplicates:true,
         queueing:true,
-        lootDropping:true
+        lootDropping:true,
+        rebroadcastSongs: true,
+        dubSongs: false,
+        fullSongRange: false
     },
     songSelection:{
         standardValue:2,
@@ -978,6 +1097,24 @@ const defaultSettings = {
             random:20
         }
     },
+    openingCategories:{
+        instrumental: true,
+        chanting: true,
+        character: true,
+        standard: true
+    },
+    endingCategories:{
+        instrumental: true,
+        chanting: true,
+        character: true,
+        standard: true
+    },
+    insertCategories:{
+        instrumental: true,
+        chanting: true,
+        character: true,
+        standard: true
+    },
     guessTime:{
         randomOn:false,
         standardValue:20,
@@ -986,7 +1123,16 @@ const defaultSettings = {
             60
         ]
     },
+    extraGuessTime:{
+        randomOn:false,
+        standardValue:0,
+        randomValue:[
+            0,
+            15
+        ]
+    },
     scoreType:1,
+    answeringMode:1,
     showSelection:1,
     inventorySize:{
         randomOn:false,
@@ -1005,6 +1151,9 @@ const defaultSettings = {
         ]
     },
     lives:5,
+    bossLives:3,
+    bossPowerUps:3,
+    bossMaxSongs:10,
     samplePoint:{
         randomOn:true,
         standardValue:1,
@@ -1111,10 +1260,18 @@ const CONST_VALUES = {
     },
     GUESS_TIME_MIN:5,
     GUESS_TIME_MAX:60,
+    EXTRA_GUESS_TIME_MIN:0,
+    EXTRA_GUESS_TIME_MAX:15,
     SCORING:{
         COUNT:1,
         SPEED:2,
-        LIVES:3
+        LIVES:3,
+        BOSS:3
+    },
+    ANSWERING:{
+        TYPING:1,
+        MIX:2,
+        MULTIPLE_CHOICE:3
     },
     SHOW_SELECTION:{
         AUTO:1,
@@ -1124,12 +1281,19 @@ const CONST_VALUES = {
         STANDARD:1,
         QUICK_DRAW:2,
         LAST_MAN_STANDING:3,
-        BATTLE_ROYALE:4
+        BATTLE_ROYALE:4,
+        BOSS_FIGHT:5
     },
     INVENTORY_SIZE_MIN:1,
     INVENTORY_SIZE_MAX:99,
     LIVES_MIN:1,
     LIVES_MAX:5,
+    BOSS_LIVES_MIN:1,
+    BOSS_LIVES_MAX:5,
+    BOSS_POWER_UPS_MIN:0,
+    BOSS_POWER_UPS_MAX:5,
+    BOSS_MAX_SONGS_MIN:5,
+    BOSS_MAX_SONGS_MAX:20,
     LOOTING_TIME_MIN:10,
     LOOTING_TIME_MAX:150,
     SAMPLE_POINT:{
