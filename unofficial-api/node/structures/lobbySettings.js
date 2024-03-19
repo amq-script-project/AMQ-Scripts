@@ -388,9 +388,9 @@ class LobbySettings{
             }
         }
         this.settings.songType.advancedValue.openings = openings
-        this.settings.songType.advancedValue.openings = endings
-        this.settings.songType.advancedValue.openings = inserts
-        this.settings.songType.advancedValue.openings = random
+        this.settings.songType.advancedValue.endings = endings
+        this.settings.songType.advancedValue.inserts = inserts
+        this.settings.songType.advancedValue.random = random
     }
 
     setSongTypeSelectionAdvanced = (openings, endings, inserts, random) => {
@@ -399,9 +399,9 @@ class LobbySettings{
             throw "sum of types must be larger than 0"
         }
 
-        this.settings.songType.standardValue.openings = Boolean(openings)
-        this.settings.songType.standardValue.endings = Boolean(endings)
-        this.settings.songType.standardValue.inserts = Boolean(inserts)
+        this.settings.songType.standardValue.openings = Boolean(openings) || Boolean(random)
+        this.settings.songType.standardValue.endings = Boolean(endings) || Boolean(random)
+        this.settings.songType.standardValue.inserts = Boolean(inserts) || Boolean(random)
 
         this._calculateSongTypeDistribution(openings, endings, inserts, random, this.settings.numberOfSongs)
     }
