@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         AMQ Level Guard
-// @version      1.1
+// @version      1.2
 // @description  Introduces ability to limit level of players
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -19,7 +19,7 @@ let loadInterval = setInterval(() => {
     }
 }, 500);
 
-const version = "1.1"
+const version = "1.2"
 let maxLevel = -1 // -1: disabled, 0: kick everyone who aren't guest, 1+: kick everyone above that level
 let minLevel = 0 // 0: disabled, 1: kick guests, 2+: kick everyone below that level
 let instaKick = false // false: move offending players to spectator, true: kick offending players AND spectators
@@ -173,7 +173,7 @@ const judgeSpectator = (playerName) => {
     }
     const profileListener = new Listener("player profile", ({name, level}) => {
         if(playerName === name){
-            if(!isAllowedLevel(level)){
+            if(!isAllowedLevel(level, playerName)){
                 kick(playerName)
             }
             profileListener.unbindListener()
@@ -190,7 +190,7 @@ const judgeSpectator = (playerName) => {
 }
 
 const judgePlayer = (playerName, level) => {
-    if(!isAllowedLevel(level)){
+    if(!isAllowedLevel(level, playerName)){
         if(playerName === selfName){
             lobby.changeToSpectator(playerName)
             printErrorToChat("You are outside the set limits and thus not allowed to play :)")
