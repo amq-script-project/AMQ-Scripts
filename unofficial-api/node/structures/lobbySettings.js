@@ -47,6 +47,7 @@ class LobbySettings{
             }
             dummy.setSongSelectionAdvanced(ssa.watched, ssa.unwatched, ssa.random)
         }
+        dummy.setWatchedDistribution(settings.watchedDistribution)
         { //songType
             const sts = settings.songType.standardValue
             const sta = settings.songType.advancedValue
@@ -376,6 +377,24 @@ class LobbySettings{
         }
         this._calculateSongDistribution(watched, unwatched, random, this.settings.numberOfSongs)
     }
+
+    setWatchedDistribution = (watchedDistribution) => {
+        assertInDictionary(watchedDistribution, CONST_VALUES.WATCHED_DISTRIBUTION, "CONST_VALUES.WATCHED_DISTRIBUTION");
+        this.settings.watchedDistribution = watchedDistribution;
+    }
+
+    setWatchedDistributionRandom = () => {
+        this.setWatchedDistribution(CONST_VALUES.WATCHED_DISTRIBUTION.RANDOM);
+    }
+
+    setwatchedDistributionWeighted = () => {
+        this.setWatchedDistribution(CONST_VALUES.WATCHED_DISTRIBUTION.WEIGHTED);
+    }
+
+    setWatchedDistributionEqual = () => {
+        this.setWatchedDistribution(CONST_VALUES.WATCHED_DISTRIBUTION.EQUAL);
+    }
+
 
     enableSongTypes = (openings=this.settings.songType.standardValue.openings, endings=this.settings.songType.standardValue.endings, inserts=this.settings.songType.standardValue.inserts) => {
         assertBooleans({openings, endings, inserts})
@@ -1084,6 +1103,7 @@ const defaultSettings = {
             random:0
         }
     },
+    watchedDistribution: 1,
     songType:{
         standardValue:{
             openings:true,
@@ -1257,6 +1277,11 @@ const CONST_VALUES = {
         MIX: {WATCHED: 80, UNWATCHED: 20, RANDOM: 0},
         WATCHED: {WATCHED: 100, UNWATCHED: 0, RANDOM: 0},
         QUANTIFIER: 100 //these ratios sum up to 100, to avoid floating points as much as possible
+    },
+    WATCHED_DISTRIBUTION: {
+        RANDOM: 1,
+        WEIGHTED: 2,
+        EQUAL: 3
     },
     GUESS_TIME_MIN:5,
     GUESS_TIME_MAX:60,
