@@ -165,9 +165,6 @@ class LobbySettings{
         if(settings.gameMode !== "Solo" && settings.gameMode !== "Multiplayer"){
             throw "game mode argument invalid"
         }
-        if((settings.roomSize>1?"Multiplayer":"Solo") !== settings.gameMode){
-            throw "game mode does not correspond to amount of players"
-        }
     }
 
     getSettings = (validate=true) => {
@@ -197,9 +194,14 @@ class LobbySettings{
     }
 
     setRoomSize = (roomSize) => {
+        if(roomSize == 1) {
+            this.settings.roomSize = 2
+            this.settings.gameMode = "Solo"
+            return
+        }
         assertInInterval(roomSize, "Room size", CONST_VALUES.ROOM_SIZE_MIN, CONST_VALUES.ROOM_SIZE_MAX)
         this.settings.roomSize = roomSize
-        this.settings.gameMode = roomSize > 1 ? "Multiplayer" : "Solo"
+        this.settings.gameMode = "Multiplayer"
     }
 
     setTeamSize = (teamSize) => {
@@ -896,6 +898,10 @@ class LobbySettings{
     clearTags = () => {
         this.settings.tags = []
     }
+
+    setSolo = () => {
+        this.setRoomSize(1)
+    }
 }
 
 const assertInInterval = (val, name, minVal, maxVal) => {
@@ -1086,7 +1092,7 @@ const defaultSettings = {
 const CONST_VALUES = {
     ROOM_NAME_MAX_LENGTH:20,
     PASSWORD_MAX_LENGTH:50,
-    ROOM_SIZE_MIN:1,
+    ROOM_SIZE_MIN:2,
     ROOM_SIZE_MAX:40,
     SONG_COUNT_MIN:5,
     SONG_COUNT_MAX:100,
