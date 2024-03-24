@@ -11,7 +11,7 @@ test = (verbose=verboseTests) => {
 
     verifyFailList(dummy.setRoomName, "", 4, "a".repeat(CONST_VALUES.ROOM_NAME_MAX_LENGTH + 1))
     verifyFailList(dummy.setPassword, 4, "a".repeat(CONST_VALUES.PASSWORD_MAX_LENGTH + 1))
-    verifyFailList(dummy.setRoomSize, "4", CONST_VALUES.ROOM_SIZE_MIN-1, CONST_VALUES.ROOM_SIZE_MAX+1,8.5)
+    verifyFailList(dummy.setRoomSize, "4", 0, CONST_VALUES.ROOM_SIZE_MAX+1,8.5)
     verifyFailList(dummy.setTeamSize,  "4", CONST_VALUES.TEAM_SIZE_MIN-1, CONST_VALUES.TEAM_SIZE_MAX+1,3.5)
     verifyFailList(dummy.setSongCount, "4", CONST_VALUES.SONG_COUNT_MIN-1, CONST_VALUES.SONG_COUNT_MAX+1,10.5)
     verifyFailList(dummy.enableSkipGuessing, 1, 0, "", undefined)
