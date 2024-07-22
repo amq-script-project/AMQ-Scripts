@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.35
+// @version      1.36
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -56,7 +56,8 @@ var options = {
 			clean: cleanString,
 			special: onlySpecialChars // adds filtering special chars instead of just ignoring
 		}
-	]
+	],
+	sort: false // sort animes by amq order (length). If false, sorts by priority (starts with > contains > partial > fuzzy)
 }
 
 if (false) { //change to true to have same filters and order as amq
@@ -78,7 +79,7 @@ let onManualChange = (key) => {
 		}
 	});
 }
-onManualChange(options.enabledToggle);
+if (!isNode) onManualChange(options.enabledToggle);
 
 var debug = false;
 
@@ -135,7 +136,6 @@ class SuperString {
 		this.lastIndex = 0;
 	}
 }
-//, specialStr: onlySpecialChars(v), splittedStr: cleanString(v).split(" ")
 
 class EntrySet {
 	constructor(list, config, manager) {
@@ -236,7 +236,7 @@ class EntrySet {
 
 	addResults (range, list) {
 		for (var i = range.first; i <= range.last && this.manager.originalIndexResults.size < this.manager.limit; i++) {
-			this.addResult(list[i].originalIndex);
+			this.addResult(i);
 		}
 	}
 
@@ -298,7 +298,7 @@ class FilterManager {
 			const filter = entrySet.filter || defaultFilter;
 
 			if (entrySet.startsWith || entrySet.contains || entrySet.partial) {
-				let list = this.list.map((e, idx) => ({str: entrySet.clean(e.str || e.originalStr), specialStr: entrySet.special ? entrySet.special(e.str || e.originalStr) : '', originalIndex: e.originalIndex, listIndex: e.idx})).filter(filter);
+				let list = this.list.map((e, idx) => ({str: entrySet.clean(e.str || e.originalStr), specialStr: entrySet.special ? entrySet.special(e.str || e.originalStr) : '', originalIndex: e.originalIndex})).filter(filter);
 				this.entrySets.push(new EntrySet(list, entrySet, this));
 			}
 		}
@@ -319,7 +319,6 @@ class FilterManager {
 
 		this.lastStr = str;
 		this.checkOldResults();
-
 
 		for (let entrySet of entrySets) {
 			if (entrySet.config.startsWith && entrySet.lastQry.length) {
@@ -358,7 +357,7 @@ class FilterManager {
 		for (let entrySet of this.entrySets) {
 			for (let idx of entrySet.results) {
 				if (!s.has(entrySet.list[idx].originalIndex)) {
-					results.push({lastQry: entrySet.lastQry, match: entrySet.list[idx], listMatch: this.list[entrySet.list[idx].listIndex]});
+					results.push({lastQry: entrySet.lastQry, match: entrySet.list[idx], listMatch: this.list[entrySet.list[idx].originalIndex], specificy: this.entrySets.indexOf(entrySet)});
 					s.add(entrySet.list[idx].originalIndex);
 				}
 			}
@@ -369,7 +368,7 @@ class FilterManager {
 			let fuzzyResults = new Set((this.fuzzy.get(cleanString(str)) || []).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
 			for (let idx of Array.from(fuzzyResults)) {
 				if (!s.has(this.list[idx].originalIndex)) {
-					results.push({match: this.list[idx], listMatch: this.list[idx], lastQry: str})
+					results.push({match: this.list[idx], listMatch: this.list[idx], lastQry: str, specificy: this.entrySets.length})
 					s.add(this.list[idx].originalIndex);
 				}
 			}
@@ -472,7 +471,7 @@ if (!isNode) {
 
 		let suggestions = this.filterManager.filterBy(this.input.value, options.fuzzy.dropdown);
 
-		if (!this.filterManager.fuzzySearched) suggestions = suggestions.sort((a, b) => {
+		if (!this.filterManager.fuzzySearched && options.sort) suggestions = suggestions.sort((a, b) => {
 		    if (this.sort !== false) {
 			    if (a.match.originalIndex < b.match.originalIndex) return -1;
 			}
@@ -507,9 +506,10 @@ if (!isNode) {
 	};
 
 	//auto send incomplete answer
-	var oldSendAnwer = QuizTypeAnswerInput.prototype.submitAnswer;
+	const proto = window.QuizTypeAnswerInput ? QuizTypeAnswerInput.prototype : AmqAwesomeplete.prototype;
+	var oldSendAnwer = proto.submitAnswer;
 
-	QuizTypeAnswerInput.prototype.submitAnswer = function () {
+	proto.submitAnswer = function () {
 	    try{
 			var awesome = this.autoCompleteController.awesomepleteInstance;
 
