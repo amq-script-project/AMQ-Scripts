@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Show Original Name
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.6
 // @description  Makes you able to see the original names of players
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -9,11 +9,14 @@
 // @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqShowOriginalName.user.js
 // @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqShowOriginalName.user.js
 // @require      https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqGetOriginalNameUtility.user.js
+// @require      https://github.com/joske2865/AMQ-Scripts/raw/master/common/amqScriptInfo.js
 // @copyright    MIT license
 // ==/UserScript==
 
-let enableOriginalName = true
+if (typeof Listener === "undefined") return
 
+const version = "1.6"
+let enableOriginalName = true
 let alwaysShowOriginalName = false
 
 const generateNameString = (nickName, originalName, hasNewLine=false) => {
@@ -81,8 +84,8 @@ lobby.addPlayer = function(player, teamFullMap){
                     if (!that.isSelf) {
                         setTimeout(() => {
                             that.setupAvatarOptions()
-			            }, 1)
-		            }
+                        }, 1)
+                    }
                 }
             })
             that.name = that.name
@@ -196,3 +199,13 @@ GameChat.prototype.addPlayerToQueue = function (name) {
             })
         .catch(e => console.error(`unable to resolve queued player "${name}" due to error >${e}`))
 }
+
+AMQ_addScriptData({
+    name: "Show Original Name",
+    author: "Zolhungaj",
+    version: version,
+    link: "https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqShowOriginalName.user.js",
+    description: `
+        <p>Makes you able to see the original names of players</p>
+    `
+})

@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Amq Chat Improvement
+// @name         AMQ Chat Improvement
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  Makes chat a lot cooler
@@ -10,8 +10,6 @@
 // ==/UserScript==
 
 if (!window.GameChat) return;
-
-
 
 GameChat.prototype.insertMsg = function (msg) {
     if(msg instanceof Object){
@@ -45,10 +43,10 @@ GameChat.prototype.insertMsg = function (msg) {
             msg.find('.gcUserName').text(usr + " +" + sum + " (" + msg.find('.gcUserName').text()+ ")");
         }
     }
-	let atBottom = this.$chatMessageContainer.scrollTop() + this.$chatMessageContainer.innerHeight() >= this.$chatMessageContainer[0].scrollHeight - 100;
-	this.$chatMessageContainer.append(msg);
-	if (atBottom) {
-		this.$chatMessageContainer.scrollTop(this.$chatMessageContainer.prop("scrollHeight"));
-	}
-	this.$SCROLLABLE_CONTAINERS.perfectScrollbar('update');
+    let atBottom = this.$chatMessageContainer.scrollTop() + this.$chatMessageContainer.innerHeight() >= this.$chatMessageContainer[0].scrollHeight - 100;
+    this.$chatMessageContainer.append(msg);
+    if (atBottom) {
+        this.$chatMessageContainer.scrollTop(this.$chatMessageContainer.prop("scrollHeight"));
+    }
+    this.$SCROLLABLE_CONTAINERS.perfectScrollbar('update');
 };

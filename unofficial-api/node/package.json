@@ -9,7 +9,7 @@
   "author": "juvian",
   "license": "MIT",
   "dependencies": {
-    "request-promise": "^4.2.5",
-    "socket.io-client": "2.4.0"
+    "request-promise": "^4.2.6",
+    "socket.io-client": "^4.7.2"
   }
 }

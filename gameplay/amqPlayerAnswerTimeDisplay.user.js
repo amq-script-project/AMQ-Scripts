@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Player Answer Time Display
 // @namespace    http://tampermonkey.net/
-// @version      1.8
+// @version      1.10
 // @description  Makes you able to see how quickly people answered
 // @author       Zolhungaj
 // @match        https://animemusicquiz.com/*
@@ -9,11 +9,13 @@
 // @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqPlayerAnswerTimeDisplay.user.js
 // @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqPlayerAnswerTimeDisplay.user.js
 // @require      https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqAnswerTimesUtility.user.js
+// @require      https://github.com/joske2865/AMQ-Scripts/raw/master/common/amqScriptInfo.js
 // @copyright    MIT license
 // ==/UserScript==
 
-if (document.getElementById("loginPage")) return
+if (typeof Listener === "undefined") return
 
+const version = "1.10"
 let ignoredPlayerIds = []
 
 const ignorePlayersRegular = (players) => {
@@ -55,7 +57,7 @@ new Listener("nexus map rejoin", () => {
 
 new Listener("player answered", (data) => {
     data.filter(id => !ignoredPlayerIds.includes(id)).forEach(id => {
-        let player = quiz.players[id]
+        let player = quiz.players?.[id]
         if (player) { //prevent errors from hidden players
             player.answer = amqAnswerTimesUtility.playerTimes[id] + "ms"
         }
@@ -77,7 +79,22 @@ quiz._playerAnswerListner = new Listener("player answers", (data) => {
     if (!quiz.isSpectator) {
         quiz.answerInput.showSubmitedAnswer()
         quiz.answerInput.resetAnswerState()
+        if (quiz.hintGameMode) {
+            quiz.hintController.hide()
+        }
     }
 
     quiz.videoTimerBar.updateState(data.progressBarState)
+    quizVideoController.checkForBufferingIssue()
+})
+
+AMQ_addScriptData({
+    name: "Player Answer Time Display",
+    author: "Zolhungaj",
+    version: version,
+    link: "https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqPlayerAnswerTimeDisplay.user.js",
+    description: `
+        <p>Makes you able to see how quickly people answered</p>
+        <p>(# ms) will be appended to all players' answers in their answer boxes</p>
+    `
 })

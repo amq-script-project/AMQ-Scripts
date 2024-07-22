@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         AMQ Notification Sounds
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      2.3
 // @description  Adds notification sounds
-// @author       ensorcell, nyamu, Zolhungaj, kempanator
+// @author       kempanator
 // @match        https://animemusicquiz.com/*
 // @grant        none
 // @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqNotificationSounds.user.js
 // @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqNotificationSounds.user.js
-// @require      https://github.com/TheJoseph98/AMQ-Scripts/raw/master/common/amqScriptInfo.js
+// @require      https://github.com/joske2865/AMQ-Scripts/raw/master/common/amqScriptInfo.js
 // @copyright    MIT license
 // ==/UserScript==
 
@@ -19,14 +19,15 @@ Settings are located in: bottom right gear icon > settings > audio
 */
 
 "use strict";
-if (document.querySelector("#loginPage")) return;
+if (typeof Listener === "undefined") return;
 let loadInterval = setInterval(() => {
     if ($("#loadingScreen").hasClass("hidden")) {
-        setup();
         clearInterval(loadInterval);
+        setup();
     }
 }, 500);
 
+const version = "2.3";
 let saveData = JSON.parse(localStorage.getItem("notificationSounds")) ?? {};
 let volume = saveData.volume ?? 50;
 let soundOnlyWhenFocused = saveData.soundOnlyWhenFocused ?? false;
@@ -279,6 +280,8 @@ function setup() {
     AMQ_addScriptData({
         name: "Notification Sounds",
         author: "kempanator",
+        version: version,
+        link: "https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqNotificationSounds.user.js",
         description: `
             <ul><b>Makes notification sounds for the following:</b>
                 <li>1. DM</li>

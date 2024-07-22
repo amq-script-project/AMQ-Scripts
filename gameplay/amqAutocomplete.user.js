@@ -460,7 +460,8 @@ if (!isNode) {
 				else if (e.keyCode == 39 && options.allowRightLeftArrows) this.next();
 				else if (e.keyCode == 9 && options.allowTab) {
 					e.preventDefault();
-					this.next();
+					if (e.shiftKey) this.previous();
+					else this.next();
 				}
 			})
 		}
