@@ -57,7 +57,7 @@ var options = {
 			special: onlySpecialChars // adds filtering special chars instead of just ignoring
 		}
 	],
-	sort: false // sort animes by amq order (length). If false, sorts by priority (starts with > contains > partial > fuzzy)
+	sort: true // sort animes by amq order (length). If false, sorts by priority (starts with > contains > partial > fuzzy)
 }
 
 if (false) { //change to true to have same filters and order as amq
