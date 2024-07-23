@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.36
+// @version      1.37
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -57,7 +57,7 @@ var options = {
 			special: onlySpecialChars // adds filtering special chars instead of just ignoring
 		}
 	],
-	sort: true // sort animes by amq order (length). If false, sorts by priority (starts with > contains > partial > fuzzy)
+	defaultSort: false // sort animes by amq order (length). If false, sorts by priority (starts with > contains > partial > fuzzy)
 }
 
 if (false) { //change to true to have same filters and order as amq
@@ -69,6 +69,7 @@ if (false) { //change to true to have same filters and order as amq
 		}
 	]
 	options.fuzzy = {dropdown: false, answer: false}
+	options.defaultSort = true;
 }
 
 let onManualChange = (key) => {
@@ -148,7 +149,7 @@ class EntrySet {
 
 		if (config.partial) this.list.forEach(e => e.splittedStr = e.str.split(' '));
 
-		this.results = new Set();
+		this.results = {};
 	}
 
 	reset() {
@@ -159,7 +160,7 @@ class EntrySet {
 		this.lastQry = "";
 		this.lastSpecialStr = "";
 		this.lastQrySplit = [];
-		this.results.clear();
+		this.results = {};
 		this.lastSpecialIndex = 0;
 	}
 
@@ -215,28 +216,29 @@ class EntrySet {
 		return !this.config.special || specialMatchesStr(this.lastSpecialStr, this.list[idx].specialStr);
 	}
 
-	addResult(idx) {
-		if (this.specialMatches(idx) && (!this.config.partial || this.partialMatches(idx))) {
-			this.results.add(idx);
+	addResult(idx, priority) {
+		if (this.specialMatches(idx) && (!this.config.partial || this.partialMatches(idx)) && !this.results.hasOwnProperty(idx)) {
+			this.results[idx] = priority;
 	    	this.manager.originalIndexResults.add(this.list[idx].originalIndex)
 		}
 	}
 
 	checkOldResults() {
-		let oldResults = Array.from(this.results);
+		let oldResults = Object.keys(this.results).map(k => +k);
 		let re = this.getQryRegex(this.lastQry);
 
-		this.results.clear();
+		this.results = [];
 
 		for (let idx of oldResults) {
 			let anime = this.list[idx].str;
-			if (anime.match(re) || (this.config.partial && this.partialMatches(idx))) this.addResult(idx);
+			if (anime.match(re)) this.addResult(idx, 1);
+			else if (this.config.partial && this.partialMatches(idx)) this.addResult(idx, 2);
 		}
 	}
 
 	addResults (range, list) {
 		for (var i = range.first; i <= range.last && this.manager.originalIndexResults.size < this.manager.limit; i++) {
-			this.addResult(i);
+			this.addResult(i, 0);
 		}
 	}
 
@@ -244,14 +246,14 @@ class EntrySet {
 		return this.config.getQryRegex ? this.config.getQryRegex(qry) : new RegExp(escapeRegExp(qry).replaceAll('u', '(u|uu)').replaceAll('o', '(o|ou|oo)'), "g");
 	}
 
-	addContainingResults (superString, qry) {
+	addContainingResults (superString, qry, priority) {
 		let re = this.getQryRegex(qry);
 		let match;
 
 		re.lastIndex = superString.lastIndex
 		while (this.manager.originalIndexResults.size < this.manager.limit && (match = re.exec(superString.str))) {
 			let idx = first(superString.lookup, v => v > match.index, 0, superString.lookup.length) - 1
-			this.addResult(idx);
+			this.addResult(idx, priority);
 			superString.lastIndex = re.lastIndex;
 		}
 	}
@@ -328,11 +330,11 @@ class FilterManager {
 
 		for (let entrySet of entrySets) {
 			if (entrySet.config.contains && entrySet.lastQry.length) {
-				entrySet.addContainingResults(entrySet.contains, entrySet.lastQry);
+				entrySet.addContainingResults(entrySet.contains, entrySet.lastQry, 1);
 			}
 			if (!entrySet.lastQry.length && entrySet.lastSpecialStr.length) {
 				for (; entrySet.lastSpecialIndex < entrySet.list.length && this.originalIndexResults.size < this.limit; entrySet.lastSpecialIndex++) {
-					entrySet.addResult(entrySet.lastSpecialIndex);
+					entrySet.addResult(entrySet.lastSpecialIndex, 1);
 				}
 			}
 		}
@@ -340,7 +342,7 @@ class FilterManager {
 		for (let entrySet of entrySets) {
 			if (entrySet.config.partial && entrySet.lastQrySplit.length >= 2) {
 				let qry = entrySet.lastQrySplit.filter((s) => s.trim()).sort((a, b) => b.length - a.length)[0];
-				entrySet.addContainingResults(entrySet.partial, qry);
+				entrySet.addContainingResults(entrySet.partial, qry, 2);
 			}
 		}
 	}
@@ -355,9 +357,9 @@ class FilterManager {
 		let s = new Set();
 
 		for (let entrySet of this.entrySets) {
-			for (let idx of entrySet.results) {
+			for (let [idx, priority] of Object.entries(entrySet.results)) {
 				if (!s.has(entrySet.list[idx].originalIndex)) {
-					results.push({lastQry: entrySet.lastQry, match: entrySet.list[idx], listMatch: this.list[entrySet.list[idx].originalIndex], specificy: this.entrySets.indexOf(entrySet)});
+					results.push({lastQry: entrySet.lastQry, match: entrySet.list[idx], listMatch: this.list[entrySet.list[idx].originalIndex], priority});
 					s.add(entrySet.list[idx].originalIndex);
 				}
 			}
@@ -368,7 +370,7 @@ class FilterManager {
 			let fuzzyResults = new Set((this.fuzzy.get(cleanString(str)) || []).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
 			for (let idx of Array.from(fuzzyResults)) {
 				if (!s.has(this.list[idx].originalIndex)) {
-					results.push({match: this.list[idx], listMatch: this.list[idx], lastQry: str, specificy: this.entrySets.length})
+					results.push({match: this.list[idx], listMatch: this.list[idx], lastQry: str, priority: 3})
 					s.add(this.list[idx].originalIndex);
 				}
 			}
@@ -472,8 +474,12 @@ if (!isNode) {
 
 		let suggestions = this.filterManager.filterBy(this.input.value, options.fuzzy.dropdown);
 
-		if (!this.filterManager.fuzzySearched && options.sort) suggestions = suggestions.sort((a, b) => {
-		    if (this.sort !== false) {
+		if (!this.filterManager.fuzzySearched) suggestions = suggestions.sort((a, b) => {
+			if (options.defaultSort == false) {
+				if (a.priority < b.priority) return -1;
+				else if (a.priority > b.priority) return 1;
+				return a.match.originalIndex < b.match.originalIndex ? -1 : 1;
+			} else if (this.sort !== false) {
 			    if (a.match.originalIndex < b.match.originalIndex) return -1;
 			}
 
