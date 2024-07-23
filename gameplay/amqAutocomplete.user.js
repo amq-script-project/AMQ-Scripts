@@ -359,7 +359,7 @@ class FilterManager {
 		for (let entrySet of this.entrySets) {
 			for (let [idx, priority] of Object.entries(entrySet.results)) {
 				if (!s.has(entrySet.list[idx].originalIndex)) {
-					results.push({lastQry: entrySet.lastQry, match: entrySet.list[idx], listMatch: this.list[entrySet.list[idx].originalIndex], priority});
+					results.push({lastQry: entrySet.lastQry, match: entrySet.list[idx], listMatch: this.list[entrySet.list[idx].originalIndex], priority, entrySetIndex: this.entrySets.indexOf(entrySet)});
 					s.add(entrySet.list[idx].originalIndex);
 				}
 			}
@@ -370,7 +370,7 @@ class FilterManager {
 			let fuzzyResults = new Set((this.fuzzy.get(cleanString(str)) || []).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
 			for (let idx of Array.from(fuzzyResults)) {
 				if (!s.has(this.list[idx].originalIndex)) {
-					results.push({match: this.list[idx], listMatch: this.list[idx], lastQry: str, priority: 3})
+					results.push({match: this.list[idx], listMatch: this.list[idx], lastQry: str, priority: 3, entrySetIndex: this.entrySets.length})
 					s.add(this.list[idx].originalIndex);
 				}
 			}
@@ -478,6 +478,8 @@ if (!isNode) {
 			if (options.defaultSort == false) {
 				if (a.priority < b.priority) return -1;
 				else if (a.priority > b.priority) return 1;
+				else if (a.entrySetIndex < b.entrySetIndex) return -1;
+				else if (a.entrySetIndex > b.entrySetIndex) return 1;
 				return a.match.originalIndex < b.match.originalIndex ? -1 : 1;
 			} else if (this.sort !== false) {
 			    if (a.match.originalIndex < b.match.originalIndex) return -1;
