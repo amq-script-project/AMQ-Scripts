@@ -296,8 +296,8 @@ class FilterManager {
 		}
 
 		for (let entrySet of this.options.entrySets) {
-
 			const filter = entrySet.filter || defaultFilter;
+			cache.clear();
 
 			if (entrySet.startsWith || entrySet.contains || entrySet.partial) {
 				let list = this.list.map((e, idx) => ({str: entrySet.clean(e.str || e.originalStr), specialStr: entrySet.special ? entrySet.special(e.str || e.originalStr) : '', originalIndex: e.originalIndex})).filter(filter);
@@ -652,7 +652,6 @@ function removeDiacritics (str, except) {
 if (isNode) {
 	Object.assign(options.entrySets[0], {startsWith: false, contains: true, partial: false});
 
-	let l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro", "guura"], 15);
 
 	escapeRegExp = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	search = (str, len, first, fuzzy) => {
@@ -666,6 +665,11 @@ if (isNode) {
 	expect = (s, str) => {
 		if (l.filterBy(s)[0] !== str) console.log(str)
 	}
+
+	let l = new FilterManager(["shingeki season 2", "Shingeki Season 2: text"], 15);
+	search("shingeki 2", 2, "shingeki season 2")
+
+	l = new FilterManager(["o", "asd", "asd!", "asd!!*hi", "o", "tt", "oh my kokoro", "kokoro", "guura"], 15);
 
 	search("s", 3, "asd")
 	search("!s", 2, "asd!")
