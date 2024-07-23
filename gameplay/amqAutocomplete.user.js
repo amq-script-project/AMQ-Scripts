@@ -241,7 +241,7 @@ class EntrySet {
 	}
 
 	getQryRegex(qry) {
-		return this.config.getQryRegex ? this.config.getQryRegex(qry) : new RegExp(escapeRegExp(qry).replaceAll('u', '(u|uu)'), "g");
+		return this.config.getQryRegex ? this.config.getQryRegex(qry) : new RegExp(escapeRegExp(qry).replaceAll('u', '(u|uu)').replaceAll('o', '(o|ou|oo)'), "g");
 	}
 
 	addContainingResults (superString, qry) {
