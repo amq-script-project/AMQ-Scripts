@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.37
+// @version      1.38
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -515,7 +515,7 @@ if (!isNode) {
 	};
 
 	//auto send incomplete answer
-	const proto = window.QuizTypeAnswerInput ? QuizTypeAnswerInput.prototype : AmqAwesomeplete.prototype;
+	const proto = typeof QuizTypeAnswerInput != 'undefined' ? QuizTypeAnswerInput.prototype : AmqAwesomeplete.prototype;
 	var oldSendAnwer = proto.submitAnswer;
 
 	proto.submitAnswer = function () {
