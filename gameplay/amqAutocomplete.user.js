@@ -238,7 +238,7 @@ class EntrySet {
 
 	addResults (range, list) {
 		for (var i = range.first; i <= range.last && this.manager.originalIndexResults.size < this.manager.limit; i++) {
-			this.addResult(i, 0);
+			this.addResult(list[i].originalIndex, 0);
 		}
 	}
 
