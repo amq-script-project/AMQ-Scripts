@@ -471,6 +471,8 @@ if (!isNode) {
 
 	AmqAwesomeplete.prototype.evaluate = function () {
 		if (this.isAnimeAutocomplete == false || options.enabled == false) return oldEvaluate.call(this);
+		
+		this.index = -1;
 
 		let suggestions = this.filterManager.filterBy(this.input.value, options.fuzzy.dropdown);
 
