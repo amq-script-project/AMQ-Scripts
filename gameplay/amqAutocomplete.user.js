@@ -498,7 +498,7 @@ if (!isNode) {
 		this.$ul.children('li').remove();
 
 		for (let i = this.suggestions.length - 1; i >= 0; i--) {
-			this.ul.insertBefore(this.item(this.suggestions[i], options.highlight ? suggestions[i].lastQry : "", i), this.ul.firstChild);
+			this.ul.insertBefore(this.item(options.highlight ? this.suggestions[i] : escapeHtml(this.suggestions[i]), options.highlight ? suggestions[i].lastQry : "", i), this.ul.firstChild);
 		}
 
 		if (this.ul.children.length === 0) {
