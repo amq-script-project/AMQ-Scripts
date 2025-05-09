@@ -39,17 +39,20 @@ const saveData = JSON.parse(localStorage.getItem("notificationSounds")) ?? {};
 let soundOnlyWhenFocused = saveData.soundOnlyWhenFocused ?? false;
 let volume = saveData.volume ?? 50;
 let sounds = {
-    dm:              { label:"DM",               audio: dmSound,       flag: saveData.sounds?.dm              ?? true },
-    gameInvite:      { label:"Game Invite",      audio: inviteSound,   flag: saveData.sounds?.gameInvite      ?? true },
-    friendRequest:   { label:"Friend Request",   audio: inviteSound,   flag: saveData.sounds?.friendRequest   ?? true },
-    nameMention:     { label:"Name Mention",     audio: mentionSound,  flag: saveData.sounds?.nameMention     ?? true },
-    settingChange:   { label:"Setting Changes",  audio: settingsSound, flag: saveData.sounds?.settingChange   ?? true },
-    gameStart:       { label:"Game Start",       audio: startSound,    flag: saveData.sounds?.gameStart       ?? true },
-    quizPause:       { label:"Quiz Pause",       audio: startSound,    flag: saveData.sounds?.quizPause       ?? true },
-    quizUnpause:     { label:"Quiz Unpause",     audio: startSound,    flag: saveData.sounds?.quizUnpause     ?? true },
-    lobbyVote:       { label:"Lobby Vote",       audio: startSound,    flag: saveData.sounds?.lobbyVote       ?? true },
-    rankedCountdown: { label:"Ranked Countdown", audio: rankedSound,   flag: saveData.sounds?.rankedCountdown ?? true }
+    dm:              { label:"DM",               audio: dmSound       },
+    gameInvite:      { label:"Game Invite",      audio: inviteSound   },
+    friendRequest:   { label:"Friend Request",   audio: inviteSound   },
+    nameMention:     { label:"Name Mention",     audio: mentionSound  },
+    settingChange:   { label:"Setting Changes",  audio: settingsSound },
+    gameStart:       { label:"Game Start",       audio: startSound    },
+    quizPause:       { label:"Quiz Pause",       audio: startSound    },
+    quizUnpause:     { label:"Quiz Unpause",     audio: startSound    },
+    lobbyVote:       { label:"Lobby Vote",       audio: startSound    },
+    rankedCountdown: { label:"Ranked Countdown", audio: rankedSound   }
 };
+for (const key of Object.keys(sounds)) {
+    sounds[key].flag = saveData.sounds?.[key] ?? true;
+}
 
 // setup
 function setup() {
@@ -214,7 +217,9 @@ function createSoundMenuElement(key) {
 
 // set all sound booleans to the inputted value
 function setAllSounds(value) {
-    for (const key in sounds) sounds[key].flag = value;
+    for (const sound of Object.values(sounds)) {
+        sound.flag = value;
+    }
     $("#nsSettings [data-sound] input[type='checkbox']").prop("checked", value);
     saveSettings();
 }
