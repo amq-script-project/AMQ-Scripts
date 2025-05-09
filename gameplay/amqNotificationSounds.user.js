@@ -96,11 +96,11 @@ function setup() {
     }).bindListener();
 
     // build settings menu
-    $("#settingsAudioContainer").append($(`<div id="nsSettings" class="row" style="margin-top: 5px"></div>`)
-        .append($(`<h3 style="text-align: center">Notification Sounds</h3>`))
+    $("#settingsAudioContainer").append($(`<div id="nsSettings" class="row" style="margin-top: 5px;"></div>`)
+        .append($(`<h3 style="text-align: center;">Notification Sounds</h3>`))
         .append($(`<div class="col-xs-4"></div>`)
-            .append($(`<div id="nsSliderContainer"></div>`)
-                .append($(`<input type="range" min="0" max="100" id="nsVolumeSlider">`)
+            .append($(`<div id="nsSliderContainer" style="margin: auto;"></div>`)
+                .append($(`<input id="nsVolumeSlider" type="range" min="0" max="100" style="width: 80%; margin: auto;">`)
                     .val(volume)
                     .on("input", function () {
                         volume = parseInt($(this).val());
@@ -108,7 +108,7 @@ function setup() {
                         saveSettings();
                     })
                 )
-                .append($(`<p id="nsVolumeText"></p>`)
+                .append($(`<p id="nsVolumeText" style="text-align: center; padding-top: 5px;"></p>`)
                     .text(`Volume: ${volume}%`)
                 )
             )
@@ -122,7 +122,7 @@ function setup() {
                 )
                 .append($(`<span>Only when focused</span>`))
             )
-            .append($(`<div style="text-align: center"></div>`)
+            .append($(`<div style="text-align: center;"></div>`)
                 .append($(`<button id="nsButtonAllOn" class="btn btn-default" style="padding: 2px 6px;">All On</button>`)
                     .click(() => {
                         setAllSounds(true);
@@ -237,23 +237,6 @@ function saveSettings() {
 function applyStyles() {
     //$("#notificationSoundsStyle").remove();
     let css = /*css*/ `
-        #nsSliderContainer {
-            margin: auto;
-        }
-        #nsVolumeSlider {
-            width: 80%;
-            height: 10px;
-            margin: auto;
-            appearance: none;
-            outline: none;
-            padding-top: 0px;
-            background: #F7F7F7;
-            border-radius: 5px;
-        }
-        #nsVolumeText {
-            text-align: center;
-            padding-top: 5px;
-        }
         #nsSettings input[type="checkbox"] {
             margin: 0 5px 0 0;
             vertical-align: -2px;
