@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Notification Sounds
 // @namespace    http://tampermonkey.net/
-// @version      2.3
+// @version      2.4
 // @description  Adds notification sounds
 // @author       kempanator
 // @match        https://animemusicquiz.com/*
@@ -21,262 +21,137 @@ Settings are located in: bottom right gear icon > settings > audio
 "use strict";
 if (typeof Listener === "undefined") return;
 let loadInterval = setInterval(() => {
-    if ($("#loadingScreen").hasClass("hidden")) {
+    if (document.querySelector("#loadingScreen.hidden")) {
         clearInterval(loadInterval);
         setup();
     }
 }, 500);
 
-const version = "2.3";
-let saveData = JSON.parse(localStorage.getItem("notificationSounds")) ?? {};
-let volume = saveData.volume ?? 50;
+const version = "2.4";
+const saveData = validateLocalStorage("notificationSounds");
 let soundOnlyWhenFocused = saveData.soundOnlyWhenFocused ?? false;
-let playDMSound = saveData.playDMSound ?? true;
-let playGameInviteSound = saveData.playGameInviteSound ?? true;
-let playFriendRequestSound = saveData.playFriendRequestSound ?? true;
-let playNameMentionSound = saveData.playNameMentionSound ?? true;
-let playSettingChangeSound = saveData.playSettingChangeSound ?? true;
-let playGameStartSound = saveData.playGameStartSound ?? true;
-let playQuizPauseSound = saveData.playQuizPauseSound ?? true;
-let playQuizUnpauseSound = saveData.playQuizUnpauseSound ?? true;
-let playLobbyVoteSound = saveData.playLobbyVoteSound ?? true;
-let playRankedCountdownSound = saveData.playRankedCountdownSound ?? true;
+let volume = saveData.volume ?? 50;
+let sounds;
 
-$("#settingsAudioContainer").append(`
-    <div id="nsSettings" class="row" style="margin-top: 5px">
-        <h3 style="text-align: center">Notification Sounds</h3>
-        <div class="col-xs-4">
-            <div id="nsSliderContainer">
-                <input type="range" min="0" max="100" id="nsVolumeSlider">
-                <p id="nsVolumeText"></p>
-            </div>
-            <div style="text-align: center; padding-bottom: 15px;">
-                <input type="checkbox" id="nsSoundModeCheckbox">
-                <span>Only when focused</span>
-            </div>
-            <div style="text-align: center">
-                <button id="nsButtonAllOn" class="btn btn-default" style="padding: 2px 6px">All On</button>
-                <button id="nsButtonAllOff" class="btn btn-default" style="padding: 2px 6px">All Off</button>
-            </div>
-        </div>
-        <div class="col-xs-4 nsToggleSoundsContainer">
-            <div>
-                <input type="checkbox" id="nsDMCheckbox">
-                <span>DM</span>
-                <i id="nsDMPlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-            <div>
-                <input type="checkbox" id="nsGameInviteCheckbox">
-                <span>Game Invite</span>
-                <i id="nsGameInvitePlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-            <div>
-                <input type="checkbox" id="nsFriendRequestCheckbox">
-                <span>Friend Request</span>
-                <i id="nsFriendRequestPlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-            <div>
-                <input type="checkbox" id="nsNameMentionCheckbox">
-                <span>Name Mention</span>
-                <i id="nsNameMentionPlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-            <div>
-                <input type="checkbox" id="nsSettingChangeCheckbox">
-                <span>Setting Changes</span>
-                <i id="nsSettingChangePlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-        </div>
-        <div class="col-xs-4 nsToggleSoundsContainer">
-            <div>
-                <input type="checkbox" id="nsGameStartCheckbox">
-                <span>Game Start</span>
-                <i id="nsGameStartPlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-            <div>
-                <input type="checkbox" id="nsQuizPauseCheckbox">
-                <span>Quiz Pause</span>
-                <i id="nsQuizPausePlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-            <div>
-                <input type="checkbox" id="nsQuizUnpauseCheckbox">
-                <span>Quiz Unpause</span>
-                <i id="nsQuizUnpausePlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-            <div>
-                <input type="checkbox" id="nsLobbyVoteCheckbox">
-                <span>Lobby Vote</span>
-                <i id="nsLobbyVotePlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-            <div>
-                <input type="checkbox" id="nsRankedCountdownCheckbox">
-                <span>Ranked Countdown</span>
-                <i id="nsRankedCountdownPlaySound" class="fa fa-volume-down" aria-hidden="true"></i>
-            </div>
-        </div>
-    </div>
-`);
-
-applyStyles();
-
+// setup
 function setup() {
-    new Listener("chat message", (payload) => {
-        if (playDMSound) {
-            playSound(dmSound);
-            document.title = "*AMQ";
-        }
+    // create sounds object
+    sounds = {
+        dm:              { label:"DM",               audio: dmSound       },
+        gameInvite:      { label:"Game Invite",      audio: inviteSound   },
+        friendRequest:   { label:"Friend Request",   audio: inviteSound   },
+        nameMention:     { label:"Name Mention",     audio: mentionSound  },
+        settingChange:   { label:"Setting Changes",  audio: settingsSound },
+        gameStart:       { label:"Game Start",       audio: startSound    },
+        quizPause:       { label:"Quiz Pause",       audio: startSound    },
+        quizUnpause:     { label:"Quiz Unpause",     audio: startSound    },
+        lobbyVote:       { label:"Lobby Vote",       audio: startSound    },
+        rankedCountdown: { label:"Ranked Countdown", audio: rankedSound   },
+    };
+    for (const key of Object.keys(sounds)) {
+        sounds[key].flag = saveData.sounds?.[key] ?? true;
+    }
+
+    // attach listeners
+    new Listener("chat message", () => {
+        playSound("dm");
+        document.title = "*AMQ";
     }).bindListener();
-    new Listener("game invite", (payload) => {
-        if (playGameInviteSound) {
-            playSound(inviteSound);
-            document.title = "*AMQ";
-        }
+    new Listener("game invite", () => {
+        playSound("gameInvite");
+        document.title = "*AMQ";
     }).bindListener();
-    new Listener("new friend request recived", (payload) => {
-        if (playFriendRequestSound) {
-            playSound(inviteSound);
-            document.title = "*AMQ";
-        }
+    new Listener("new friend request recived", () => {
+        playSound("gameInvite");
+        document.title = "*AMQ";
     }).bindListener();
-    new Listener("Game Chat Message", (payload) => {
-        checkChatMention(payload);
+    new Listener("Game Chat Message", (data) => {
+        checkChatMention(data);
     }).bindListener();
-    new Listener("game chat update", (payload) => {
-        payload.messages.forEach((message) => checkChatMention(message));
+    new Listener("game chat update", (data) => {
+        data.messages.forEach((message) => checkChatMention(message));
     }).bindListener();
-    new Listener("Room Settings Changed", (payload) => {
-        if (playSettingChangeSound) {
-            playSound(settingsSound);
-        }
+    new Listener("Room Settings Changed", () => {
+        playSound("settingChange");
     }).bindListener();
-    new Listener("Game Starting", (payload) => {
-        if (playGameStartSound) {
-            playSound(startSound);
-        }
+    new Listener("Game Starting", () => {
+        playSound("gameStart");
     }).bindListener();
-    new Listener("quiz pause triggered", (payload) => {
-        if (playQuizPauseSound) {
-            playSound(startSound);
-        }
+    new Listener("quiz pause triggered", () => {
+        playSound("quizPause");
     }).bindListener();
-    new Listener("quiz unpause triggered", (payload) => {
-        if (playQuizUnpauseSound) {
-            playSound(startSound);
-        }
+    new Listener("quiz unpause triggered", () => {
+        playSound("quizUnpause");
     }).bindListener();
-    new Listener("return lobby vote start", (payload) => {
-        if (playLobbyVoteSound) {
-            playSound(startSound);
-        }
+    new Listener("return lobby vote start", () => {
+        playSound("lobbyVote");
     }).bindListener();
-    new Listener("popout message", (payload) => {
-        if (playRankedCountdownSound && payload.message.includes("Lobby can be joined")) {
-            playSound(rankedSound);
+    new Listener("popout message", (data) => {
+        if (data.message.includes("Lobby can be joined")) {
+            playSound("rankedCountdown");
         }
     }).bindListener();
 
-    $("body").click(() => {document.title = "AMQ"}).keypress(() => {document.title = "AMQ"});
-    $("#nsVolumeText").text(`Volume: ${volume}%`);
-    $("#nsVolumeSlider").val(volume).on("change", function() {
-        volume = parseInt($(this).val());
-        $("#nsVolumeText").text(`Volume: ${volume}%`);
-        saveSettings();
-    });
-    $("#nsSoundModeCheckbox").prop("checked", soundOnlyWhenFocused).click(function() {
-        soundOnlyWhenFocused = !soundOnlyWhenFocused;
-        $(this).prop("checked", soundOnlyWhenFocused);
-        saveSettings();
-    });
-    $("#nsButtonAllOn").click(() => {
-        setAllSounds(true);
-        $(".nsToggleSoundsContainer input[type='checkbox']").prop("checked", true);
-        saveSettings();
-    });
-    $("#nsButtonAllOff").click(() => {
-        setAllSounds(false);
-        $(".nsToggleSoundsContainer input[type='checkbox']").prop("checked", false);
-        saveSettings();
-    });
-    $("#nsDMCheckbox").prop("checked", playDMSound).click(function() {
-        playDMSound = !playDMSound;
-        $(this).prop("checked", playDMSound);
-        saveSettings();
-    });
-    $("#nsGameInviteCheckbox").prop("checked", playGameInviteSound).click(function() {
-        playGameInviteSound = !playGameInviteSound;
-        $(this).prop("checked", playGameInviteSound);
-        saveSettings();
-    });
-    $("#nsFriendRequestCheckbox").prop("checked", playFriendRequestSound).click(function() {
-        playFriendRequestSound = !playFriendRequestSound;
-        $(this).prop("checked", playFriendRequestSound);
-        saveSettings();
-    });
-    $("#nsNameMentionCheckbox").prop("checked", playNameMentionSound).click(function() {
-        playNameMentionSound = !playNameMentionSound;
-        $(this).prop("checked", playNameMentionSound);
-        saveSettings();
-    });
-    $("#nsSettingChangeCheckbox").prop("checked", playSettingChangeSound).click(function() {
-        playSettingChangeSound = !playSettingChangeSound;
-        $(this).prop("checked", playSettingChangeSound);
-        saveSettings();
-    });
-    $("#nsGameStartCheckbox").prop("checked", playGameStartSound).click(function() {
-        playGameStartSound = !playGameStartSound;
-        $(this).prop("checked", playGameStartSound);
-        saveSettings();
-    });
-    $("#nsQuizPauseCheckbox").prop("checked", playQuizPauseSound).click(function() {
-        playQuizPauseSound = !playQuizPauseSound;
-        $(this).prop("checked", playQuizPauseSound);
-        saveSettings();
-    });
-    $("#nsQuizUnpauseCheckbox").prop("checked", playQuizUnpauseSound).click(function() {
-        playQuizUnpauseSound = !playQuizUnpauseSound;
-        $(this).prop("checked", playQuizUnpauseSound);
-        saveSettings();
-    });
-    $("#nsLobbyVoteCheckbox").prop("checked", playLobbyVoteSound).click(function() {
-        playLobbyVoteSound = !playLobbyVoteSound;
-        $(this).prop("checked", playLobbyVoteSound);
-        saveSettings();
-    });
-    $("#nsRankedCountdownCheckbox").prop("checked", playRankedCountdownSound).click(function() {
-        playRankedCountdownSound = !playRankedCountdownSound;
-        $(this).prop("checked", playRankedCountdownSound);
-        saveSettings();
-    });
-    $("#nsDMPlaySound").click(() => {
-        playSound(dmSound);
-    });
-    $("#nsGameInvitePlaySound").click(() => {
-        playSound(inviteSound);
-    });
-    $("#nsFriendRequestPlaySound").click(() => {
-        playSound(inviteSound);
-    });
-    $("#nsNameMentionPlaySound").click(() => {
-        playSound(mentionSound);
-    });
-    $("#nsSettingChangePlaySound").click(() => {
-        playSound(settingsSound);
-    });
-    $("#nsGameStartPlaySound").click(() => {
-        playSound(startSound);
-    });
-    $("#nsQuizPausePlaySound").click(() => {
-        playSound(startSound);
-    });
-    $("#nsQuizUnpausePlaySound").click(() => {
-        playSound(startSound);
-    });
-    $("#nsLobbyVotePlaySound").click(() => {
-        playSound(startSound);
-    });
-    $("#nsRankedCountdownPlaySound").click(() => {
-        playSound(rankedSound);
-    });
+    // build settings menu
+    $("#settingsAudioContainer").append($(`<div id="nsSettings" class="row" style="margin-top: 5px;"></div>`)
+        .append($(`<h3 style="text-align: center;">Notification Sounds</h3>`))
+        .append($(`<div class="col-xs-4"></div>`)
+            .append($(`<div id="nsSliderContainer" style="margin: auto;"></div>`)
+                .append($(`<input id="nsVolumeSlider" type="range" min="0" max="100" style="width: 80%; margin: auto;">`)
+                    .val(volume)
+                    .on("input", function () {
+                        volume = parseInt($(this).val());
+                        $("#nsVolumeText").text(`Volume: ${volume}%`);
+                        saveSettings();
+                    })
+                )
+                .append($(`<p id="nsVolumeText" style="text-align: center; padding-top: 5px;"></p>`)
+                    .text(`Volume: ${volume}%`)
+                )
+            )
+            .append($(`<div style="text-align: center; padding-bottom: 15px;"></div>`)
+                .append($(`<input type="checkbox" id="nsSoundModeCheckbox">`)
+                    .prop("checked", soundOnlyWhenFocused)
+                    .click(() => {
+                        soundOnlyWhenFocused = !soundOnlyWhenFocused;
+                        saveSettings();
+                    })
+                )
+                .append($(`<span>Only when focused</span>`))
+            )
+            .append($(`<div style="text-align: center;"></div>`)
+                .append($(`<button id="nsButtonAllOn" class="btn btn-default" style="padding: 2px 6px;">All On</button>`)
+                    .click(() => {
+                        setAllSounds(true);
+                    })
+                )
+                .append($(`<button id="nsButtonAllOff" class="btn btn-default" style="margin-left: 5px; padding: 2px 6px;">All Off</button>`)
+                    .click(() => {
+                        setAllSounds(false);
+                    })
+                )
+            )
+        )
+        .append($(`<div class="col-xs-4 nsToggleSoundsContainer"></div>`)
+            .append(createSoundMenuElement("dm"))
+            .append(createSoundMenuElement("gameInvite"))
+            .append(createSoundMenuElement("friendRequest"))
+            .append(createSoundMenuElement("nameMention"))
+            .append(createSoundMenuElement("settingChange"))
+        )
+        .append($(`<div class="col-xs-4 nsToggleSoundsContainer"></div>`)
+            .append(createSoundMenuElement("gameStart"))
+            .append(createSoundMenuElement("quizPause"))
+            .append(createSoundMenuElement("quizUnpause"))
+            .append(createSoundMenuElement("lobbyVote"))
+            .append(createSoundMenuElement("rankedCountdown"))
+        )
+    );
 
+    document.addEventListener("click", () => { document.title = "AMQ" });
+    document.addEventListener("keypress", () => { document.title = "AMQ" });
+
+    applyStyles();
     AMQ_addScriptData({
         name: "Notification Sounds",
         author: "kempanator",
@@ -295,94 +170,103 @@ function setup() {
                 <li>9. Ranked countdown</li>
             </ul>
             <p>Adjust which notifications you want to receive as well as the notification volume in the audio tab in settings</p>
-            <p>Adds an signifier for unread notifications in the tab title for when tabbed out</p>
+            <p>Adds a signifier for unread notifications in the tab title for when tabbed out</p>
         `
     });
 }
 
-// play a sound
-function playSound(audio) {
-    if (!soundOnlyWhenFocused || document.hasFocus()) {
-        audio.volume = volume / 100;
-        audio.play();
+// check conditions and play a sound
+function playSound(key) {
+    if (sounds[key].flag) {
+        if (!soundOnlyWhenFocused || document.hasFocus()) {
+            const audio = sounds[key].audio;
+            audio.volume = volume / 100;
+            audio.currentTime = 0;
+            audio.play();
+        }
     }
 }
 
 // play a sound when your name is mentioned in chat (@name)
 function checkChatMention(message) {
-    if (playNameMentionSound && !socialTab.isBlocked(message.sender)) {
+    if (!socialTab.isBlocked(message.sender)) {
         if (gameChat.atSelfRegex.test(message.message) || message.atEveryone) {
-            playSound(mentionSound);
+            playSound("nameMention");
         }
     }
 }
 
+// create sound element in audio settings
+function createSoundMenuElement(key) {
+    return $("<div>").attr("data-sound", key)
+        .append($("<input>").attr("type", "checkbox").prop("checked", sounds[key].flag).click(() => {
+            sounds[key].flag = !sounds[key].flag;
+            saveSettings();
+        }))
+        .append($("<span>").text(sounds[key].label))
+        .append($("<i>").addClass("fa fa-volume-down").attr("aria-hidden", "true").click(() => {
+            const audio = sounds[key].audio;
+            audio.volume = volume / 100;
+            audio.currentTime = 0;
+            audio.play();
+        }));
+}
+
 // set all sound booleans to the inputted value
 function setAllSounds(value) {
-    playDMSound = value;
-    playGameInviteSound = value;
-    playFriendRequestSound = value;
-    playNameMentionSound = value;
-    playSettingChangeSound = value;
-    playGameStartSound = value;
-    playQuizPauseSound = value;
-    playQuizUnpauseSound = value;
-    playLobbyVoteSound = value;
-    playRankedCountdownSound = value;
+    for (const sound of Object.values(sounds)) {
+        sound.flag = value;
+    }
+    $("#nsSettings [data-sound] input[type='checkbox']").prop("checked", value);
+    saveSettings();
+}
+
+// validate json data in local storage
+function validateLocalStorage(item) {
+    try {
+        const json = JSON.parse(localStorage.getItem(item));
+        if (!json || typeof json !== "object") return {};
+        return json;
+    }
+    catch {
+        return {};
+    }
 }
 
 // save settings
 function saveSettings() {
     localStorage.setItem("notificationSounds", JSON.stringify({
-        volume: volume,
-        soundOnlyWhenFocused: soundOnlyWhenFocused,
-        playDMSound: playDMSound,
-        playGameInviteSound: playGameInviteSound,
-        playFriendRequestSound: playFriendRequestSound,
-        playNameMentionSound: playNameMentionSound,
-        playSettingChangeSound: playSettingChangeSound,
-        playGameStartSound: playGameStartSound,
-        playQuizPauseSound: playQuizPauseSound,
-        playQuizUnpauseSound: playQuizUnpauseSound,
-        playLobbyVoteSound: playLobbyVoteSound,
-        playRankedCountdownSound: playRankedCountdownSound
+        volume,
+        soundOnlyWhenFocused,
+        sounds: Object.fromEntries(Object.entries(sounds).map(([k, v]) => [k, v.flag]))
     }));
 }
 
 // apply styles
 function applyStyles() {
     //$("#notificationSoundsStyle").remove();
-    let style = document.createElement("style");
-    style.type = "text/css";
-    style.id = "notificationSoundsStyle";
-    style.appendChild(document.createTextNode(`
-        #nsSliderContainer {
-            margin: auto;
+    let css = /*css*/ `
+        #nsSettings input[type="checkbox"] {
+            margin: 0 5px 0 0;
+            vertical-align: -2px;
         }
-        #nsVolumeSlider {
-            width: 80%;
-            height: 10px;
-            margin: auto;
-            appearance: none;
-            outline: none;
-            padding-top: 0px;
-            background: #F7F7F7;
-            border-radius: 5px;
-        }
-        #nsVolumeText {
-            text-align: center;
-            padding-top: 5px;
+        .nsToggleSoundsContainer span {
+            vertical-align: middle;
         }
         .nsToggleSoundsContainer i.fa-volume-down {
             font-size: 18px;
             margin-left: 5px;
             cursor: pointer;
             user-select: none;
+            vertical-align: middle;
         }
         .nsToggleSoundsContainer i.fa-volume-down:hover {
             opacity: .8;
         }
-    `));
+    `;
+    const style = document.createElement("style");
+    style.id = "notificationSoundsStyle";
+    style.textContent = css.trim();
     document.head.appendChild(style);
 }
 
