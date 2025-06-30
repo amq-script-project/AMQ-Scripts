@@ -1,16 +1,20 @@
 // ==UserScript==
 // @name         AMQ Notification Sounds
 // @namespace    http://tampermonkey.net/
-// @version      2.3
+// @version      2.4
 // @description  Adds notification sounds
 // @author       kempanator
 // @match        https://animemusicquiz.com/*
 // @grant        none
-// @downloadURL  https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqNotificationSounds.user.js
-// @updateURL    https://github.com/amq-script-project/AMQ-Scripts/raw/master/gameplay/amqNotificationSounds.user.js
+// @downloadURL  https://github.com/kempanator/amq-scripts/raw/main/amqNotificationSounds.user.js
+// @updateURL    https://github.com/kempanator/amq-scripts/raw/main/amqNotificationSounds.user.js
 // @require      https://github.com/joske2865/AMQ-Scripts/raw/master/common/amqScriptInfo.js
 // @copyright    MIT license
 // ==/UserScript==
+
+/*
+MOVED TO https://github.com/kempanator/amq-scripts/blob/main/amqNotificationSounds.user.js
+*/
 
 /*
 Complete rewrite of ensorcell's script
@@ -27,7 +31,7 @@ let loadInterval = setInterval(() => {
     }
 }, 500);
 
-const version = "2.3";
+const version = "2.4";
 let saveData = JSON.parse(localStorage.getItem("notificationSounds")) ?? {};
 let volume = saveData.volume ?? 50;
 let soundOnlyWhenFocused = saveData.soundOnlyWhenFocused ?? false;
