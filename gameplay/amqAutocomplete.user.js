@@ -522,7 +522,7 @@ if (!isNode) {
 
 	proto.submitAnswer = function () {
 	    try{
-			var awesome = this.autoCompleteController.awesomepleteInstance;
+			var awesome = autoCompleteController.awesomepleteInstances[0];
 
 			if(options.enabled && awesome && awesome.input.value == awesome.filterManager.lastStr && awesome.suggestions && awesome.input.value.trim() && awesome.suggestions.every(s => s.value.trim().toLowerCase() != awesome.input.value.trim().toLowerCase()) && (awesome.suggestions.length || (!options.fuzzy.dropdown && options.fuzzy.answer))) {
 				awesome.input.value = awesome.suggestions.length ? awesome.suggestions[0].value : awesome.filterManager.filterBy(awesome.input.value, true)[0].originalStr;
