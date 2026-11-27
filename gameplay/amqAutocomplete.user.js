@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.41
+// @version      1.42
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -270,15 +270,11 @@ class FilterManager {
 
 		this.addEntrySets();
 
-		if (this.options.fuzzy.dropdown || this.options.fuzzy.answer) {
-			let cleaned = this.list.map(v => cleanString(v.originalStr));
-			this.fuzzy = FuzzySet(cleaned);
-			this.reverseMapping = {}
-			this.list.forEach((v, idx) => {
-				this.reverseMapping[cleaned[idx]] = this.reverseMapping[cleaned[idx]] || []
-				this.reverseMapping[cleaned[idx]].push(v.idx)
-			});
+		// fuzzy index is expensive to build (~350ms): built lazily on first use, or earlier when the browser is idle
+		if ((this.options.fuzzy.dropdown || this.options.fuzzy.answer) && typeof requestIdleCallback === "function") {
+			requestIdleCallback(() => this.ensureFuzzy(), {timeout: 15000});
 		}
+
 
 		this.originalIndexResults = new Set();
 
@@ -309,6 +305,18 @@ class FilterManager {
 	reset () {
 		this.entrySets.forEach(e => e.reset());
 		this.originalIndexResults.clear();
+	}
+
+	ensureFuzzy() {
+		if (this.fuzzy) return;
+
+		let cleaned = this.list.map(v => cleanString(v.originalStr));
+		this.fuzzy = FuzzySet(cleaned);
+		this.reverseMapping = {}
+		this.list.forEach((v, idx) => {
+			this.reverseMapping[cleaned[idx]] = this.reverseMapping[cleaned[idx]] || []
+			this.reverseMapping[cleaned[idx]].push(v.idx)
+		});
 	}
 
 	checkOldResults() {
@@ -367,6 +375,7 @@ class FilterManager {
 
 		//add fuzzy results
 		if (this.originalIndexResults.size == 0 && fuzzy) {
+			this.ensureFuzzy();
 			let fuzzyResults = new Set((this.fuzzy.get(cleanString(str)) || []).slice(0, this.limit).map(r => this.reverseMapping[r[1]]).reduce((acc, val) => acc.concat(val), []).slice(0, this.limit));
 			for (let idx of Array.from(fuzzyResults)) {
 				if (!s.has(this.list[idx].originalIndex)) {
@@ -452,7 +461,12 @@ if (!isNode) {
 
 		if (options.submitOnSelect) {
 			$(this.input).on("awesomplete-selectcomplete", (e) => {
-				quiz.answerInput.typingInput.submitAnswer();
+				// only submit the game this input belongs to
+				if (this.input.id == 'apAnswerInputField') {
+					if (typeof amqdleGame !== "undefined") amqdleGame.answerInput.submitAnswer();
+				} else if (typeof quiz !== "undefined") {
+					quiz.answerInput.typingInput.submitAnswer();
+				}
 			});
 		}
 
@@ -471,7 +485,7 @@ if (!isNode) {
 
 	AmqAwesomeplete.prototype.evaluate = function () {
 		if (this.isAnimeAutocomplete != true || options.enabled == false) return oldEvaluate.call(this);
-		
+
 		this.index = -1;
 
 		let suggestions = this.filterManager.filterBy(this.input.value, options.fuzzy.dropdown);
@@ -517,20 +531,39 @@ if (!isNode) {
 	};
 
 	//auto send incomplete answer
+	const QUIZ_INPUT_ID = 'qpAnswerInput';
+	const AMQDLE_INPUT_ID = 'apAnswerInputField';
 	const proto = typeof QuizTypeAnswerInput != 'undefined' ? QuizTypeAnswerInput.prototype : AmqAwesomeplete.prototype;
-	var oldSendAnwer = proto.submitAnswer;
+	var oldSendAnswer = proto.submitAnswer;
 
 	proto.submitAnswer = function () {
-	    try{
-			var awesome = this.autoCompleteController.awesomepleteInstance;
+		submitFromDropdown(QUIZ_INPUT_ID);
+		return oldSendAnswer.apply(this, Array.from(arguments));
+	}
 
-			if(options.enabled && awesome && awesome.input.value == awesome.filterManager.lastStr && awesome.suggestions && awesome.input.value.trim() && awesome.suggestions.every(s => s.value.trim().toLowerCase() != awesome.input.value.trim().toLowerCase()) && (awesome.suggestions.length || (!options.fuzzy.dropdown && options.fuzzy.answer))) {
+	// amqdle answer input can be (re)created at any time, so keep checking that it is hooked
+	setInterval(() => {
+		const input = typeof amqdleGame !== "undefined" ? amqdleGame?.answerInput : null;
+		if (!input || typeof input.submitAnswer !== "function" || input.submitAnswer.amqAutocompleteHooked) return;
+
+		const oldAmqdleSend = input.submitAnswer;
+		input.submitAnswer = function () {
+			submitFromDropdown(AMQDLE_INPUT_ID);
+			return oldAmqdleSend.apply(this, arguments);
+		};
+		input.submitAnswer.amqAutocompleteHooked = true;
+	}, 500);
+
+	function submitFromDropdown(inputId) {
+		try {
+			var awesome = (autoCompleteController.awesomepleteInstances || []).find(a => a.input && a.input.id == inputId);
+
+			if (options.enabled && awesome && awesome.filterManager && awesome.input.value == awesome.filterManager.lastStr && awesome.suggestions && awesome.input.value.trim() && awesome.suggestions.every(s => s.value.trim().toLowerCase() != awesome.input.value.trim().toLowerCase()) && (awesome.suggestions.length || (!options.fuzzy.dropdown && options.fuzzy.answer))) {
 				awesome.input.value = awesome.suggestions.length ? awesome.suggestions[0].value : awesome.filterManager.filterBy(awesome.input.value, true)[0].originalStr;
 			}
 		} catch (ex) {
-	        console.log(ex);
+			console.log(ex);
 		}
-		oldSendAnwer.apply(this, Array.from(arguments))
 	}
 }
 

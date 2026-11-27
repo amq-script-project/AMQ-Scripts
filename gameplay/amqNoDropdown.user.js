@@ -19,7 +19,7 @@ let realList;
 
 function changeEnabled() {
     enabled = !enabled;
-    let controller = window?.quiz?.answerInput?.autoCompleteController;
+    let controller = window.autoCompleteController;
 
     if (controller) {
         controller.newList();
