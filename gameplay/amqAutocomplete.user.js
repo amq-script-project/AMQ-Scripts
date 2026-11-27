@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amq Autocomplete improvement
 // @namespace    http://tampermonkey.net/
-// @version      1.42
+// @version      1.43
 // @description  faster and better autocomplete
 // First searches for text startingWith, then includes and finally if input words match words in anime (in any order). Special characters can be in any place in any order
 // @author       Juvian
@@ -444,16 +444,10 @@ class HightLightManager {
 
 if (!isNode) {
 
-	var oldProto = AmqAwesomeplete.prototype;
 	var oldEvaluate = AmqAwesomeplete.prototype.evaluate;
 
-	AmqAwesomeplete = function(input, o) {
-		oldProto.constructor.apply(this, Array.from(arguments))
-		this.isAnimeAutocomplete = this._list.indexOf("Serial Experiments Lain") != -1;
-		if (this.isAnimeAutocomplete) this.preprocess();
-	}
-
-	AmqAwesomeplete.prototype = oldProto;
+	// do not replace the AmqAwesomeplete global: AMQ uses its static methods and subclasses it (e.g. AmqAwesompleteLocalized),
+	// so each instance is set up lazily the first time evaluate runs
 
 	AmqAwesomeplete.prototype.preprocess = function () {
 		this.filterManager = new FilterManager(this._list.sort(this.sort), this.maxItems);
@@ -484,6 +478,11 @@ if (!isNode) {
 	}
 
 	AmqAwesomeplete.prototype.evaluate = function () {
+		if (this.isAnimeAutocomplete === undefined) {
+			this.isAnimeAutocomplete = Array.isArray(this._list) && this._list.indexOf("Serial Experiments Lain") != -1;
+			if (this.isAnimeAutocomplete) this.preprocess();
+		}
+
 		if (this.isAnimeAutocomplete != true || options.enabled == false) return oldEvaluate.call(this);
 
 		this.index = -1;
